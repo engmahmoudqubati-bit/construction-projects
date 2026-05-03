@@ -2,6 +2,7 @@
   "name": "construction-projects-frontend",
   "version": "1.0.0",
   "type": "module",
+  "homepage": "https://engmahmoudqubati-bit.github.io/construction-projects",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
