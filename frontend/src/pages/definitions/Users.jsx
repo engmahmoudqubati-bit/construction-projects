@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import DataTable    from '../../components/shared/DataTable';
@@ -7,40 +7,34 @@ import StatusBadge  from '../../components/shared/StatusBadge';
 import { useToast } from '../../components/shared/Toast';
 import t from '../../lang';
 
-const ROLES     = ['admin', 'project_manager', 'site_engineer'];
-const PAGE_KEYS = [
-  { key: 'definitions_projects',        label: t.projects },
-  { key: 'definitions_classifications', label: t.itemClassifications },
-  { key: 'definitions_items',           label: t.items },
-  { key: 'planning',                    label: t.planning },
-  { key: 'delivery',                    label: t.delivery },
-  { key: 'installation',                label: t.installation },
-  { key: 'inspection',                  label: t.inspection },
-  { key: 'reports',                     label: t.reports },
-];
+const ROLES = ['admin', 'project_manager', 'site_engineer'];
 
 const EMPTY = {
-  full_name: '', username: '', password: '', role: 'site_engineer', email: '',
-  page_permissions: [], project_access: [],
+  full_name: '', full_name_ar: '', full_name_en: '',
+  username: '', password: '', role: 'site_engineer', email: '',
+  photo_url: '', position_role_id: '', company_id: '',
+  project_access: [],
 };
 
 export default function Users() {
   const toast = useToast();
-  const { ALL_PAGES } = useAuth();
+  const photoRef = useRef();
 
-  const [users,    setUsers]    = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [modal,    setModal]    = useState(false);
-  const [editing,  setEditing]  = useState(null);
-  const [form,     setForm]     = useState(EMPTY);
-  const [saving,   setSaving]   = useState(false);
-  const [search,   setSearch]   = useState('');
-  const [delModal, setDelModal] = useState(null);
+  const [users,         setUsers]         = useState([]);
+  const [projects,      setProjects]      = useState([]);
+  const [positionRoles, setPositionRoles] = useState([]);
+  const [companies,     setCompanies]     = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [modal,         setModal]         = useState(false);
+  const [editing,       setEditing]       = useState(null);
+  const [form,          setForm]          = useState(EMPTY);
+  const [saving,        setSaving]        = useState(false);
+  const [search,        setSearch]        = useState('');
+  const [delModal,      setDelModal]      = useState(null);
 
   useEffect(() => {
-    Promise.all([api.getUsers(), api.getProjects()])
-      .then(([u, p]) => { setUsers(u); setProjects(p); })
+    Promise.all([api.getUsers(), api.getProjects(), api.getPositionRoles(), api.getCompanies()])
+      .then(([u, p, pr, co]) => { setUsers(u); setProjects(p); setPositionRoles(pr); setCompanies(co); })
       .catch(() => toast(t.errorOccurred, 'error'))
       .finally(() => setLoading(false));
   }, []);
@@ -48,29 +42,23 @@ export default function Users() {
   async function openEdit(user) {
     const perms = await api.getUserPerms(user.id);
     setForm({
-      full_name: user.full_name, username: user.username,
-      password: '', role: user.role, email: user.email || '',
-      page_permissions: perms.pages,
-      project_access:   perms.projects,
+      full_name: user.full_name,
+      full_name_ar: user.full_name_ar || '',
+      full_name_en: user.full_name_en || '',
+      username: user.username,
+      password: '',
+      role: user.role,
+      email: user.email || '',
+      photo_url: user.photo_url || '',
+      position_role_id: user.position_role_id || '',
+      company_id: user.company_id || '',
+      project_access: perms.projects,
     });
     setEditing(user);
     setModal(true);
   }
 
-  function openAdd() {
-    setForm(EMPTY);
-    setEditing(null);
-    setModal(true);
-  }
-
-  function togglePage(key) {
-    setForm(f => ({
-      ...f,
-      page_permissions: f.page_permissions.includes(key)
-        ? f.page_permissions.filter(k => k !== key)
-        : [...f.page_permissions, key],
-    }));
-  }
+  function openAdd() { setForm(EMPTY); setEditing(null); setModal(true); }
 
   function toggleProject(id) {
     setForm(f => ({
@@ -81,15 +69,24 @@ export default function Users() {
     }));
   }
 
+  function handlePhotoChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setForm(f => ({ ...f, photo_url: ev.target.result }));
+    reader.readAsDataURL(file);
+  }
+
   async function handleSave() {
-    if (!form.full_name || !form.username || !form.role) {
+    if (!form.full_name || !form.username || !form.role)
       return toast('Full name, username and role are required', 'error');
-    }
     if (!editing && !form.password) return toast('Password is required for new users', 'error');
     setSaving(true);
     try {
       const payload = { ...form };
       if (!payload.password) delete payload.password;
+      if (!payload.position_role_id) payload.position_role_id = null;
+      if (!payload.company_id) payload.company_id = null;
       if (editing) {
         const updated = await api.updateUser(editing.id, payload);
         setUsers(u => u.map(x => x.id === editing.id ? { ...x, ...updated } : x));
@@ -99,9 +96,8 @@ export default function Users() {
       }
       toast(t.saveSuccess);
       setModal(false);
-    } catch (err) {
-      toast(err.message, 'error');
-    } finally { setSaving(false); }
+    } catch (err) { toast(err.message, 'error'); }
+    finally { setSaving(false); }
   }
 
   async function handleToggle(user) {
@@ -128,12 +124,18 @@ export default function Users() {
   const projectLabel = (p) => [p.project_name_en, p.project_name_ar].filter(Boolean).join(' / ');
 
   const columns = [
+    { key: 'photo', label: '', render: r => (
+      r.photo_url
+        ? <img src={r.photo_url} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
+        : <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--card2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>👤</div>
+    )},
     { key: 'full_name',  label: t.fullName },
     { key: 'username',   label: t.username },
     { key: 'role',       label: t.role,   render: r => <StatusBadge value={r.role} /> },
+    { key: 'position_role_name', label: t.positionRole },
     { key: 'email',      label: t.email },
     { key: 'is_active',  label: t.status, render: r => <StatusBadge value={r.is_active ? 'active' : 'inactive'} /> },
-    { key: 'actions',    label: '',       render: r => (
+    { key: 'actions',    label: '', render: r => (
       <div className="td-actions">
         <button className="btn btn-secondary btn-sm" onClick={() => openEdit(r)}>{t.edit}</button>
         <button className="btn btn-secondary btn-sm" onClick={() => handleToggle(r)}>
@@ -161,7 +163,6 @@ export default function Users() {
         <DataTable columns={columns} data={filtered} loading={loading} />
       </div>
 
-      {/* Add / Edit Modal */}
       <Modal
         open={modal}
         onClose={() => setModal(false)}
@@ -176,11 +177,48 @@ export default function Users() {
           </>
         }
       >
+        {/* Photo upload */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+          <div
+            style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--card2)', border: '2px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: 'pointer' }}
+            onClick={() => photoRef.current?.click()}
+          >
+            {form.photo_url
+              ? <img src={form.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <span style={{ fontSize: 24 }}>👤</span>
+            }
+          </div>
+          <div>
+            <button className="btn btn-secondary btn-sm" onClick={() => photoRef.current?.click()}>
+              {t.profilePicture}
+            </button>
+            {form.photo_url && (
+              <button className="btn btn-secondary btn-sm" style={{ marginLeft: 8 }} onClick={() => setForm(f => ({ ...f, photo_url: '' }))}>
+                ✕
+              </button>
+            )}
+            <input ref={photoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoChange} />
+          </div>
+        </div>
+
         <div className="form-row">
           <div className="form-group">
             <label className="form-label">{t.fullName} *</label>
             <input className="form-control" value={form.full_name}
               onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">{t.fullNameAr}</label>
+            <input className="form-control" dir="rtl" value={form.full_name_ar}
+              onChange={e => setForm(f => ({ ...f, full_name_ar: e.target.value }))} />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label">{t.fullNameEn}</label>
+            <input className="form-control" value={form.full_name_en}
+              onChange={e => setForm(f => ({ ...f, full_name_en: e.target.value }))} />
           </div>
           <div className="form-group">
             <label className="form-label">{t.username} *</label>
@@ -203,63 +241,60 @@ export default function Users() {
           </div>
         </div>
 
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label">{t.role} *</label>
+            <select className="form-control" value={form.role}
+              onChange={e => setForm(f => ({ ...f, role: e.target.value }))}>
+              {ROLES.map(r => <option key={r} value={r}>{t.roles[r]}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">{t.positionRole}</label>
+            <select className="form-control" value={form.position_role_id}
+              onChange={e => setForm(f => ({ ...f, position_role_id: e.target.value }))}>
+              <option value="">— {t.positionRole} —</option>
+              {positionRoles.map(pr => (
+                <option key={pr.id} value={pr.id}>{pr.name_en}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <div className="form-group">
-          <label className="form-label">{t.role} *</label>
-          <select className="form-control" value={form.role}
-            onChange={e => setForm(f => ({ ...f, role: e.target.value }))}>
-            {ROLES.map(r => <option key={r} value={r}>{t.roles[r]}</option>)}
+          <label className="form-label">{t.companies}</label>
+          <select className="form-control" value={form.company_id}
+            onChange={e => setForm(f => ({ ...f, company_id: e.target.value }))}>
+            <option value="">— {t.companies} —</option>
+            {companies.map(c => (
+              <option key={c.id} value={c.id}>{c.name_en}</option>
+            ))}
           </select>
         </div>
 
-        {/* Permissions — only for non-admin */}
+        {/* Project access for non-admin */}
         {form.role !== 'admin' && (
           <>
             <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '16px 0' }} />
             <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>{t.permissionsNote}</p>
-
-            <div className="form-row">
-              {/* Page permissions */}
-              <div className="form-group" style={{ gridColumn: 'span 1' }}>
-                <label className="form-label">{t.pagePermissions}</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-                  {PAGE_KEYS.map(({ key, label }) => (
-                    <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
-                      <input
-                        type="checkbox"
-                        checked={form.page_permissions.includes(key)}
-                        onChange={() => togglePage(key)}
-                      />
-                      {label}
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Project access */}
-              <div className="form-group" style={{ gridColumn: 'span 1' }}>
-                <label className="form-label">{t.projectAccess}</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4, maxHeight: 220, overflowY: 'auto' }}>
-                  {projects.map(p => (
-                    <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
-                      <input
-                        type="checkbox"
-                        checked={form.project_access.includes(p.id)}
-                        onChange={() => toggleProject(p.id)}
-                      />
-                      {projectLabel(p)}
-                    </label>
-                  ))}
-                  {projects.length === 0 && (
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>No projects available</span>
-                  )}
-                </div>
-              </div>
+            <label className="form-label">{t.projectAccess}</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8, maxHeight: 200, overflowY: 'auto' }}>
+              {projects.map(p => (
+                <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+                  <input
+                    type="checkbox"
+                    checked={form.project_access.includes(p.id)}
+                    onChange={() => toggleProject(p.id)}
+                  />
+                  {projectLabel(p)}
+                </label>
+              ))}
+              {projects.length === 0 && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>No projects available</span>}
             </div>
           </>
         )}
       </Modal>
 
-      {/* Delete confirm */}
       <Modal
         open={!!delModal}
         onClose={() => setDelModal(null)}

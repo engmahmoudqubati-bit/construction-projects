@@ -10,13 +10,14 @@ import Users              from './pages/definitions/Users';
 import Projects           from './pages/definitions/Projects';
 import ItemClassifications from './pages/definitions/ItemClassifications';
 import Items              from './pages/definitions/Items';
+import Companies          from './pages/definitions/Companies';
+import PositionRoles      from './pages/definitions/PositionRoles';
 import Planning           from './pages/planning/Planning';
 import Delivery           from './pages/transactions/Delivery';
 import Installation       from './pages/transactions/Installation';
 import Inspection         from './pages/transactions/Inspection';
 import Reports            from './pages/reports/Reports';
 
-// Guards
 function RequireAuth({ children }) {
   const { user } = useAuth();
   return user ? children : <Navigate to="/login" replace />;
@@ -38,8 +39,8 @@ function RequireRole({ roles, children }) {
 
 function AppShell() {
   const { user } = useAuth();
-  const [collapsed, setCollapsed]     = useState(false);
-  const [mobileOpen, setMobileOpen]   = useState(false);
+  const [collapsed, setCollapsed]   = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   if (!user) {
     return (
@@ -69,7 +70,13 @@ function AppShell() {
             <Route path="/login"    element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
 
-            {/* Definitions — role-gated */}
+            {/* Admin-only definitions */}
+            <Route path="/definitions/companies" element={
+              <RequireRole roles={['admin']}><Companies /></RequireRole>
+            } />
+            <Route path="/definitions/position-roles" element={
+              <RequireRole roles={['admin']}><PositionRoles /></RequireRole>
+            } />
             <Route path="/definitions/users" element={
               <RequireRole roles={['admin']}><Users /></RequireRole>
             } />

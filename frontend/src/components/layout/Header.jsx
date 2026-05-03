@@ -5,6 +5,8 @@ import t from '../../lang';
 
 const TITLES = {
   '/dashboard':                    t.dashboard,
+  '/definitions/companies':        t.companies,
+  '/definitions/position-roles':   t.positionRoles,
   '/definitions/users':            t.users,
   '/definitions/projects':         t.projects,
   '/definitions/classifications':  t.itemClassifications,
@@ -43,6 +45,10 @@ export default function Header({ onToggleSidebar, onToggleMobile }) {
         </button>
         {user && (
           <div className="user-chip">
+            {user.photo_url
+              ? <img src={user.photo_url} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
+              : <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--card2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>👤</div>
+            }
             <span>{user.full_name}</span>
             <span className={`badge badge-${user.role}`}>
               {t.roles[user.role] || user.role}

@@ -6,6 +6,8 @@ const NAV = [
   { label: t.dashboard, icon: '◈', path: '/dashboard', pageKey: null },
 
   { section: t.definitions },
+  { label: t.companies,          icon: '🏢', path: '/definitions/companies',      role: 'admin' },
+  { label: t.positionRoles,      icon: '🎖️', path: '/definitions/position-roles', role: 'admin' },
   { label: t.users,              icon: '👥', path: '/definitions/users',           role: 'admin' },
   { label: t.projects,           icon: '🏗️', path: '/definitions/projects',        pageKey: 'definitions_projects' },
   { label: t.itemClassifications,icon: '🗂️', path: '/definitions/classifications',  pageKey: 'definitions_classifications' },
@@ -30,7 +32,7 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
 
   function isVisible(item) {
     if (item.role) return user?.role === item.role;
-    if (item.pageKey === null) return true;           // dashboard — always visible
+    if (item.pageKey === null) return true;
     if (user?.role === 'admin') return true;
     return canAccessPage(item.pageKey);
   }
@@ -44,13 +46,17 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
     <nav className={cls}>
       <div className="sidebar-logo">
         <span className="logo-icon">🏗️</span>
-        <span className="logo-text">{t.appName}</span>
+        {!collapsed && <span className="logo-text">CPMS</span>}
       </div>
 
       <div className="sidebar-nav">
         {NAV.map((item, i) => {
           if (item.section) {
-            return <div key={i} className="nav-section-label">{item.section}</div>;
+            return (
+              <div key={i} className="nav-section-label">
+                {collapsed ? <span title={item.section}>—</span> : item.section}
+              </div>
+            );
           }
           if (!isVisible(item)) return null;
           const active = location.pathname === item.path;
@@ -62,7 +68,7 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
               title={collapsed ? item.label : undefined}
             >
               <span className="nav-icon">{item.icon}</span>
-              <span className="nav-label">{item.label}</span>
+              {!collapsed && <span className="nav-label">{item.label}</span>}
             </button>
           );
         })}
@@ -75,7 +81,7 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {
           title={collapsed ? 'Logout' : undefined}
         >
           <span className="nav-icon">🚪</span>
-          <span className="nav-label">{t.logout}</span>
+          {!collapsed && <span className="nav-label">{t.logout}</span>}
         </button>
       </div>
     </nav>

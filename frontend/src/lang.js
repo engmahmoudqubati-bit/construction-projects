@@ -1,14 +1,12 @@
 const en = {
-  appName: 'Construction PM',
+  appName: 'Construction Project Management System (CPMS)',
 
-  // Nav sections
   dashboard: 'Dashboard',
   definitions: 'Definitions',
   planning: 'Planning',
   transactions: 'Transactions',
   reports: 'Reports',
 
-  // Nav items
   users: 'Users',
   projects: 'Projects',
   itemClassifications: 'Item Classifications',
@@ -16,8 +14,9 @@ const en = {
   delivery: 'Delivery',
   installation: 'Installation',
   inspection: 'Inspection',
+  companies: 'Companies',
+  positionRoles: 'Position Roles',
 
-  // Actions
   add: 'Add',
   edit: 'Edit',
   delete: 'Delete',
@@ -29,7 +28,6 @@ const en = {
   saving: 'Saving...',
   confirm: 'Confirm',
 
-  // Auth
   login: 'Sign In',
   logout: 'Logout',
   username: 'Username',
@@ -37,28 +35,48 @@ const en = {
   newPassword: 'New Password',
   leaveBlankPassword: 'Leave blank to keep current password',
   loginSubtitle: 'Sign in to your account',
+  selectCompany: 'Select Company',
+  selectCompanyPrompt: 'You have access to multiple companies. Please select one to continue.',
+  continueBtn: 'Continue',
 
-  // User fields
   fullName: 'Full Name',
+  fullNameAr: 'Full Name (Arabic)',
+  fullNameEn: 'Full Name (English)',
   role: 'Role',
+  positionRole: 'Position Role',
   email: 'Email',
   status: 'Status',
   active: 'Active',
   inactive: 'Inactive',
   addUser: 'Add User',
   editUser: 'Edit User',
+  profilePicture: 'Profile Picture',
   roles: {
     admin: 'Admin',
     project_manager: 'Project Manager',
     site_engineer: 'Site Engineer',
   },
 
-  // Permissions
   pagePermissions: 'Page Permissions',
   projectAccess: 'Project Access',
   permissionsNote: 'Admin has full access — permissions apply to PM and Site Engineer only.',
 
-  // Project fields
+  companyNameAr: 'Company Name (Arabic)',
+  companyNameEn: 'Company Name (English)',
+  companyType: 'Company Type',
+  companyTypeOrg: 'Organization',
+  companyTypeHolding: 'Holding Company',
+  taxId: 'Tax ID',
+  parentCompany: 'Parent Holding Company',
+  noParent: '— None (Top Level) —',
+  addCompany: 'Add Company',
+  editCompany: 'Edit Company',
+
+  positionRoleNameAr: 'Position Name (Arabic)',
+  positionRoleNameEn: 'Position Name (English)',
+  addPositionRole: 'Add Position Role',
+  editPositionRole: 'Edit Position Role',
+
   projectCode: 'Project Code',
   projectNameEn: 'Project Name (English)',
   projectNameAr: 'Project Name (Arabic)',
@@ -76,7 +94,6 @@ const en = {
     cancelled: 'Cancelled',
   },
 
-  // Classification fields
   classificationCode: 'Code',
   classificationName: 'Name',
   parentClassification: 'Parent Classification',
@@ -84,7 +101,6 @@ const en = {
   addClassification: 'Add Classification',
   editClassification: 'Edit Classification',
 
-  // Item fields
   itemCode: 'Item Code',
   itemName: 'Item Name',
   classification: 'Classification',
@@ -92,14 +108,12 @@ const en = {
   addItem: 'Add Item',
   editItem: 'Edit Item',
 
-  // Planning
   plannedQty: 'Planned Qty',
   planningTitle: 'Project Planning',
   selectProjectToStart: 'Select a project to set up its planned quantities',
   noItemsAvailable: 'No active items available. Add items in Definitions first.',
   savePlanning: 'Save Planning',
 
-  // Transactions
   selectProject: 'Select Project',
   allProjects: 'All Projects',
   selectDate: 'Select Date',
@@ -117,7 +131,6 @@ const en = {
   saveEntries: 'Save Entries',
   noItemsLinked: 'No items have been planned for this project yet.',
 
-  // Dashboard KPIs
   totalProjects: 'Total Projects',
   installationProgress: 'Installation Progress',
   deliveryProgress: 'Delivery Progress',
@@ -134,7 +147,6 @@ const en = {
   fail: 'Fail',
   pending: 'Pending',
 
-  // Reports tabs
   reportProgress: 'Planning vs Delivery vs Installation',
   reportProjectsSummary: 'Project Summary',
   reportItemTracking: 'Item Tracking',
@@ -142,7 +154,6 @@ const en = {
   installPct: 'Install %',
   deliveryPct: 'Delivery %',
 
-  // Misc
   confirmDelete: 'Are you sure you want to delete this record? This cannot be undone.',
   noData: 'No data available',
   errorOccurred: 'An error occurred. Please try again.',

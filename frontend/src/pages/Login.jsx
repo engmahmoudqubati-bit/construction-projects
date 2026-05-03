@@ -31,7 +31,7 @@ export default function Login() {
       <div className="login-card">
         <div className="login-logo">
           <div className="logo-mark">🏗️</div>
-          <h1>{t.appName}</h1>
+          <h1 style={{ fontSize: 18, lineHeight: 1.3, textAlign: 'center' }}>{t.appName}</h1>
           <p>{t.loginSubtitle}</p>
         </div>
 

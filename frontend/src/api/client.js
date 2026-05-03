@@ -40,6 +40,19 @@ export const api = {
   deleteUser:     (id)      => request('DELETE', `/api/users/${id}`),
   getUserPerms:   (id)      => request('GET',    `/api/users/${id}/permissions`),
 
+  // Companies
+  getCompanies:    ()       => request('GET',    '/api/companies'),
+  createCompany:   (b)      => request('POST',   '/api/companies', b),
+  updateCompany:   (id, b)  => request('PUT',    `/api/companies/${id}`, b),
+  deleteCompany:   (id)     => request('DELETE', `/api/companies/${id}`),
+
+  // Position Roles
+  getPositionRoles:        ()       => request('GET',    '/api/position-roles'),
+  createPositionRole:      (b)      => request('POST',   '/api/position-roles', b),
+  updatePositionRole:      (id, b)  => request('PUT',    `/api/position-roles/${id}`, b),
+  deletePositionRole:      (id)     => request('DELETE', `/api/position-roles/${id}`),
+  getPositionRolePerms:    (id)     => request('GET',    `/api/position-roles/${id}/permissions`),
+
   // Projects
   getProjects:    ()        => request('GET',    '/api/projects'),
   getProject:     (id)      => request('GET',    `/api/projects/${id}`),
