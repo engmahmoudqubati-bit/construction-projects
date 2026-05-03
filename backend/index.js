@@ -4,7 +4,7 @@ const cors    = require('cors');
 
 const app = express();
 
-app.use(cors({
+const corsOptions = {
   origin: [
     'https://engmahmoudqubati-bit.github.io',
     'http://localhost:5173',
@@ -12,29 +12,11 @@ app.use(cors({
   ],
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization'],
-}));
-app.options('*', cors());
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));  // ← only once, with options
 app.use(express.json());
 
-
-
-
-app.options('*', cors());
-app.use(express.json());
-
-app.use('/api/auth',            require('./routes/auth'));
-app.use('/api/users',           require('./routes/users'));
-app.use('/api/projects',        require('./routes/projects'));
-app.use('/api/classifications', require('./routes/classifications'));
-app.use('/api/items',           require('./routes/items'));
-app.use('/api/planning',        require('./routes/planning'));
-app.use('/api/delivery',        require('./routes/delivery'));
-app.use('/api/installation',    require('./routes/installation'));
-app.use('/api/inspection',      require('./routes/inspection'));
-app.use('/api/dashboard',       require('./routes/dashboard'));
-app.use('/api/reports',         require('./routes/reports'));
-
-app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// ... rest of your routes
