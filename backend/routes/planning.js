@@ -20,7 +20,7 @@ router.get('/available-items/:projectId', async (req, res) => {
        LEFT JOIN cp_item_classifications pc ON pc.id = c.parent_id
        LEFT JOIN cp_project_planning pp ON pp.item_id = i.id AND pp.project_id = $1
        WHERE i.is_active = true AND pp.id IS NULL
-       ORDER BY p.classification_name NULLS LAST, c.classification_name, i.item_name`,
+       ORDER BY pc.classification_name NULLS LAST, c.classification_name, i.item_name`,
       [projectId]
     );
     res.json(rows);
