@@ -16,7 +16,22 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));  // ← only once, with options
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
-// ... rest of your routes
+app.use('/api/auth',            require('./routes/auth'));
+app.use('/api/users',           require('./routes/users'));
+app.use('/api/projects',        require('./routes/projects'));
+app.use('/api/classifications', require('./routes/classifications'));
+app.use('/api/items',           require('./routes/items'));
+app.use('/api/planning',        require('./routes/planning'));
+app.use('/api/delivery',        require('./routes/delivery'));
+app.use('/api/installation',    require('./routes/installation'));
+app.use('/api/inspection',      require('./routes/inspection'));
+app.use('/api/dashboard',       require('./routes/dashboard'));
+app.use('/api/reports',         require('./routes/reports'));
+
+app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
