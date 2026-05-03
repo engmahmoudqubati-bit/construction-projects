@@ -1,0 +1,89 @@
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+function getToken() { return localStorage.getItem('cp_token'); }
+
+async function request(method, path, body) {
+  const headers = { 'Content-Type': 'application/json' };
+  const token = getToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+
+  if (res.status === 401) {
+    ['cp_token','cp_user','cp_permissions'].forEach(k => localStorage.removeItem(k));
+    window.location.hash = '#/login';
+  }
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || `Error ${res.status}`);
+  return data;
+}
+
+const qs = (params) => '?' + new URLSearchParams(
+  Object.fromEntries(Object.entries(params).filter(([,v]) => v !== undefined && v !== null))
+).toString();
+
+export const api = {
+  // Auth
+  login: (b)            => request('POST', '/api/auth/login', b),
+  me:    ()             => request('GET',  '/api/auth/me'),
+
+  // Users
+  getUsers:       ()        => request('GET',    '/api/users'),
+  createUser:     (b)       => request('POST',   '/api/users', b),
+  updateUser:     (id, b)   => request('PUT',    `/api/users/${id}`, b),
+  toggleUser:     (id)      => request('PATCH',  `/api/users/${id}/toggle-active`),
+  deleteUser:     (id)      => request('DELETE', `/api/users/${id}`),
+  getUserPerms:   (id)      => request('GET',    `/api/users/${id}/permissions`),
+
+  // Projects
+  getProjects:    ()        => request('GET',    '/api/projects'),
+  getProject:     (id)      => request('GET',    `/api/projects/${id}`),
+  createProject:  (b)       => request('POST',   '/api/projects', b),
+  updateProject:  (id, b)   => request('PUT',    `/api/projects/${id}`, b),
+  deleteProject:  (id)      => request('DELETE', `/api/projects/${id}`),
+
+  // Classifications
+  getClassifications:    ()       => request('GET',    '/api/classifications'),
+  createClassification:  (b)      => request('POST',   '/api/classifications', b),
+  updateClassification:  (id, b)  => request('PUT',    `/api/classifications/${id}`, b),
+  deleteClassification:  (id)     => request('DELETE', `/api/classifications/${id}`),
+
+  // Items
+  getItems:      ()        => request('GET',    '/api/items'),
+  createItem:    (b)       => request('POST',   '/api/items', b),
+  updateItem:    (id, b)   => request('PUT',    `/api/items/${id}`, b),
+  deleteItem:    (id)      => request('DELETE', `/api/items/${id}`),
+
+  // Planning
+  getPlanning:   (pid)     => request('GET',  `/api/planning/${pid}`),
+  savePlanning:  (b)       => request('POST', '/api/planning', b),
+
+  // Delivery
+  getDelivery:   (pid, date) => request('GET',  `/api/delivery${qs({ projectId: pid, date })}`),
+  saveDelivery:  (b)         => request('POST', '/api/delivery', b),
+
+  // Installation
+  getInstallation:  (pid, date) => request('GET',  `/api/installation${qs({ projectId: pid, date })}`),
+  saveInstallation: (b)         => request('POST', '/api/installation', b),
+
+  // Inspection
+  getInspection:  (pid, date)  => request('GET',  `/api/inspection${qs({ projectId: pid, date })}`),
+  saveInspection: (b)          => request('POST', '/api/inspection', b),
+
+  // Dashboard
+  getDashboardKpis:          (pid) => request('GET', `/api/dashboard/kpis${qs({ projectId: pid })}`),
+  getInstallationProgress:   (pid) => request('GET', `/api/dashboard/installation-progress${qs({ projectId: pid })}`),
+  getInspectionStats:        (pid) => request('GET', `/api/dashboard/inspection-stats${qs({ projectId: pid })}`),
+  getDeliveryProgress:       (pid) => request('GET', `/api/dashboard/delivery-progress${qs({ projectId: pid })}`),
+
+  // Reports
+  getReportProgress:         (pid) => request('GET', `/api/reports/progress${qs({ projectId: pid })}`),
+  getReportProjectsSummary:  ()    => request('GET', '/api/reports/projects-summary'),
+  getReportItemTracking:     (params) => request('GET', `/api/reports/item-tracking${qs(params)}`),
+  getReportInspection:       (pid) => request('GET', `/api/reports/inspection${qs({ projectId: pid })}`),
+};
