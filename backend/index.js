@@ -3,7 +3,23 @@ const express = require('express');
 const cors    = require('cors');
 
 const app = express();
-app.use(cors());
+
+app.use(cors({
+  origin: [
+    'https://engmahmoudqubati-bit.github.io',
+    'http://localhost:5173',
+    'http://localhost:4173',
+  ],
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
+}));
+app.options('*', cors());
+app.use(express.json());
+
+
+
+
+app.options('*', cors());
 app.use(express.json());
 
 app.use('/api/auth',            require('./routes/auth'));
