@@ -136,7 +136,7 @@ export default function Users() {
                       }
                     </td>
                     <td style={{ fontWeight:500 }}>{u.full_name_en}</td>
-                    <td dir="rtl">{u.full_name_ar}</td>
+                    <td style={{ textAlign:"right", direction:"rtl" }}>{u.full_name_ar}</td>
                     <td style={{ color:'var(--text-muted)',fontSize:12 }}>{u.username}</td>
                     <td>{u.position_role_name || '—'}</td>
                     <td style={{ fontSize:12 }}>{u.company_name || '—'}</td>

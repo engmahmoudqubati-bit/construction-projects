@@ -3,9 +3,13 @@ import { useEffect } from 'react';
 export default function Modal({ open, onClose, title, size = 'md', children, footer }) {
   useEffect(() => {
     if (!open) return;
+    document.body.style.overflow = 'hidden';
     const handler = (e) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
+    return () => {
+      document.removeEventListener('keydown', handler);
+      document.body.style.overflow = '';
+    };
   }, [open, onClose]);
 
   if (!open) return null;
@@ -15,7 +19,7 @@ export default function Modal({ open, onClose, title, size = 'md', children, foo
       <div className={`modal modal-${size}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <span className="modal-title">{title}</span>
-          <button className="icon-btn" onClick={onClose} title="Close">✕</button>
+          <button className="modal-close-btn" onClick={onClose} title="Close">✕</button>
         </div>
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-footer">{footer}</div>}

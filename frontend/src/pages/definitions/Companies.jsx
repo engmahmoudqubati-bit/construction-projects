@@ -124,7 +124,7 @@ export default function Companies() {
                       {r._level > 0 && <span style={{ color:'var(--text-muted)', marginRight:6, fontSize:11 }}>└─</span>}
                       {r.name_en}
                     </td>
-                    <td dir="rtl">{r.name_ar}</td>
+                    <td style={{ textAlign:"right", direction:"rtl" }}>{r.name_ar}</td>
                     <td><span className={`badge badge-${r.type}`}>{r.type === 'holding' ? t.companyTypeHolding : t.companyTypeOrg}</span></td>
                     <td style={{ fontSize:12 }}>{r.tax_id || '—'}</td>
                     <td><div className="td-actions">
