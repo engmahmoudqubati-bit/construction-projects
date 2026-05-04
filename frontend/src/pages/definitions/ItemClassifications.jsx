@@ -1,22 +1,18 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../api/client';
-import Modal      from '../../components/shared/Modal';
+import DataTable   from '../../components/shared/DataTable';
+import Modal       from '../../components/shared/Modal';
 import StatusBadge from '../../components/shared/StatusBadge';
 import { useToast } from '../../components/shared/Toast';
-import RefreshButton from '../../components/shared/RefreshButton';
 import t from '../../lang';
 
+const FILTER_FIELDS = [
+  { key: 'is_active', label: 'Status', type: 'select', options: [
+    { value: 'true', label: 'Active' }, { value: 'false', label: 'Inactive' },
+  ]},
+  { key: 'parent_name', label: 'Parent', type: 'text' },
+];
 const EMPTY = { classification_code:'', classification_name:'', parent_id:'', is_active:true };
-
-function smartSearch(list, q) {
-  if (!q) return list;
-  const lq = q.toLowerCase();
-  return list.filter(c =>
-    (c.classification_name||'').toLowerCase().includes(lq) ||
-    (c.classification_code||'').toLowerCase().includes(lq) ||
-    (c.parent_name||'').toLowerCase().includes(lq)
-  );
-}
 
 export default function ItemClassifications() {
   const toast = useToast();
@@ -26,13 +22,15 @@ export default function ItemClassifications() {
   const [editing, setEditing] = useState(null);
   const [form,    setForm]    = useState(EMPTY);
   const [saving,  setSaving]  = useState(false);
-  const [search,  setSearch]  = useState('');
   const [delModal,setDelModal]= useState(null);
 
-  const load = () => {
+  function load() {
     setLoading(true);
-    api.getClassifications().then(setList).catch(() => toast(t.errorOccurred,'error')).finally(() => setLoading(false));
-  };
+    api.getClassifications()
+      .then(setList)
+      .catch(() => toast(t.errorOccurred,'error'))
+      .finally(() => setLoading(false));
+  }
   useEffect(load, []);
 
   const topLevel = list.filter(c => c.parent_id === null);
@@ -47,7 +45,7 @@ export default function ItemClassifications() {
     if (!form.classification_code || !form.classification_name) return toast('Code and name are required','error');
     setSaving(true);
     try {
-      const payload = { ...form, parent_id: form.parent_id||null, is_active: form.is_active !== false };
+      const payload = { ...form, parent_id: form.parent_id || null, is_active: form.is_active !== false };
       if (editing) {
         const u = await api.updateClassification(editing.id, payload);
         setList(l => l.map(x => x.id === editing.id ? u : x));
@@ -68,83 +66,62 @@ export default function ItemClassifications() {
     } catch (err) { toast(err.message,'error'); }
   }
 
-  // Build tree
-  function buildTree(all) {
-    const filtered = smartSearch(all, search);
-    const rows = [];
-    const parents  = all.filter(c => !c.parent_id);
-    const children = all.filter(c => !!c.parent_id);
-    parents.forEach(p => {
-      if (filtered.some(f => f.id === p.id || f.parent_id === p.id)) {
-        rows.push({ ...p, _level:0 });
-        children.filter(c => c.parent_id === p.id)
-          .filter(c => filtered.some(f => f.id === c.id))
-          .forEach(c => rows.push({ ...c, _level:1 }));
-      }
-    });
-    return rows;
-  }
+  // Sort: parents first, then children
+  const sorted = [
+    ...list.filter(c => !c.parent_id),
+    ...list.filter(c => !!c.parent_id),
+  ];
 
-  const treeRows = buildTree(list);
+  const columns = [
+    { key: 'classification_code', label: t.classificationCode,
+      render: r => <span style={{ fontFamily:'monospace', fontSize:12, fontWeight:700 }}>{r.classification_code}</span> },
+    { key: 'classification_name', label: t.classificationName,
+      render: r => (
+        <span>
+          {r.parent_id && <span style={{ color:'var(--text-muted)', marginRight:8, fontSize:13 }}>└</span>}
+          {r.classification_name}
+          {r.parent_name && (
+            <span style={{ fontSize:11, color:'var(--text-muted)', marginLeft:8 }}>({r.parent_name})</span>
+          )}
+        </span>
+      )},
+    { key: 'is_active', label: t.status, render: r => <StatusBadge value={r.is_active ? 'active' : 'inactive'} /> },
+    { key: 'actions', label: '', style:{width:120}, render: r => (
+      <div className="td-actions">
+        <button className="btn btn-secondary btn-sm" onClick={() => openEdit(r)}>✏ {t.edit}</button>
+        <button className="btn btn-danger btn-sm" onClick={() => setDelModal(r)}>🗑</button>
+      </div>
+    )},
+  ];
 
   return (
     <div>
-      <div className="page-header">
-        <h1>{t.itemClassifications}</h1>
-        <button className="btn btn-primary" onClick={openAdd}>+ {t.addClassification}</button>
-      </div>
+      <div className="page-header"><h1>{t.itemClassifications}</h1></div>
 
-      <div className="card">
-        <div className="card-header">
-          <div className="search-box">
-            <span className="search-icon">🔍</span>
-            <input placeholder={t.search} value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          <RefreshButton onRefresh={load} />
-        </div>
-        {loading ? <div className="spinner-wrap"><div className="spinner"/></div> : (
-          <div className="table-wrapper">
-            <table>
-              <thead><tr><th>{t.classificationCode}</th><th>{t.classificationName}</th><th>{t.status}</th><th></th></tr></thead>
-              <tbody>
-                {treeRows.length === 0 ? (
-                  <tr><td colSpan={4} style={{ textAlign:'center', padding:32, color:'var(--text-muted)' }}>{t.noData}</td></tr>
-                ) : treeRows.map(r => (
-                  <tr key={r.id} className={r._level === 0 && !r.parent_id ? 'tree-row-parent' : ''}>
-                    <td style={{ fontSize:12, color:'var(--text-muted)', paddingLeft: r._level > 0 ? 32 : 14 }}>
-                      {r._level > 0 && <span style={{ marginRight:6, color:'var(--text-muted)' }}>└─</span>}
-                      {r.classification_code}
-                    </td>
-                    <td style={{ paddingLeft: r._level > 0 ? 32 : 14, fontWeight: r._level === 0 ? 600 : 400 }}>
-                      {r.classification_name}
-                    </td>
-                    <td><StatusBadge value={r.is_active ? 'active' : 'inactive'} /></td>
-                    <td><div className="td-actions">
-                      <button className="btn btn-secondary btn-sm" onClick={() => openEdit(r)}>{t.edit}</button>
-                      <button className="btn btn-danger btn-sm" onClick={() => setDelModal(r)}>{t.delete}</button>
-                    </div></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        data={sorted}
+        loading={loading}
+        title="Item Classifications"
+        onAdd={openAdd}
+        filterFields={FILTER_FIELDS}
+      />
 
-      <Modal open={modal} onClose={() => setModal(false)} title={editing ? t.editClassification : t.addClassification} size="sm"
-        footer={<><button className="btn btn-secondary" onClick={() => setModal(false)}>{t.cancel}</button>
-          <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? t.saving : t.save}</button></>}>
+      <Modal open={modal} onClose={() => setModal(false)}
+        title={editing ? t.editClassification : t.addClassification}
+        parentTitle={t.itemClassifications}
+        size="sm" onSave={handleSave} saving={saving}>
         <div className="form-group">
           <label className="form-label">{t.classificationCode} *</label>
-          <input className="form-control" value={form.classification_code} onChange={e => setForm(f => ({ ...f, classification_code:e.target.value }))} />
+          <input className="form-control" value={form.classification_code} onChange={e => setForm(f => ({...f,classification_code:e.target.value}))} />
         </div>
         <div className="form-group">
           <label className="form-label">{t.classificationName} *</label>
-          <input className="form-control" value={form.classification_name} onChange={e => setForm(f => ({ ...f, classification_name:e.target.value }))} />
+          <input className="form-control" value={form.classification_name} onChange={e => setForm(f => ({...f,classification_name:e.target.value}))} />
         </div>
         <div className="form-group">
           <label className="form-label">{t.parentClassification}</label>
-          <select className="form-control" value={form.parent_id} onChange={e => setForm(f => ({ ...f, parent_id:e.target.value }))}>
+          <select className="form-control" value={form.parent_id} onChange={e => setForm(f => ({...f,parent_id:e.target.value}))}>
             <option value="">{t.topLevel}</option>
             {topLevel.filter(c => !editing || c.id !== editing.id).map(c => (
               <option key={c.id} value={c.id}>{c.classification_name}</option>
@@ -154,8 +131,8 @@ export default function ItemClassifications() {
         {editing && (
           <div className="form-group">
             <label className="form-label">{t.status}</label>
-            <select className="form-control" value={form.is_active ? 'true':'false'}
-              onChange={e => setForm(f => ({ ...f, is_active: e.target.value === 'true' }))}>
+            <select className="form-control" value={form.is_active ? 'true' : 'false'}
+              onChange={e => setForm(f => ({...f,is_active: e.target.value === 'true'}))}>
               <option value="true">{t.active}</option>
               <option value="false">{t.inactive}</option>
             </select>
@@ -163,11 +140,11 @@ export default function ItemClassifications() {
         )}
       </Modal>
 
-      <Modal open={!!delModal} onClose={() => setDelModal(null)} title={t.delete} size="sm"
-        footer={<><button className="btn btn-secondary" onClick={() => setDelModal(null)}>{t.cancel}</button>
-          <button className="btn btn-danger" onClick={handleDelete}>{t.delete}</button></>}>
+      <Modal open={!!delModal} onClose={() => setDelModal(null)}
+        title="Delete Classification" parentTitle={t.itemClassifications}
+        size="sm" onSave={handleDelete} saveLabel="Delete">
         <p>{t.confirmDelete}</p>
-        {delModal && <p style={{ marginTop:8, fontWeight:600 }}>{delModal.classification_name}</p>}
+        {delModal && <p style={{ marginTop:8, fontWeight:700, color:'var(--danger)' }}>{delModal.classification_name}</p>}
       </Modal>
     </div>
   );
