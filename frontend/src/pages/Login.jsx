@@ -4,6 +4,45 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import t from '../lang';
 
+// ── Deterministic pseudo-random (no flicker on re-render) ──
+function frand(seed) {
+  const x = Math.sin(seed + 1) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+// Generate window rectangles for a building
+function buildingWindows(cols, rows, x0, y0, cellW, cellH, gapX, gapY, seed = 0) {
+  const rects = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const lit = frand(seed + r * 100 + c) > 0.28;
+      const bright = lit ? frand(seed + r * 50 + c * 3) : 0;
+      let fill;
+      if (!lit) {
+        fill = '#040301';
+      } else if (bright > 0.7) {
+        fill = '#e8961e';
+      } else if (bright > 0.45) {
+        fill = '#c87820';
+      } else {
+        fill = '#a86018';
+      }
+      rects.push(
+        <rect
+          key={`${r}-${c}`}
+          x={x0 + c * (cellW + gapX)}
+          y={y0 + r * (cellH + gapY)}
+          width={cellW}
+          height={cellH}
+          fill={fill}
+          opacity={lit ? 0.88 : 1}
+        />
+      );
+    }
+  }
+  return rects;
+}
+
 export default function Login() {
   const { login }   = useAuth();
   const navigate    = useNavigate();
@@ -29,81 +68,125 @@ export default function Login() {
 
   return (
     <div className="login-shell">
-      {/* ── Background: dark construction photo simulation ── */}
+      {/* ── Background ── */}
       <div className="login-bg">
-        {/* Architectural grid lines - top-left */}
-        <svg className="login-bg-svg" viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid slice">
-          {/* Sky gradient rect */}
+        <svg
+          className="login-bg-svg"
+          viewBox="0 0 1400 900"
+          preserveAspectRatio="xMidYMid slice"
+          xmlns="http://www.w3.org/2000/svg"
+        >
           <defs>
             <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stopColor="#1a1208"/>
-              <stop offset="40%"  stopColor="#2d1e0a"/>
-              <stop offset="100%" stopColor="#0d0d0d"/>
+              <stop offset="0%"   stopColor="#020100" />
+              <stop offset="55%"  stopColor="#080501" />
+              <stop offset="100%" stopColor="#150c03" />
             </linearGradient>
-            <linearGradient id="buildGrad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%"   stopColor="#1a120a"/>
-              <stop offset="100%" stopColor="#2a1e0e"/>
+            <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stopColor="#0f0803" />
+              <stop offset="100%" stopColor="#000000" />
             </linearGradient>
+            <linearGradient id="glassSheen" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.04" />
+              <stop offset="50%"  stopColor="#ffffff" stopOpacity="0.01" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+            </linearGradient>
+            <linearGradient id="glassSheen2" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.0" />
+              <stop offset="40%"  stopColor="#ffffff" stopOpacity="0.03" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+            </linearGradient>
+            <radialGradient id="warmGlow" cx="35%" cy="95%" r="50%">
+              <stop offset="0%"   stopColor="#c87020" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="#c87020" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="warmGlow2" cx="85%" cy="95%" r="30%">
+              <stop offset="0%"   stopColor="#a05010" stopOpacity="0.14" />
+              <stop offset="100%" stopColor="#a05010" stopOpacity="0" />
+            </radialGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="1.2" result="blur" />
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
           </defs>
-          <rect width="1400" height="900" fill="url(#skyGrad)"/>
 
-          {/* Large glass building left */}
-          <rect x="0" y="80" width="420" height="820" fill="#1c1408"/>
-          {/* Window grid left building */}
-          {Array.from({ length: 16 }).map((_, row) =>
-            Array.from({ length: 7 }).map((_, col) => {
-              const lit = Math.random() > 0.35;
-              return (
-                <rect key={`${row}-${col}`}
-                  x={18 + col * 56} y={100 + row * 48}
-                  width={42} height={34} rx={1}
-                  fill={lit ? '#c47a1a' : '#0f0c06'}
-                  opacity={lit ? 0.85 : 1}
-                />
-              );
-            })
-          )}
-          {/* Building reflection sheen */}
-          <rect x="0" y="80" width="420" height="820" fill="url(#buildGrad)" opacity="0.3"/>
+          {/* Sky */}
+          <rect width="1400" height="900" fill="url(#skyGrad)" />
 
-          {/* Large glass building right */}
-          <rect x="900" y="120" width="500" height="780" fill="#181210"/>
-          {Array.from({ length: 14 }).map((_, row) =>
-            Array.from({ length: 8 }).map((_, col) => {
-              const lit = Math.random() > 0.4;
-              return (
-                <rect key={`r${row}-${col}`}
-                  x={918 + col * 58} y={140 + row * 52}
-                  width={44} height={38} rx={1}
-                  fill={lit ? '#b86e14' : '#100e08'}
-                  opacity={lit ? 0.8 : 1}
-                />
-              );
-            })
-          )}
+          {/* ── MAIN LEFT BUILDING (glass curtain wall) ── */}
+          {/* Structure frame */}
+          <rect x="0" y="0" width="620" height="900" fill="#0a0703" />
 
-          {/* Warm light glow at bottom */}
-          <ellipse cx="700" cy="900" rx="700" ry="200"
-            fill="rgba(180,100,20,0.18)"/>
+          {/* Vertical structural columns */}
+          {[0, 62, 124, 186, 248, 310, 372, 434, 496, 558, 620].map(x => (
+            <rect key={x} x={x} y={0} width={3} height={900} fill="#0d0904" opacity={0.8} />
+          ))}
+          {/* Horizontal floor plates */}
+          {Array.from({ length: 26 }, (_, i) => (
+            <rect key={i} x={0} y={i * 34} width={623} height={2} fill="#0d0904" opacity={0.7} />
+          ))}
 
-          {/* Street/ground */}
-          <rect x="0" y="820" width="1400" height="80" fill="#0a0806"/>
+          {/* Window panes — main left building */}
+          {buildingWindows(9, 25, 6, 4, 54, 26, 8, 8, 1)}
 
-          {/* Overlay darken */}
-          <rect width="1400" height="900" fill="rgba(0,0,0,0.45)"/>
+          {/* Glass sheen / reflection overlay on main building */}
+          <rect x="0" y="0" width="620" height="900" fill="url(#glassSheen)" />
+          {/* Diagonal reflection streak */}
+          <polygon points="80,0 280,0 200,900 0,900" fill="rgba(255,245,220,0.022)" />
+
+          {/* ── SECOND LARGE BUILDING (right side, partial) ── */}
+          <rect x="880" y="80" width="520" height="820" fill="#080601" />
+          {/* Vertical columns */}
+          {[880, 935, 990, 1045, 1100, 1155, 1210, 1265, 1320, 1375, 1400].map(x => (
+            <rect key={x} x={x} y={80} width={2.5} height={820} fill="#0c0903" opacity={0.8} />
+          ))}
+          {/* Horizontal floors */}
+          {Array.from({ length: 22 }, (_, i) => (
+            <rect key={i} x={880} y={80 + i * 37} width={520} height={2} fill="#0c0903" opacity={0.7} />
+          ))}
+          {/* Window panes — right building */}
+          {buildingWindows(8, 20, 886, 84, 47, 29, 8, 8, 500)}
+          {/* Sheen */}
+          <rect x="880" y="80" width="520" height="820" fill="url(#glassSheen2)" />
+
+          {/* ── SMALL BUILDINGS (depth / city) ── */}
+          {/* Centre gap building */}
+          <rect x="630" y="320" width="240" height="580" fill="#060402" />
+          {buildingWindows(4, 14, 638, 330, 48, 32, 8, 8, 900)}
+
+          {/* ── Ground floor / street ── */}
+          <rect x="0" y="840" width="1400" height="60" fill="url(#groundGrad)" />
+          <rect x="0" y="838" width="1400" height="4" fill="rgba(200,120,30,0.08)" />
+
+          {/* ── Ambient warm glow from windows ── */}
+          <rect width="1400" height="900" fill="url(#warmGlow)" />
+          <rect width="1400" height="900" fill="url(#warmGlow2)" />
+
+          {/* ── Final dark cinematic overlay ── */}
+          <rect width="1400" height="900" fill="rgba(0,0,0,0.42)" />
+
+          {/* ── Slight vignette edges ── */}
+          <rect width="1400" height="900"
+            fill="none"
+            style={{ filter: 'none' }}
+          />
+          <rect x="0" y="0" width="200" height="900" fill="rgba(0,0,0,0.18)" />
+          <rect x="1200" y="0" width="200" height="900" fill="rgba(0,0,0,0.22)" />
+          <rect x="0" y="700" width="1400" height="200" fill="rgba(0,0,0,0.25)" />
         </svg>
       </div>
 
       {/* ── Right panel: login card ── */}
       <div className="login-panel">
         <div className="login-card-new">
+
           {/* Company logo area */}
           <div className="login-logo-area">
             <div className="login-logo-placeholder">
               <span style={{ fontSize: 32 }}>🏗️</span>
-              <div style={{ lineHeight: 1 }}>
-                <div style={{ fontSize: 10, color: '#888', letterSpacing: '0.05em' }}>شعار الشركة</div>
-                <div style={{ fontSize: 11, color: '#aaa', letterSpacing: '0.05em' }}>Company Logo</div>
+              <div style={{ lineHeight: 1.3 }}>
+                <div style={{ fontSize: 11, color: '#6b7280', letterSpacing: '0.04em', direction:'rtl' }}>شعار الشركة</div>
+                <div style={{ fontSize: 11, color: '#9ca3af', letterSpacing: '0.04em' }}>Company Logo</div>
               </div>
             </div>
           </div>
@@ -121,7 +204,8 @@ export default function Login() {
               <div className="login-input-wrap">
                 <span className="login-field-icon">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                    <circle cx="12" cy="8" r="4"/>
+                    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
                   </svg>
                 </span>
                 <input
@@ -164,11 +248,7 @@ export default function Login() {
               </div>
             </div>
 
-            <button
-              type="submit"
-              className="login-submit-btn"
-              disabled={loading}
-            >
+            <button type="submit" className="login-submit-btn" disabled={loading}>
               {loading ? 'Signing in...' : 'Continue'}
             </button>
           </form>
