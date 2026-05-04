@@ -8,15 +8,15 @@ router.use(auth, requirePage('inspection'), attachProjectAccess);
 router.get('/', async (req, res) => {
   const { projectId, date } = req.query;
   if (!projectId || !date) return res.status(400).json({ message: 'projectId and date required' });
-  if (!canAccessProject(req, projectId)) return res.status(403).json({ message: 'No access to this project' });
+  if (!canAccessProject(req, projectId)) return res.status(403).json({ message: 'No access' });
   try {
     const { rows } = await pool.query(
       `SELECT pp.item_id, pp.planned_qty,
               i.item_code, i.item_name, i.unit_of_measure,
               c.classification_name,
               pc.classification_name AS parent_classification_name,
-              t.id AS tx_id, t.qty_inspected, t.status, t.remarks,
-              COALESCE(SUM(t2.qty_inspected), 0) AS total_inspected
+              t.id AS tx_id, t.qty_inspected, t.status AS insp_status, t.remarks, t.tx_status,
+              COALESCE(SUM(t2.qty_inspected) FILTER (WHERE t2.tx_status='confirmed'), 0) AS total_inspected
        FROM cp_project_planning pp
        JOIN cp_items i ON i.id = pp.item_id
        LEFT JOIN cp_item_classifications c  ON c.id  = i.classification_id
@@ -25,10 +25,10 @@ router.get('/', async (req, res) => {
          ON t.project_id=pp.project_id AND t.item_id=pp.item_id AND t.transaction_date=$2
        LEFT JOIN cp_inspection_transactions t2
          ON t2.project_id=pp.project_id AND t2.item_id=pp.item_id
-       WHERE pp.project_id=$1
+       WHERE pp.project_id=$1 AND pp.status='confirmed'
        GROUP BY pp.item_id, pp.planned_qty, i.item_code, i.item_name, i.unit_of_measure,
                 c.classification_name, pc.classification_name,
-                t.id, t.qty_inspected, t.status, t.remarks
+                t.id, t.qty_inspected, t.status, t.remarks, t.tx_status
        ORDER BY pc.classification_name NULLS LAST, c.classification_name, i.item_name`,
       [projectId, date]
     );
@@ -40,23 +40,22 @@ router.post('/', async (req, res) => {
   const { project_id, transaction_date, entries } = req.body;
   if (!project_id || !transaction_date || !Array.isArray(entries))
     return res.status(400).json({ message: 'project_id, transaction_date, entries[] required' });
-  if (!canAccessProject(req, project_id)) return res.status(403).json({ message: 'No access to this project' });
+  if (!canAccessProject(req, project_id)) return res.status(403).json({ message: 'No access' });
   try {
     const results = [];
     for (const e of entries) {
       if (!e.qty_inspected || Number(e.qty_inspected) <= 0) continue;
       const { rows } = await pool.query(
         `INSERT INTO cp_inspection_transactions
-           (project_id,item_id,transaction_date,qty_inspected,status,inspector_id,remarks)
-         VALUES ($1,$2,$3,$4,$5,$6,$7)
+           (project_id,item_id,transaction_date,qty_inspected,status,inspector_id,remarks,tx_status)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,'draft')
          ON CONFLICT (project_id,item_id,transaction_date)
          DO UPDATE SET qty_inspected=EXCLUDED.qty_inspected,
                        status=EXCLUDED.status,
                        remarks=EXCLUDED.remarks,
                        inspector_id=EXCLUDED.inspector_id
          RETURNING *`,
-        [project_id, e.item_id, transaction_date, e.qty_inspected,
-         e.status || 'pending', req.user.id, e.remarks || null]
+        [project_id, e.item_id, transaction_date, e.qty_inspected, e.status||'pending', req.user.id, e.remarks||null]
       );
       results.push(rows[0]);
     }
@@ -64,12 +63,26 @@ router.post('/', async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+router.patch('/confirm', async (req, res) => {
+  const { project_id, transaction_date } = req.body;
+  if (!project_id || !transaction_date) return res.status(400).json({ message: 'project_id and transaction_date required' });
+  if (!canAccessProject(req, project_id)) return res.status(403).json({ message: 'No access' });
+  try {
+    const { rowCount } = await pool.query(
+      `UPDATE cp_inspection_transactions SET tx_status='confirmed'
+       WHERE project_id=$1 AND transaction_date=$2 AND tx_status='draft'`,
+      [project_id, transaction_date]
+    );
+    res.json({ confirmed: rowCount });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 router.delete('/:id', async (req, res) => {
   try {
     const { rowCount } = await pool.query(
-      'DELETE FROM cp_inspection_transactions WHERE id=$1', [req.params.id]
+      `DELETE FROM cp_inspection_transactions WHERE id=$1 AND tx_status='draft'`, [req.params.id]
     );
-    if (!rowCount) return res.status(404).json({ message: 'Record not found' });
+    if (!rowCount) return res.status(404).json({ message: 'Record not found or already confirmed' });
     res.json({ message: 'Deleted' });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });

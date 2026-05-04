@@ -6,18 +6,14 @@ async function request(method, path, body) {
   const headers = { 'Content-Type': 'application/json' };
   const token = getToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;
-
   const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers,
+    method, headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-
   if (res.status === 401) {
     ['cp_token','cp_user','cp_permissions'].forEach(k => localStorage.removeItem(k));
     window.location.hash = '#/login';
   }
-
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.message || `Error ${res.status}`);
   return data;
@@ -28,75 +24,71 @@ const qs = (params) => '?' + new URLSearchParams(
 ).toString();
 
 export const api = {
-  // Auth
-  login: (b)            => request('POST', '/api/auth/login', b),
-  me:    ()             => request('GET',  '/api/auth/me'),
+  login: (b) => request('POST', '/api/auth/login', b),
+  me:    ()  => request('GET',  '/api/auth/me'),
 
-  // Users
-  getUsers:       ()        => request('GET',    '/api/users'),
-  createUser:     (b)       => request('POST',   '/api/users', b),
-  updateUser:     (id, b)   => request('PUT',    `/api/users/${id}`, b),
-  toggleUser:     (id)      => request('PATCH',  `/api/users/${id}/toggle-active`),
-  deleteUser:     (id)      => request('DELETE', `/api/users/${id}`),
-  getUserPerms:   (id)      => request('GET',    `/api/users/${id}/permissions`),
+  getUsers:     ()       => request('GET',    '/api/users'),
+  createUser:   (b)      => request('POST',   '/api/users', b),
+  updateUser:   (id, b)  => request('PUT',    `/api/users/${id}`, b),
+  toggleUser:   (id)     => request('PATCH',  `/api/users/${id}/toggle-active`),
+  deleteUser:   (id)     => request('DELETE', `/api/users/${id}`),
+  getUserPerms: (id)     => request('GET',    `/api/users/${id}/permissions`),
 
-  // Companies
-  getCompanies:    ()       => request('GET',    '/api/companies'),
-  createCompany:   (b)      => request('POST',   '/api/companies', b),
-  updateCompany:   (id, b)  => request('PUT',    `/api/companies/${id}`, b),
-  deleteCompany:   (id)     => request('DELETE', `/api/companies/${id}`),
+  getCompanies:  ()      => request('GET',    '/api/companies'),
+  createCompany: (b)     => request('POST',   '/api/companies', b),
+  updateCompany: (id, b) => request('PUT',    `/api/companies/${id}`, b),
+  deleteCompany: (id)    => request('DELETE', `/api/companies/${id}`),
 
-  // Position Roles
-  getPositionRoles:        ()       => request('GET',    '/api/position-roles'),
-  createPositionRole:      (b)      => request('POST',   '/api/position-roles', b),
-  updatePositionRole:      (id, b)  => request('PUT',    `/api/position-roles/${id}`, b),
-  deletePositionRole:      (id)     => request('DELETE', `/api/position-roles/${id}`),
-  getPositionRolePerms:    (id)     => request('GET',    `/api/position-roles/${id}/permissions`),
+  getPositionRoles:     ()      => request('GET',    '/api/position-roles'),
+  createPositionRole:   (b)     => request('POST',   '/api/position-roles', b),
+  updatePositionRole:   (id, b) => request('PUT',    `/api/position-roles/${id}`, b),
+  deletePositionRole:   (id)    => request('DELETE', `/api/position-roles/${id}`),
+  getPositionRolePerms: (id)    => request('GET',    `/api/position-roles/${id}/permissions`),
 
-  // Projects
-  getProjects:    ()        => request('GET',    '/api/projects'),
-  getProject:     (id)      => request('GET',    `/api/projects/${id}`),
-  createProject:  (b)       => request('POST',   '/api/projects', b),
-  updateProject:  (id, b)   => request('PUT',    `/api/projects/${id}`, b),
-  deleteProject:  (id)      => request('DELETE', `/api/projects/${id}`),
+  getProjects:   ()      => request('GET',    '/api/projects'),
+  getProject:    (id)    => request('GET',    `/api/projects/${id}`),
+  createProject: (b)     => request('POST',   '/api/projects', b),
+  updateProject: (id, b) => request('PUT',    `/api/projects/${id}`, b),
+  deleteProject: (id)    => request('DELETE', `/api/projects/${id}`),
 
-  // Classifications
-  getClassifications:    ()       => request('GET',    '/api/classifications'),
-  createClassification:  (b)      => request('POST',   '/api/classifications', b),
-  updateClassification:  (id, b)  => request('PUT',    `/api/classifications/${id}`, b),
-  deleteClassification:  (id)     => request('DELETE', `/api/classifications/${id}`),
+  getClassifications:   ()      => request('GET',    '/api/classifications'),
+  createClassification: (b)     => request('POST',   '/api/classifications', b),
+  updateClassification: (id, b) => request('PUT',    `/api/classifications/${id}`, b),
+  deleteClassification: (id)    => request('DELETE', `/api/classifications/${id}`),
 
-  // Items
-  getItems:      ()        => request('GET',    '/api/items'),
-  createItem:    (b)       => request('POST',   '/api/items', b),
-  updateItem:    (id, b)   => request('PUT',    `/api/items/${id}`, b),
-  deleteItem:    (id)      => request('DELETE', `/api/items/${id}`),
+  getItems:       ()      => request('GET',    '/api/items'),
+  getNextItemCode:(clsId) => request('GET',    `/api/items/next-code/${clsId}`),
+  createItem:     (b)     => request('POST',   '/api/items', b),
+  updateItem:     (id, b) => request('PUT',    `/api/items/${id}`, b),
+  deleteItem:     (id)    => request('DELETE', `/api/items/${id}`),
 
-  // Planning
-  getPlanning:   (pid)     => request('GET',  `/api/planning/${pid}`),
-  savePlanning:  (b)       => request('POST', '/api/planning', b),
+  getPlanning:          (pid)    => request('GET',   `/api/planning/${pid}`),
+  getAvailableItems:    (pid)    => request('GET',   `/api/planning/available-items/${pid}`),
+  insertPlanningItems:  (b)      => request('POST',  '/api/planning/insert-items', b),
+  savePlanning:         (b)      => request('POST',  '/api/planning', b),
+  preparePlanning:      (pid)    => request('PATCH', `/api/planning/prepare/${pid}`),
+  confirmPlanning:      (pid)    => request('PATCH', `/api/planning/confirm/${pid}`),
+  deletePlanningItem:   (pid, iid) => request('DELETE', `/api/planning/${pid}/${iid}`),
 
-  // Delivery
-  getDelivery:   (pid, date) => request('GET',  `/api/delivery${qs({ projectId: pid, date })}`),
-  saveDelivery:  (b)         => request('POST', '/api/delivery', b),
+  getDelivery:     (pid, date) => request('GET',  `/api/delivery${qs({ projectId: pid, date })}`),
+  saveDelivery:    (b)         => request('POST', '/api/delivery', b),
+  confirmDelivery: (project_id, transaction_date) => request('PATCH', '/api/delivery/confirm', { project_id, transaction_date }),
 
-  // Installation
-  getInstallation:  (pid, date) => request('GET',  `/api/installation${qs({ projectId: pid, date })}`),
-  saveInstallation: (b)         => request('POST', '/api/installation', b),
+  getInstallation:     (pid, date) => request('GET',  `/api/installation${qs({ projectId: pid, date })}`),
+  saveInstallation:    (b)         => request('POST', '/api/installation', b),
+  confirmInstallation: (project_id, transaction_date) => request('PATCH', '/api/installation/confirm', { project_id, transaction_date }),
 
-  // Inspection
-  getInspection:  (pid, date)  => request('GET',  `/api/inspection${qs({ projectId: pid, date })}`),
-  saveInspection: (b)          => request('POST', '/api/inspection', b),
+  getInspection:     (pid, date) => request('GET',  `/api/inspection${qs({ projectId: pid, date })}`),
+  saveInspection:    (b)         => request('POST', '/api/inspection', b),
+  confirmInspection: (project_id, transaction_date) => request('PATCH', '/api/inspection/confirm', { project_id, transaction_date }),
 
-  // Dashboard
-  getDashboardKpis:          (pid) => request('GET', `/api/dashboard/kpis${qs({ projectId: pid })}`),
-  getInstallationProgress:   (pid) => request('GET', `/api/dashboard/installation-progress${qs({ projectId: pid })}`),
-  getInspectionStats:        (pid) => request('GET', `/api/dashboard/inspection-stats${qs({ projectId: pid })}`),
-  getDeliveryProgress:       (pid) => request('GET', `/api/dashboard/delivery-progress${qs({ projectId: pid })}`),
+  getDashboardKpis:        (pid) => request('GET', `/api/dashboard/kpis${qs({ projectId: pid })}`),
+  getInstallationProgress: (pid) => request('GET', `/api/dashboard/installation-progress${qs({ projectId: pid })}`),
+  getInspectionStats:      (pid) => request('GET', `/api/dashboard/inspection-stats${qs({ projectId: pid })}`),
+  getDeliveryProgress:     (pid) => request('GET', `/api/dashboard/delivery-progress${qs({ projectId: pid })}`),
 
-  // Reports
-  getReportProgress:         (pid) => request('GET', `/api/reports/progress${qs({ projectId: pid })}`),
-  getReportProjectsSummary:  ()    => request('GET', '/api/reports/projects-summary'),
-  getReportItemTracking:     (params) => request('GET', `/api/reports/item-tracking${qs(params)}`),
-  getReportInspection:       (pid) => request('GET', `/api/reports/inspection${qs({ projectId: pid })}`),
+  getReportProgress:        (pid)    => request('GET', `/api/reports/progress${qs({ projectId: pid })}`),
+  getReportProjectsSummary: ()       => request('GET', '/api/reports/projects-summary'),
+  getReportItemTracking:    (params) => request('GET', `/api/reports/item-tracking${qs(params)}`),
+  getReportInspection:      (pid)    => request('GET', `/api/reports/inspection${qs({ projectId: pid })}`),
 };

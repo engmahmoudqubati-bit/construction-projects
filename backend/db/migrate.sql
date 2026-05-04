@@ -50,3 +50,12 @@ ALTER TABLE cp_inspection_transactions ADD COLUMN IF NOT EXISTS status VARCHAR(2
 -- Auto-numbering sequences for codes
 CREATE SEQUENCE IF NOT EXISTS cp_item_code_seq START 1;
 CREATE SEQUENCE IF NOT EXISTS cp_project_code_seq START 1;
+-- Add tx_status to transaction tables
+ALTER TABLE cp_delivery_transactions     ADD COLUMN IF NOT EXISTS tx_status VARCHAR(20) DEFAULT 'draft' CHECK (tx_status IN ('draft','confirmed'));
+ALTER TABLE cp_installation_transactions ADD COLUMN IF NOT EXISTS tx_status VARCHAR(20) DEFAULT 'draft' CHECK (tx_status IN ('draft','confirmed'));
+ALTER TABLE cp_inspection_transactions   ADD COLUMN IF NOT EXISTS tx_status VARCHAR(20) DEFAULT 'draft' CHECK (tx_status IN ('draft','confirmed'));
+
+-- Update api client confirm routes
+-- delivery:     PATCH /api/delivery/confirm
+-- installation: PATCH /api/installation/confirm
+-- inspection:   PATCH /api/inspection/confirm

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../../api/client';
-import StatusBadge from '../../components/shared/StatusBadge';
 import { useToast } from '../../components/shared/Toast';
+import RefreshButton from '../../components/shared/RefreshButton';
 import t from '../../lang';
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -9,12 +9,13 @@ const STATUSES = ['pending', 'pass', 'fail'];
 
 export default function Inspection() {
   const toast = useToast();
-  const [projects,  setProjects]  = useState([]);
-  const [projectId, setProjectId] = useState('');
-  const [date,      setDate]      = useState(today());
-  const [rows,      setRows]      = useState([]);
-  const [loading,   setLoading]   = useState(false);
-  const [saving,    setSaving]    = useState(false);
+  const [projects,   setProjects]   = useState([]);
+  const [projectId,  setProjectId]  = useState('');
+  const [date,       setDate]       = useState(today());
+  const [rows,       setRows]       = useState([]);
+  const [loading,    setLoading]    = useState(false);
+  const [saving,     setSaving]     = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => { api.getProjects().then(setProjects).catch(() => {}); }, []);
 
@@ -26,7 +27,7 @@ export default function Inspection() {
       setRows(data.map(r => ({
         ...r,
         qty_input:     r.qty_inspected ?? '',
-        status_input:  r.status        ?? 'pending',
+        status_input:  r.insp_status   ?? 'pending',
         remarks_input: r.remarks       ?? '',
       })));
     } catch (err) { toast(err.message, 'error'); }
@@ -45,12 +46,7 @@ export default function Inspection() {
     try {
       const entries = rows
         .filter(r => r.qty_input !== '' && parseFloat(r.qty_input) > 0)
-        .map(r => ({
-          item_id:       r.item_id,
-          qty_inspected: parseFloat(r.qty_input),
-          status:        r.status_input  || 'pending',
-          remarks:       r.remarks_input || null,
-        }));
+        .map(r => ({ item_id: r.item_id, qty_inspected: parseFloat(r.qty_input), status: r.status_input || 'pending', remarks: r.remarks_input || null }));
       const res = await api.saveInspection({ project_id: projectId, transaction_date: date, entries });
       toast(`${t.saveSuccess} (${res.saved} rows)`);
       load();
@@ -58,46 +54,72 @@ export default function Inspection() {
     finally { setSaving(false); }
   }
 
-  const projectLabel = (p) => [p.project_name_en, p.project_name_ar].filter(Boolean).join(' / ');
+  async function handleConfirm() {
+    setConfirming(true);
+    try {
+      const res = await api.confirmInspection(projectId, date);
+      toast(`Confirmed ${res.confirmed} entries`);
+      load();
+    } catch (err) { toast(err.message, 'error'); }
+    finally { setConfirming(false); }
+  }
+
+  const projectLabel = p => [p.project_name_en, p.project_name_ar].filter(Boolean).join(' / ');
 
   const grouped = rows.reduce((acc, row) => {
-    const key = row.parent_classification_name || row.classification_name || 'Uncategorized';
+    const key = row.parent_classification_name
+      ? `${row.parent_classification_name} › ${row.classification_name || ''}`
+      : row.classification_name || 'Uncategorized';
     if (!acc[key]) acc[key] = [];
     acc[key].push(row);
     return acc;
   }, {});
 
+  const draftCount     = rows.filter(r => r.tx_id && r.tx_status === 'draft').length;
+  const confirmedCount = rows.filter(r => r.tx_id && r.tx_status === 'confirmed').length;
+  const canConfirm     = draftCount > 0;
+
   return (
     <div>
-      <div className="page-header"><h1>🔍 {t.inspection}</h1></div>
-
-      <div className="card" style={{ marginBottom: 20 }}>
-        <div className="card-body" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div className="form-group" style={{ margin: 0, flex: 1, minWidth: 200 }}>
-            <label className="form-label">{t.selectProject}</label>
-            <select className="form-control" value={projectId} onChange={e => setProjectId(e.target.value)}>
-              <option value="">— {t.selectProject} —</option>
-              {projects.map(p => <option key={p.id} value={p.id}>{projectLabel(p)}</option>)}
-            </select>
-          </div>
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label">{t.selectDate}</label>
-            <input className="form-control" type="date" value={date} onChange={e => setDate(e.target.value)} />
-          </div>
+      <div className="page-header">
+        <h1>🔍 {t.inspection}</h1>
+        <div style={{ display: 'flex', gap: 8 }}>
           {projectId && date && (
-            <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+            <button className="btn btn-secondary" onClick={handleSave} disabled={saving}>
               {saving ? t.saving : t.saveEntries}
+            </button>
+          )}
+          {canConfirm && (
+            <button className="btn btn-success" onClick={handleConfirm} disabled={confirming}>
+              {confirming ? t.saving : `✓ ${t.confirm} (${draftCount})`}
             </button>
           )}
         </div>
       </div>
 
-      {!projectId && (
-        <div className="empty-state"><div className="empty-icon">🔍</div><p>{t.selectProject}</p></div>
-      )}
+      <div className="filter-bar">
+        <div className="filter-group">
+          <label>🏗️ {t.selectProject}:</label>
+          <select value={projectId} onChange={e => setProjectId(e.target.value)} style={{ minWidth: 260 }}>
+            <option value="">— {t.selectProject} —</option>
+            {projects.map(p => <option key={p.id} value={p.id}>{projectLabel(p)}</option>)}
+          </select>
+        </div>
+        <div className="filter-group">
+          <label>📅 {t.selectDate}:</label>
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} />
+        </div>
+        {projectId && date && <RefreshButton onRefresh={load} />}
+        {rows.length > 0 && (
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+            {draftCount > 0 && <span className="badge badge-draft">{draftCount} draft</span>}
+            {confirmedCount > 0 && <span className="badge badge-confirmed">{confirmedCount} confirmed</span>}
+          </div>
+        )}
+      </div>
 
+      {!projectId && <div className="empty-state"><div className="empty-icon">🔍</div><p>{t.selectProject}</p></div>}
       {loading && <div className="spinner-wrap"><div className="spinner" /></div>}
-
       {!loading && projectId && rows.length === 0 && (
         <div className="empty-state"><div className="empty-icon">📦</div><p>{t.noItemsLinked}</p></div>
       )}
@@ -108,53 +130,44 @@ export default function Inspection() {
             <table className="tx-table">
               <thead>
                 <tr>
-                  <th>{t.itemCode}</th>
-                  <th>{t.itemName}</th>
-                  <th>{t.unitOfMeasure}</th>
-                  <th>{t.plannedQty}</th>
-                  <th>{t.totalInspected}</th>
+                  <th>{t.itemCode}</th><th>{t.itemName}</th><th>{t.unitOfMeasure}</th>
+                  <th>{t.plannedQty}</th><th>{t.totalInspected}</th>
                   <th style={{ minWidth: 110 }}>{t.qtyInspected}</th>
                   <th style={{ minWidth: 110 }}>{t.inspectionStatus}</th>
                   <th style={{ minWidth: 150 }}>{t.remarks}</th>
+                  <th>{t.status}</th>
                 </tr>
               </thead>
               <tbody>
                 {Object.entries(grouped).map(([group, items]) => (
                   <>
                     <tr key={`g-${group}`} style={{ background: 'var(--bg2)' }}>
-                      <td colSpan={8} style={{ padding: '8px 14px', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                        {group}
-                      </td>
+                      <td colSpan={9} style={{ padding: '6px 14px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{group}</td>
                     </tr>
                     {items.map(row => {
                       const pct = row.planned_qty > 0
-                        ? Math.min(100, (parseFloat(row.total_inspected) / parseFloat(row.planned_qty)) * 100)
-                        : 0;
+                        ? Math.min(100, (parseFloat(row.total_inspected) / parseFloat(row.planned_qty)) * 100) : 0;
+                      const isConfirmed = row.tx_status === 'confirmed';
                       return (
-                        <tr key={row.item_id}>
+                        <tr key={row.item_id} style={{ opacity: isConfirmed ? 0.85 : 1 }}>
                           <td className="item-meta">{row.item_code}</td>
                           <td>{row.item_name}</td>
                           <td className="item-meta">{row.unit_of_measure || '—'}</td>
                           <td>{row.planned_qty}</td>
-                          <td className="progress-cell">
-                            <div style={{ fontSize: 12, marginBottom: 4 }}>
-                              {parseFloat(row.total_inspected).toFixed(3)} ({pct.toFixed(1)}%)
-                            </div>
+                          <td>
+                            <div style={{ fontSize: 12, marginBottom: 3 }}>{parseFloat(row.total_inspected).toFixed(3)} ({pct.toFixed(1)}%)</div>
                             <div className="progress-bar-wrap">
-                              <div className="progress-bar-fill" style={{ width: `${pct}%`,
-                                background: pct >= 100 ? 'var(--success)' : 'var(--accent)' }} />
+                              <div className="progress-bar-fill" style={{ width: `${pct}%`, background: pct >= 100 ? 'var(--success)' : 'var(--accent)' }} />
                             </div>
                           </td>
-                          <td><input type="number" min="0" step="0.001" value={row.qty_input}
-                            onChange={e => setField(row.item_id, 'qty_input', e.target.value)} /></td>
+                          <td><input type="number" min="0" step="0.001" value={row.qty_input} disabled={isConfirmed} onChange={e => setField(row.item_id, 'qty_input', e.target.value)} /></td>
                           <td>
-                            <select value={row.status_input}
-                              onChange={e => setField(row.item_id, 'status_input', e.target.value)}>
+                            <select value={row.status_input} disabled={isConfirmed} onChange={e => setField(row.item_id, 'status_input', e.target.value)}>
                               {STATUSES.map(s => <option key={s} value={s}>{t[s] || s}</option>)}
                             </select>
                           </td>
-                          <td><input type="text" value={row.remarks_input}
-                            onChange={e => setField(row.item_id, 'remarks_input', e.target.value)} /></td>
+                          <td><input type="text" value={row.remarks_input} disabled={isConfirmed} onChange={e => setField(row.item_id, 'remarks_input', e.target.value)} /></td>
+                          <td>{row.tx_id && <span className={`badge badge-${row.tx_status || 'draft'}`}>{t.txStatuses[row.tx_status] || row.tx_status}</span>}</td>
                         </tr>
                       );
                     })}
@@ -163,10 +176,9 @@ export default function Inspection() {
               </tbody>
             </table>
           </div>
-          <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
-            <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-              {saving ? t.saving : t.saveEntries}
-            </button>
+          <div style={{ padding: '12px 18px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <button className="btn btn-secondary" onClick={handleSave} disabled={saving}>{saving ? t.saving : t.saveEntries}</button>
+            {canConfirm && <button className="btn btn-success" onClick={handleConfirm} disabled={confirming}>{confirming ? t.saving : `✓ ${t.confirm}`}</button>}
           </div>
         </div>
       )}

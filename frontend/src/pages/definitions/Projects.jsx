@@ -1,22 +1,29 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../api/client';
-import DataTable   from '../../components/shared/DataTable';
-import Modal       from '../../components/shared/Modal';
+import Modal      from '../../components/shared/Modal';
 import StatusBadge from '../../components/shared/StatusBadge';
 import { useToast } from '../../components/shared/Toast';
+import RefreshButton from '../../components/shared/RefreshButton';
 import t from '../../lang';
 
 const STATUSES = ['active','completed','on_hold','cancelled'];
-const EMPTY = {
-  project_code: '', project_name_en: '', project_name_ar: '',
-  location: '', client_name: '', start_date: '', end_date: '',
-  status: 'active', manager_id: '',
-};
+const EMPTY = { project_code:'', project_name_en:'', project_name_ar:'', location:'', client_name:'', start_date:'', end_date:'', status:'active' };
+
+function smartSearch(projects, q) {
+  if (!q) return projects;
+  const lq = q.toLowerCase();
+  return projects.filter(p =>
+    (p.project_name_en||'').toLowerCase().includes(lq) ||
+    (p.project_name_ar||'').includes(q) ||
+    (p.project_code||'').toLowerCase().includes(lq) ||
+    (p.client_name||'').toLowerCase().includes(lq) ||
+    (p.location||'').toLowerCase().includes(lq)
+  );
+}
 
 export default function Projects() {
   const toast = useToast();
   const [projects, setProjects] = useState([]);
-  const [managers, setManagers] = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [modal,    setModal]    = useState(false);
   const [editing,  setEditing]  = useState(null);
@@ -25,46 +32,31 @@ export default function Projects() {
   const [search,   setSearch]   = useState('');
   const [delModal, setDelModal] = useState(null);
 
-  useEffect(() => {
-    Promise.all([api.getProjects(), api.getUsers()])
-      .then(([p, u]) => { setProjects(p); setManagers(u.filter(x => x.role !== 'site_engineer')); })
-      .catch(() => toast(t.errorOccurred, 'error'))
-      .finally(() => setLoading(false));
-  }, []);
+  const load = () => {
+    setLoading(true);
+    api.getProjects().then(setProjects).catch(() => toast(t.errorOccurred,'error')).finally(() => setLoading(false));
+  };
+  useEffect(load, []);
 
   function openAdd() { setForm(EMPTY); setEditing(null); setModal(true); }
-
   function openEdit(p) {
-    setForm({
-      project_code: p.project_code, project_name_en: p.project_name_en,
-      project_name_ar: p.project_name_ar || '', location: p.location || '',
-      client_name: p.client_name || '',
-      start_date: p.start_date ? p.start_date.slice(0,10) : '',
-      end_date:   p.end_date   ? p.end_date.slice(0,10)   : '',
-      status: p.status, manager_id: p.manager_id || '',
-    });
-    setEditing(p);
-    setModal(true);
+    setForm({ project_code:p.project_code, project_name_en:p.project_name_en, project_name_ar:p.project_name_ar||'', location:p.location||'', client_name:p.client_name||'', start_date:p.start_date?p.start_date.slice(0,10):'', end_date:p.end_date?p.end_date.slice(0,10):'', status:p.status });
+    setEditing(p); setModal(true);
   }
 
-  function set(field) { return e => setForm(f => ({ ...f, [field]: e.target.value })); }
-
   async function handleSave() {
-    if (!form.project_code || !form.project_name_en)
-      return toast('Project code and English name are required', 'error');
+    if (!form.project_code || !form.project_name_en) return toast('Project code and English name are required','error');
     setSaving(true);
     try {
-      const payload = { ...form, manager_id: form.manager_id || null };
       if (editing) {
-        const updated = await api.updateProject(editing.id, payload);
-        setProjects(ps => ps.map(x => x.id === editing.id ? updated : x));
+        const u = await api.updateProject(editing.id, form);
+        setProjects(ps => ps.map(x => x.id === editing.id ? u : x));
       } else {
-        const created = await api.createProject(payload);
-        setProjects(ps => [...ps, created]);
+        const c = await api.createProject(form);
+        setProjects(ps => [...ps, c]);
       }
-      toast(t.saveSuccess);
-      setModal(false);
-    } catch (err) { toast(err.message, 'error'); }
+      toast(t.saveSuccess); setModal(false);
+    } catch (err) { toast(err.message,'error'); }
     finally { setSaving(false); }
   }
 
@@ -72,38 +64,11 @@ export default function Projects() {
     try {
       await api.deleteProject(delModal.id);
       setProjects(ps => ps.filter(x => x.id !== delModal.id));
-      toast(t.deleteSuccess);
-      setDelModal(null);
-    } catch (err) { toast(err.message, 'error'); }
+      toast(t.deleteSuccess); setDelModal(null);
+    } catch (err) { toast(err.message,'error'); }
   }
 
-  const projectLabel = (p) =>
-    [p.project_name_en, p.project_name_ar].filter(Boolean).join(' / ');
-
-  const filtered = projects.filter(p =>
-    projectLabel(p).toLowerCase().includes(search.toLowerCase()) ||
-    p.project_code.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const columns = [
-    { key: 'project_code',    label: t.projectCode },
-    { key: 'project_name_en', label: `${t.projectNameEn} / ${t.projectNameAr}`,
-      render: r => (
-        <div>
-          <div>{r.project_name_en}</div>
-          {r.project_name_ar && <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>{r.project_name_ar}</div>}
-        </div>
-      )},
-    { key: 'client_name',  label: t.client },
-    { key: 'manager_name', label: t.manager },
-    { key: 'status',       label: t.status, render: r => <StatusBadge value={r.status} /> },
-    { key: 'actions',      label: '', render: r => (
-      <div className="td-actions">
-        <button className="btn btn-secondary btn-sm" onClick={() => openEdit(r)}>{t.edit}</button>
-        <button className="btn btn-danger    btn-sm" onClick={() => setDelModal(r)}>{t.delete}</button>
-      </div>
-    )},
-  ];
+  const filtered = smartSearch(projects, search);
 
   return (
     <div>
@@ -118,90 +83,94 @@ export default function Projects() {
             <span className="search-icon">🔍</span>
             <input placeholder={t.search} value={search} onChange={e => setSearch(e.target.value)} />
           </div>
+          <RefreshButton onRefresh={load} />
         </div>
-        <DataTable columns={columns} data={filtered} loading={loading} />
+        {loading ? <div className="spinner-wrap"><div className="spinner"/></div> : (
+          <div className="table-wrapper">
+            <table>
+              <thead><tr>
+                <th>{t.projectCode}</th><th>{t.projectNameEn} / {t.projectNameAr}</th>
+                <th>{t.client}</th><th>{t.location}</th>
+                <th>{t.startDate}</th><th>{t.status}</th><th></th>
+              </tr></thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr><td colSpan={7} style={{ textAlign:'center', padding:32, color:'var(--text-muted)' }}>{t.noData}</td></tr>
+                ) : filtered.map(p => (
+                  <tr key={p.id}>
+                    <td style={{ fontSize:12, color:'var(--text-muted)', fontWeight:600 }}>{p.project_code}</td>
+                    <td>
+                      <div style={{ fontWeight:500 }}>{p.project_name_en}</div>
+                      {p.project_name_ar && <div style={{ fontSize:12, color:'var(--text-muted)' }} dir="rtl">{p.project_name_ar}</div>}
+                    </td>
+                    <td style={{ fontSize:12 }}>{p.client_name||'—'}</td>
+                    <td style={{ fontSize:12 }}>{p.location||'—'}</td>
+                    <td style={{ fontSize:12 }}>{p.start_date ? p.start_date.slice(0,10) : '—'}</td>
+                    <td><StatusBadge value={p.status} /></td>
+                    <td><div className="td-actions">
+                      <button className="btn btn-secondary btn-sm" onClick={() => openEdit(p)}>{t.edit}</button>
+                      <button className="btn btn-danger btn-sm" onClick={() => setDelModal(p)}>{t.delete}</button>
+                    </div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      <Modal
-        open={modal} onClose={() => setModal(false)}
-        title={editing ? t.editProject : t.addProject}
-        size="lg"
-        footer={
-          <>
-            <button className="btn btn-secondary" onClick={() => setModal(false)}>{t.cancel}</button>
-            <button className="btn btn-primary"   onClick={handleSave} disabled={saving}>
-              {saving ? t.saving : t.save}
-            </button>
-          </>
-        }
-      >
+      <Modal open={modal} onClose={() => setModal(false)} title={editing ? t.editProject : t.addProject} size="lg"
+        footer={<><button className="btn btn-secondary" onClick={() => setModal(false)}>{t.cancel}</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? t.saving : t.save}</button></>}>
         <div className="form-row">
           <div className="form-group">
             <label className="form-label">{t.projectCode} *</label>
-            <input className="form-control" value={form.project_code} onChange={set('project_code')} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">{t.projectNameEn} *</label>
-            <input className="form-control" value={form.project_name_en} onChange={set('project_name_en')} />
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">{t.projectNameAr}</label>
-            <input className="form-control" value={form.project_name_ar} onChange={set('project_name_ar')} dir="rtl" />
-          </div>
-          <div className="form-group">
-            <label className="form-label">{t.client}</label>
-            <input className="form-control" value={form.client_name} onChange={set('client_name')} />
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">{t.location}</label>
-          <input className="form-control" value={form.location} onChange={set('location')} />
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">{t.startDate}</label>
-            <input className="form-control" type="date" value={form.start_date} onChange={set('start_date')} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">{t.endDate}</label>
-            <input className="form-control" type="date" value={form.end_date} onChange={set('end_date')} />
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">{t.manager}</label>
-            <select className="form-control" value={form.manager_id} onChange={set('manager_id')}>
-              <option value="">— None —</option>
-              {managers.map(m => <option key={m.id} value={m.id}>{m.full_name}</option>)}
-            </select>
+            <input className="form-control" value={form.project_code} onChange={e => setForm(f => ({ ...f, project_code:e.target.value }))} />
           </div>
           <div className="form-group">
             <label className="form-label">{t.status}</label>
-            <select className="form-control" value={form.status} onChange={set('status')}>
+            <select className="form-control" value={form.status} onChange={e => setForm(f => ({ ...f, status:e.target.value }))}>
               {STATUSES.map(s => <option key={s} value={s}>{t.statuses[s]}</option>)}
             </select>
           </div>
         </div>
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label">{t.projectNameEn} *</label>
+            <input className="form-control" value={form.project_name_en} onChange={e => setForm(f => ({ ...f, project_name_en:e.target.value }))} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">{t.projectNameAr}</label>
+            <input className="form-control" dir="rtl" value={form.project_name_ar} onChange={e => setForm(f => ({ ...f, project_name_ar:e.target.value }))} />
+          </div>
+        </div>
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label">{t.client}</label>
+            <input className="form-control" value={form.client_name} onChange={e => setForm(f => ({ ...f, client_name:e.target.value }))} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">{t.location}</label>
+            <input className="form-control" value={form.location} onChange={e => setForm(f => ({ ...f, location:e.target.value }))} />
+          </div>
+        </div>
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label">{t.startDate}</label>
+            <input className="form-control" type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date:e.target.value }))} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">{t.endDate}</label>
+            <input className="form-control" type="date" value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date:e.target.value }))} />
+          </div>
+        </div>
       </Modal>
 
-      <Modal
-        open={!!delModal} onClose={() => setDelModal(null)}
-        title={t.delete} size="sm"
-        footer={
-          <>
-            <button className="btn btn-secondary" onClick={() => setDelModal(null)}>{t.cancel}</button>
-            <button className="btn btn-danger"    onClick={handleDelete}>{t.delete}</button>
-          </>
-        }
-      >
+      <Modal open={!!delModal} onClose={() => setDelModal(null)} title={t.delete} size="sm"
+        footer={<><button className="btn btn-secondary" onClick={() => setDelModal(null)}>{t.cancel}</button>
+          <button className="btn btn-danger" onClick={handleDelete}>{t.delete}</button></>}>
         <p>{t.confirmDelete}</p>
-        {delModal && <p style={{ marginTop: 8, fontWeight: 600 }}>{projectLabel(delModal)}</p>}
+        {delModal && <p style={{ marginTop:8, fontWeight:600 }}>{delModal.project_name_en}</p>}
       </Modal>
     </div>
   );
