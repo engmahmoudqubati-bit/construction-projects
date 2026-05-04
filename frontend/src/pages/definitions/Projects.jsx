@@ -101,7 +101,9 @@ export default function Projects() {
                     <td style={{ fontSize:12, color:'var(--text-muted)', fontWeight:600 }}>{p.project_code}</td>
                     <td>
                       <div style={{ fontWeight:500 }}>{p.project_name_en}</div>
-                      {p.project_name_ar && <div style={{ fontSize:12, color:'var(--text-muted)' }} style={{ textAlign:"right", direction:"rtl" }}>{p.project_name_ar}</div>}
+                      {p.project_name_ar && (
+                        <div className="rtl-text" style={{ marginTop:2 }}>{p.project_name_ar}</div>
+                      )}
                     </td>
                     <td style={{ fontSize:12 }}>{p.client_name||'—'}</td>
                     <td style={{ fontSize:12 }}>{p.location||'—'}</td>

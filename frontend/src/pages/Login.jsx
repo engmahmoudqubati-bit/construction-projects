@@ -4,141 +4,13 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import t from '../lang';
 
-const BG_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid slice">
-  <rect fill="#eef5ff" x="0" y="0" width="1400" height="900"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="0" y1="100" x2="1400" y2="100"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="0" y1="200" x2="1400" y2="200"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="0" y1="300" x2="1400" y2="300"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="0" y1="400" x2="1400" y2="400"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="0" y1="500" x2="1400" y2="500"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="0" y1="600" x2="1400" y2="600"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="0" y1="700" x2="1400" y2="700"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="0" y1="800" x2="1400" y2="800"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="100" y1="0" x2="100" y2="900"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="200" y1="0" x2="200" y2="900"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="300" y1="0" x2="300" y2="900"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="400" y1="0" x2="400" y2="900"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="500" y1="0" x2="500" y2="900"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="600" y1="0" x2="600" y2="900"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="700" y1="0" x2="700" y2="900"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="800" y1="0" x2="800" y2="900"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="900" y1="0" x2="900" y2="900"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="1000" y1="0" x2="1000" y2="900"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="1100" y1="0" x2="1100" y2="900"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="1200" y1="0" x2="1200" y2="900"/>
-  <line stroke="#c4d6f0" stroke-width="1" x1="1300" y1="0" x2="1300" y2="900"/>
-  <rect fill="#e2edf8" stroke="#b0c8e4" stroke-width="1.5" x="0" y="760" width="1400" height="140"/>
-  <rect fill="#dce8f6" stroke="#a8c0dc" stroke-width="1.5" x="80" y="340" width="160" height="420"/>
-  <rect fill="#d8e4f4" stroke="#a0b8d8" stroke-width="1.5" x="0" y="500" width="74" height="260"/>
-  <rect fill="#ccd8f0" stroke="#98b0d0" stroke-width="1.5" x="1160" y="240" width="180" height="520"/>
-  <rect fill="#d4e0f2" stroke="#a0b8d4" stroke-width="1.5" x="1356" y="480" width="44" height="280"/>
-  <rect fill="#dae6f4" stroke="#a4bcd6" stroke-width="1.5" x="580" y="480" width="320" height="280"/>
-  <rect fill="#ccd8f0" stroke="#a0b4d4" stroke-width="1.2" x="580" y="480" width="320" height="280"/>
-  <line stroke="#b4c8e4" stroke-width="1" x1="580" y1="540" x2="900" y2="540"/>
-  <line stroke="#b4c8e4" stroke-width="1" x1="580" y1="600" x2="900" y2="600"/>
-  <line stroke="#b4c8e4" stroke-width="1" x1="580" y1="660" x2="900" y2="660"/>
-  <line stroke="#b4c8e4" stroke-width="1" x1="580" y1="720" x2="900" y2="720"/>
-  <line stroke="#b4c8e4" stroke-width="1" x1="640" y1="480" x2="640" y2="760"/>
-  <line stroke="#b4c8e4" stroke-width="1" x1="700" y1="480" x2="700" y2="760"/>
-  <line stroke="#b4c8e4" stroke-width="1" x1="760" y1="480" x2="760" y2="760"/>
-  <line stroke="#b4c8e4" stroke-width="1" x1="820" y1="480" x2="820" y2="760"/>
-  <line stroke="#b4c8e4" stroke-width="1" x1="880" y1="480" x2="880" y2="760"/>
-  <rect fill="#d8e6f6" stroke="#a4bcda" stroke-width="1.5" x="83" y="350" width="154" height="410"/>
-  <rect fill="#c8d8ee" stroke="#98b0cc" stroke-width="1.2" x="93" y="360" width="20" height="26" rx="1"/>
-  <rect fill="#c0d0ea" stroke="#90a8c4" stroke-width="1.2" x="121" y="360" width="20" height="26" rx="1"/>
-  <rect fill="#c8d8ee" stroke="#98b0cc" stroke-width="1.2" x="149" y="360" width="20" height="26" rx="1"/>
-  <rect fill="#c0d0ea" stroke="#90a8c4" stroke-width="1.2" x="177" y="360" width="20" height="26" rx="1"/>
-  <rect fill="#c8d8ee" stroke="#98b0cc" stroke-width="1.2" x="93" y="398" width="20" height="26" rx="1"/>
-  <rect fill="#c8d8ee" stroke="#98b0cc" stroke-width="1.2" x="121" y="398" width="20" height="26" rx="1"/>
-  <rect fill="#c0d0ea" stroke="#90a8c4" stroke-width="1.2" x="149" y="398" width="20" height="26" rx="1"/>
-  <rect fill="#c8d8ee" stroke="#98b0cc" stroke-width="1.2" x="177" y="398" width="20" height="26" rx="1"/>
-  <rect fill="#c0d0ea" stroke="#90a8c4" stroke-width="1.2" x="93" y="436" width="20" height="26" rx="1"/>
-  <rect fill="#c8d8ee" stroke="#98b0cc" stroke-width="1.2" x="121" y="436" width="20" height="26" rx="1"/>
-  <rect fill="#c8d8ee" stroke="#98b0cc" stroke-width="1.2" x="149" y="436" width="20" height="26" rx="1"/>
-  <rect fill="#c0d0ea" stroke="#90a8c4" stroke-width="1.2" x="177" y="436" width="20" height="26" rx="1"/>
-  <rect fill="#c8d8ee" stroke="#98b0cc" stroke-width="1.2" x="93" y="474" width="20" height="26" rx="1"/>
-  <rect fill="#c0d0ea" stroke="#90a8c4" stroke-width="1.2" x="121" y="474" width="20" height="26" rx="1"/>
-  <rect fill="#c8d8ee" stroke="#98b0cc" stroke-width="1.2" x="149" y="474" width="20" height="26" rx="1"/>
-  <rect fill="#c8d8ee" stroke="#98b0cc" stroke-width="1.2" x="177" y="474" width="20" height="26" rx="1"/>
-  <rect fill="#c8d8ee" stroke="#98b0cc" stroke-width="1.2" x="93" y="512" width="20" height="26" rx="1"/>
-  <rect fill="#c8d8ee" stroke="#98b0cc" stroke-width="1.2" x="121" y="512" width="20" height="26" rx="1"/>
-  <rect fill="#c0d0ea" stroke="#90a8c4" stroke-width="1.2" x="149" y="512" width="20" height="26" rx="1"/>
-  <rect fill="#c8d8ee" stroke="#98b0cc" stroke-width="1.2" x="177" y="512" width="20" height="26" rx="1"/>
-  <rect fill="#c8d8ee" stroke="#98b0cc" stroke-width="1.2" x="93" y="550" width="20" height="26" rx="1"/>
-  <rect fill="#c0d0ea" stroke="#90a8c4" stroke-width="1.2" x="121" y="550" width="20" height="26" rx="1"/>
-  <rect fill="#c8d8ee" stroke="#98b0cc" stroke-width="1.2" x="149" y="550" width="20" height="26" rx="1"/>
-  <rect fill="#c0d0ea" stroke="#90a8c4" stroke-width="1.2" x="177" y="550" width="20" height="26" rx="1"/>
-  <rect fill="#c8d8ee" stroke="#98b0cc" stroke-width="1.2" x="93" y="588" width="20" height="26" rx="1"/>
-  <rect fill="#c8d8ee" stroke="#98b0cc" stroke-width="1.2" x="121" y="588" width="20" height="26" rx="1"/>
-  <rect fill="#c0d0ea" stroke="#90a8c4" stroke-width="1.2" x="149" y="588" width="20" height="26" rx="1"/>
-  <rect fill="#c8d8ee" stroke="#98b0cc" stroke-width="1.2" x="177" y="588" width="20" height="26" rx="1"/>
-  <rect fill="#d0dcf0" stroke="#9cB4cc" stroke-width="1.5" x="1163" y="250" width="174" height="510"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1173" y="264" width="22" height="28" rx="1"/>
-  <rect fill="#bcccea" stroke="#90a8c2" stroke-width="1.2" x="1203" y="264" width="22" height="28" rx="1"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1233" y="264" width="22" height="28" rx="1"/>
-  <rect fill="#bcccea" stroke="#90a8c2" stroke-width="1.2" x="1263" y="264" width="22" height="28" rx="1"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1293" y="264" width="22" height="28" rx="1"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1173" y="304" width="22" height="28" rx="1"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1203" y="304" width="22" height="28" rx="1"/>
-  <rect fill="#bcccea" stroke="#90a8c2" stroke-width="1.2" x="1233" y="304" width="22" height="28" rx="1"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1263" y="304" width="22" height="28" rx="1"/>
-  <rect fill="#bcccea" stroke="#90a8c2" stroke-width="1.2" x="1293" y="304" width="22" height="28" rx="1"/>
-  <rect fill="#bcccea" stroke="#90a8c2" stroke-width="1.2" x="1173" y="344" width="22" height="28" rx="1"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1203" y="344" width="22" height="28" rx="1"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1233" y="344" width="22" height="28" rx="1"/>
-  <rect fill="#bcccea" stroke="#90a8c2" stroke-width="1.2" x="1263" y="344" width="22" height="28" rx="1"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1293" y="344" width="22" height="28" rx="1"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1173" y="384" width="22" height="28" rx="1"/>
-  <rect fill="#bcccea" stroke="#90a8c2" stroke-width="1.2" x="1203" y="384" width="22" height="28" rx="1"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1233" y="384" width="22" height="28" rx="1"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1263" y="384" width="22" height="28" rx="1"/>
-  <rect fill="#bcccea" stroke="#90a8c2" stroke-width="1.2" x="1293" y="384" width="22" height="28" rx="1"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1173" y="424" width="22" height="28" rx="1"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1203" y="424" width="22" height="28" rx="1"/>
-  <rect fill="#bcccea" stroke="#90a8c2" stroke-width="1.2" x="1233" y="424" width="22" height="28" rx="1"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1263" y="424" width="22" height="28" rx="1"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1293" y="424" width="22" height="28" rx="1"/>
-  <rect fill="#bcccea" stroke="#90a8c2" stroke-width="1.2" x="1173" y="464" width="22" height="28" rx="1"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1203" y="464" width="22" height="28" rx="1"/>
-  <rect fill="#bcccea" stroke="#90a8c2" stroke-width="1.2" x="1233" y="464" width="22" height="28" rx="1"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1263" y="464" width="22" height="28" rx="1"/>
-  <rect fill="#c4d4ec" stroke="#98b0c8" stroke-width="1.2" x="1293" y="464" width="22" height="28" rx="1"/>
-  <rect fill="#d8e6f8" stroke="#a4bcda" stroke-width="2" x="460" y="140" width="28" height="340" rx="2"/>
-  <rect fill="#ccdaf4" stroke="#9cb4d0" stroke-width="1.5" x="410" y="138" width="420" height="10" rx="2"/>
-  <rect fill="#ccdaf4" stroke="#9cb4d0" stroke-width="1.5" x="380" y="138" width="52" height="10" rx="2"/>
-  <rect fill="#c8d6f2" stroke="#98b0cc" stroke-width="1.5" x="368" y="130" width="28" height="22" rx="2"/>
-  <rect fill="#d8e6f8" stroke="#a4bcda" stroke-width="1.5" x="448" y="148" width="16" height="10" rx="1"/>
-  <line stroke="#b4c8e8" stroke-width="1.2" x1="456" y1="158" x2="456" y2="200" stroke-linecap="round"/>
-  <path d="M450 200 Q456 210 462 200" stroke="#b4c8e8" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-  <line stroke="#b4c8e8" stroke-width="1" x1="474" y1="142" x2="414" y2="148" stroke-linecap="round"/>
-  <line stroke="#b4c8e8" stroke-width="1" x1="474" y1="142" x2="830" y2="148" stroke-linecap="round"/>
-  <circle cx="1320" cy="80" r="38" fill="none" stroke="#bcd0e8" stroke-width="1"/>
-  <circle cx="1320" cy="80" r="28" fill="none" stroke="#bcd0e8" stroke-width="0.6"/>
-  <line x1="1320" y1="42" x2="1320" y2="118" stroke="#bcd0e8" stroke-width="0.8"/>
-  <line x1="1282" y1="80" x2="1358" y2="80" stroke="#bcd0e8" stroke-width="0.8"/>
-  <line x1="1293" y1="53" x2="1347" y2="107" stroke="#c8daf0" stroke-width="0.5"/>
-  <line x1="1347" y1="53" x2="1293" y2="107" stroke="#c8daf0" stroke-width="0.5"/>
-  <polygon points="1320,43 1315,58 1320,55 1325,58" fill="#a8c0dc"/>
-  <ellipse cx="70" cy="850" rx="56" ry="20" fill="#f0d870" stroke="#c8b040" stroke-width="1"/>
-  <path d="M18 850 Q22 820 70 814 Q118 820 122 850Z" fill="#f0d870" stroke="#c8b040" stroke-width="1"/>
-  <rect x="14" y="848" width="112" height="10" rx="3" fill="#e4cc60" stroke="#c8b040" stroke-width="1"/>
-  <rect x="960" y="870" width="200" height="24" rx="3" fill="#d8e6f8" stroke="#a0b8d4" stroke-width="1"/>
-  <line x1="984" y1="870" x2="984" y2="882" stroke="#a0b8d4" stroke-width="0.8"/>
-  <line x1="1008" y1="870" x2="1008" y2="882" stroke="#a0b8d4" stroke-width="0.8"/>
-  <line x1="1032" y1="870" x2="1032" y2="888" stroke="#a0b8d4" stroke-width="1"/>
-  <line x1="1056" y1="870" x2="1056" y2="882" stroke="#a0b8d4" stroke-width="0.8"/>
-  <line x1="1080" y1="870" x2="1080" y2="882" stroke="#a0b8d4" stroke-width="0.8"/>
-  <line x1="1104" y1="870" x2="1104" y2="888" stroke="#a0b8d4" stroke-width="1"/>
-  <line x1="1128" y1="870" x2="1128" y2="882" stroke="#a0b8d4" stroke-width="0.8"/>
-  <line x1="1152" y1="870" x2="1152" y2="882" stroke="#a0b8d4" stroke-width="0.8"/>
-</svg>`;
-
 export default function Login() {
-  const { login } = useAuth();
-  const navigate  = useNavigate();
+  const { login }   = useAuth();
+  const navigate    = useNavigate();
   const [form, setForm]       = useState({ username: '', password: '' });
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPw, setShowPw]   = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -149,122 +21,357 @@ export default function Login() {
       login(res.token, res.user, res.permissions);
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      setError(err.message || 'An error occurred');
+      setError(err.message || 'Invalid credentials');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 20,
-      position: 'relative',
-      overflow: 'hidden',
-      background: '#eef5ff',
-    }}>
-      {/* SVG Background */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          zIndex: 0,
-          pointerEvents: 'none',
-        }}
-        dangerouslySetInnerHTML={{ __html: BG_SVG }}
-      />
+    <div style={styles.page}>
+      {/* Animated background */}
+      <div style={styles.bgLayer}>
+        <div style={styles.bgGlow1} />
+        <div style={styles.bgGlow2} />
+        <div style={styles.bgGlow3} />
+        <svg style={styles.bgGrid} xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+          <defs>
+            <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
+      </div>
 
-      {/* Frosted overlay */}
-      <div style={{
-        position: 'absolute', inset: 0, zIndex: 1,
-        background: 'rgba(238,245,255,0.55)',
-        backdropFilter: 'blur(1px)',
-      }} />
+      {/* Left panel — branding */}
+      <div style={styles.leftPanel}>
+        <div style={styles.brandBox}>
+          <div style={styles.brandIcon}>🏗️</div>
+          <h1 style={styles.brandTitle}>Construction PM</h1>
+          <p style={styles.brandSub}>Project Management System</p>
 
-      {/* Login card */}
-      <div style={{
-        position: 'relative', zIndex: 2,
-        width: '100%', maxWidth: 400,
-        background: 'rgba(255,255,255,0.92)',
-        border: '1px solid rgba(176,200,228,0.7)',
-        borderRadius: 16,
-        boxShadow: '0 8px 40px rgba(100,140,200,0.18)',
-        padding: '36px 32px',
-        backdropFilter: 'blur(8px)',
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ fontSize: 36, marginBottom: 8 }}>🏗️</div>
-          <h1 style={{ fontSize: 17, fontWeight: 700, color: '#1e3a5f', lineHeight: 1.35 }}>
-            {t.appName}
-          </h1>
-          <p style={{ fontSize: 12, color: '#6b8aaa', marginTop: 5 }}>{t.loginSubtitle}</p>
+          <div style={styles.featureList}>
+            {[
+              { icon: '📋', text: 'Project Planning & Tracking' },
+              { icon: '🚚', text: 'Delivery Management' },
+              { icon: '🔧', text: 'Installation Monitoring' },
+              { icon: '🔍', text: 'Inspection & Quality Control' },
+              { icon: '📊', text: 'Real-time Reports & Analytics' },
+            ].map((f, i) => (
+              <div key={i} style={styles.featureItem}>
+                <span style={styles.featureIcon}>{f.icon}</span>
+                <span style={styles.featureText}>{f.text}</span>
+              </div>
+            ))}
+          </div>
         </div>
+      </div>
 
-        {error && (
-          <div style={{
-            background: 'rgba(220,38,38,0.08)', border: '1px solid #dc2626',
-            color: '#dc2626', borderRadius: 8, padding: '9px 12px',
-            fontSize: 12, marginBottom: 14,
-          }}>
-            {error}
-          </div>
-        )}
+      {/* Right panel — form */}
+      <div style={styles.rightPanel}>
+        <div style={styles.card}>
+          {/* Card accent bar */}
+          <div style={styles.cardAccent} />
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#4a6a8a', display: 'block', marginBottom: 5 }}>
-              {t.username}
-            </label>
-            <input
-              style={{
-                width: '100%', background: '#f0f6ff',
-                border: '1px solid #b8d0e8', borderRadius: 8,
-                color: '#1e3a5f', padding: '9px 12px', fontSize: 13,
-                boxSizing: 'border-box',
-              }}
-              type="text"
-              value={form.username}
-              onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
-              placeholder={t.username}
-              required autoFocus
-            />
+          <div style={styles.cardHeader}>
+            <div style={styles.cardLogo}>🏗️</div>
+            <h2 style={styles.cardTitle}>Welcome Back</h2>
+            <p style={styles.cardSub}>Sign in to your account</p>
           </div>
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#4a6a8a', display: 'block', marginBottom: 5 }}>
-              {t.password}
-            </label>
-            <input
-              style={{
-                width: '100%', background: '#f0f6ff',
-                border: '1px solid #b8d0e8', borderRadius: 8,
-                color: '#1e3a5f', padding: '9px 12px', fontSize: 13,
-                boxSizing: 'border-box',
-              }}
-              type="password"
-              value={form.password}
-              onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-              placeholder={t.password}
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            style={{
-              width: '100%', padding: '11px',
-              background: loading ? '#7ab0d8' : '#0ea5e9',
-              color: '#fff', border: 'none', borderRadius: 8,
-              fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'background 0.15s',
-            }}
-            disabled={loading}
-          >
-            {loading ? t.loading : t.login}
-          </button>
-        </form>
+
+          {error && (
+            <div style={styles.errorBox}>
+              <span>⚠️</span> {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Username */}
+            <div>
+              <label style={styles.label}>Username</label>
+              <div style={styles.inputWrap}>
+                <span style={styles.inputIcon}>👤</span>
+                <input
+                  style={styles.input}
+                  type="text"
+                  value={form.username}
+                  onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
+                  placeholder="Enter your username"
+                  required
+                  autoFocus
+                  autoComplete="username"
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div>
+              <label style={styles.label}>Password</label>
+              <div style={styles.inputWrap}>
+                <span style={styles.inputIcon}>🔒</span>
+                <input
+                  style={{ ...styles.input, paddingRight: 44 }}
+                  type={showPw ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                  placeholder="Enter your password"
+                  required
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(p => !p)}
+                  style={styles.pwToggle}
+                  tabIndex={-1}
+                >
+                  {showPw ? '🙈' : '👁️'}
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" disabled={loading} style={{
+              ...styles.submitBtn,
+              opacity: loading ? 0.75 : 1,
+              cursor: loading ? 'not-allowed' : 'pointer',
+            }}>
+              {loading ? (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                  <span style={styles.btnSpinner} /> Signing in...
+                </span>
+              ) : 'Sign In →'}
+            </button>
+          </form>
+
+          <p style={styles.footerText}>
+            Construction Projects Management System
+          </p>
+        </div>
       </div>
     </div>
   );
 }
+
+const styles = {
+  page: {
+    minHeight: '100vh',
+    display: 'flex',
+    background: '#0a1628',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  bgLayer: {
+    position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden',
+  },
+  bgGlow1: {
+    position: 'absolute', width: 600, height: 600,
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(26,115,232,0.18) 0%, transparent 70%)',
+    top: -200, left: -100,
+  },
+  bgGlow2: {
+    position: 'absolute', width: 500, height: 500,
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%)',
+    bottom: -150, right: 100,
+  },
+  bgGlow3: {
+    position: 'absolute', width: 300, height: 300,
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%)',
+    top: '40%', left: '40%',
+  },
+  bgGrid: {
+    position: 'absolute', inset: 0,
+  },
+
+  // Left panel
+  leftPanel: {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '60px 48px',
+    position: 'relative',
+    zIndex: 1,
+  },
+  brandBox: {
+    maxWidth: 420,
+  },
+  brandIcon: {
+    fontSize: 52,
+    marginBottom: 16,
+    display: 'block',
+    filter: 'drop-shadow(0 4px 12px rgba(26,115,232,0.4))',
+  },
+  brandTitle: {
+    fontSize: 34,
+    fontWeight: 800,
+    color: '#ffffff',
+    letterSpacing: '-0.03em',
+    lineHeight: 1.2,
+    marginBottom: 8,
+  },
+  brandSub: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.45)',
+    marginBottom: 40,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+  },
+  featureList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 14,
+  },
+  featureItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+  },
+  featureIcon: {
+    width: 36, height: 36,
+    background: 'rgba(26,115,232,0.15)',
+    border: '1px solid rgba(26,115,232,0.3)',
+    borderRadius: 8,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: 16, flexShrink: 0,
+    textAlign: 'center', lineHeight: '36px',
+  },
+  featureText: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.65)',
+    fontWeight: 500,
+  },
+
+  // Right panel
+  rightPanel: {
+    width: 440,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '40px 32px',
+    position: 'relative',
+    zIndex: 1,
+    background: 'rgba(255,255,255,0.03)',
+    borderLeft: '1px solid rgba(255,255,255,0.06)',
+    backdropFilter: 'blur(20px)',
+  },
+  card: {
+    width: '100%',
+    background: 'rgba(255,255,255,0.96)',
+    borderRadius: 20,
+    padding: '36px 32px 28px',
+    boxShadow: '0 24px 80px rgba(0,0,0,0.4)',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  cardAccent: {
+    position: 'absolute', top: 0, left: 0, right: 0, height: 4,
+    background: 'linear-gradient(90deg, #1a73e8, #0ea5e9, #10b981)',
+  },
+  cardHeader: {
+    textAlign: 'center',
+    marginBottom: 28,
+  },
+  cardLogo: {
+    fontSize: 40,
+    marginBottom: 12,
+    display: 'block',
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: 800,
+    color: '#0d1b2a',
+    letterSpacing: '-0.02em',
+    marginBottom: 4,
+  },
+  cardSub: {
+    fontSize: 13,
+    color: '#5a6a7e',
+  },
+  errorBox: {
+    background: 'rgba(220,38,38,0.08)',
+    border: '1px solid rgba(220,38,38,0.3)',
+    color: '#dc2626',
+    borderRadius: 8,
+    padding: '10px 14px',
+    fontSize: 13,
+    marginBottom: 16,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    fontWeight: 500,
+  },
+  label: {
+    display: 'block',
+    fontSize: 12,
+    fontWeight: 700,
+    color: '#4a6a8a',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+  },
+  inputWrap: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  inputIcon: {
+    position: 'absolute',
+    left: 12,
+    fontSize: 15,
+    pointerEvents: 'none',
+    zIndex: 1,
+  },
+  input: {
+    width: '100%',
+    background: '#f4f8ff',
+    border: '1.5px solid #d0dbe8',
+    borderRadius: 10,
+    color: '#0d1b2a',
+    padding: '11px 12px 11px 40px',
+    fontSize: 13,
+    fontFamily: 'inherit',
+    transition: 'all 0.15s',
+    outline: 'none',
+    boxSizing: 'border-box',
+  },
+  pwToggle: {
+    position: 'absolute', right: 10,
+    background: 'none', border: 'none',
+    fontSize: 15, cursor: 'pointer',
+    padding: 4, lineHeight: 1,
+    color: '#5a6a7e',
+  },
+  submitBtn: {
+    width: '100%',
+    padding: '13px',
+    background: 'linear-gradient(135deg, #1a73e8, #0ea5e9)',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 10,
+    fontSize: 14,
+    fontWeight: 700,
+    letterSpacing: '0.02em',
+    boxShadow: '0 4px 16px rgba(26,115,232,0.35)',
+    transition: 'all 0.15s',
+    fontFamily: 'inherit',
+    marginTop: 4,
+  },
+  btnSpinner: {
+    display: 'inline-block',
+    width: 14, height: 14,
+    border: '2px solid rgba(255,255,255,0.4)',
+    borderTopColor: '#fff',
+    borderRadius: '50%',
+    animation: 'spin 0.7s linear infinite',
+  },
+  footerText: {
+    textAlign: 'center',
+    fontSize: 11,
+    color: '#8898aa',
+    marginTop: 24,
+    letterSpacing: '0.03em',
+  },
+};
