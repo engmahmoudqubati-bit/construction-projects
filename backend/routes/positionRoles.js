@@ -85,11 +85,14 @@ router.delete('/:id', async (req, res) => {
       'SELECT id FROM cp_users WHERE position_role_id=$1 LIMIT 1', [req.params.id]
     );
     if (users.length > 0)
-      return res.status(409).json({ message: 'Cannot delete: users are assigned to this position role' });
+      return res.status(409).json({ message: 'Cannot delete: users are assigned to this position role. Reassign them first.' });
     const { rowCount } = await pool.query('DELETE FROM cp_position_roles WHERE id=$1', [req.params.id]);
     if (!rowCount) return res.status(404).json({ message: 'Not found' });
     res.json({ message: 'Deleted' });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) {
+    if (err.code === '23503') return res.status(409).json({ message: 'Cannot delete: this record is linked to other data. Remove the linked records first.' });
+    res.status(500).json({ message: err.message });
+  }
 });
 
 async function savePerms(client, roleId, pages, actions, projects) {

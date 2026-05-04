@@ -204,7 +204,10 @@ router.get('/:id/permissions', async (req, res) => {
       pages:    pagesRes.rows.map(r => r.page_key),
       projects: projRes.rows.map(r => r.project_id),
     });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) {
+    if (err.code === '23503') return res.status(409).json({ message: 'Cannot delete: this record is linked to other data. Remove the linked records first.' });
+    res.status(500).json({ message: err.message });
+  }
 });
 
 module.exports = router;

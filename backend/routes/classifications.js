@@ -63,7 +63,10 @@ router.delete('/:id', role('admin'), async (req, res) => {
     );
     if (!rowCount) return res.status(404).json({ message: 'Classification not found' });
     res.json({ message: 'Deleted' });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) {
+    if (err.code === '23503') return res.status(409).json({ message: 'Cannot delete: this record is linked to other data. Remove the linked records first.' });
+    res.status(500).json({ message: err.message });
+  }
 });
 
 module.exports = router;

@@ -112,7 +112,10 @@ router.delete('/:id', role('admin'), async (req, res) => {
     const { rowCount } = await pool.query('DELETE FROM cp_items WHERE id=$1', [req.params.id]);
     if (!rowCount) return res.status(404).json({ message: 'Item not found' });
     res.json({ message: 'Deleted' });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) {
+    if (err.code === '23503') return res.status(409).json({ message: 'Cannot delete: this record is linked to other data. Remove the linked records first.' });
+    res.status(500).json({ message: err.message });
+  }
 });
 
 module.exports = router;
