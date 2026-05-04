@@ -281,6 +281,33 @@ export default function DataTable({
               </svg>
             </button>
           )}
+
+          {/* View button — only shown when rows selected */}
+          {onView && (
+            <button
+              className={`btn btn-secondary btn-sm${selected.length > 0 ? '' : ''}`}
+              onClick={() => { if (selected.length > 0) onView(selected); }}
+              disabled={selected.length === 0}
+              title={selected.length > 0 ? `View ${selected.length} selected` : 'Select rows to view'}
+              style={{ display:'flex', alignItems:'center', gap:5, opacity: selected.length === 0 ? 0.45 : 1 }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              View{selected.length > 0 ? ` (${selected.length})` : ''}
+            </button>
+          )}
+
+          {/* New button */}
+          {onAdd && (
+            <button className="btn btn-primary btn-sm" onClick={onAdd} style={{ display:'flex', alignItems:'center', gap:5 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              New
+            </button>
+          )}
         </div>
       </div>
 
@@ -352,29 +379,7 @@ export default function DataTable({
         </>
       )}
 
-      {/* Floating action buttons — New + View */}
-      <div className="dt-float-actions">
-        {onView && selected.length > 0 && (
-          <button
-            className="dt-float-view"
-            onClick={() => onView(selected)}
-            title={`View ${selected.length} selected`}
-          >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-            {selected.length > 1 && <span style={{ fontSize:11, fontWeight:700, marginLeft:2 }}>{selected.length}</span>}
-          </button>
-        )}
-        {onAdd && (
-          <button className="dt-float-add" onClick={onAdd} title="Add New">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-          </button>
-        )}
-      </div>
+
 
       {/* Advanced Filter */}
       <AdvancedFilter

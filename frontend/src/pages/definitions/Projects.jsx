@@ -8,10 +8,11 @@ import t from '../../lang';
 
 const STATUSES = ['active','completed','on_hold','cancelled'];
 const FILTER_FIELDS = [
-  { key: 'status',     label: 'Status',   type: 'select', options: STATUSES.map(s => ({ value: s, label: t.statuses[s] })) },
-  { key: 'location',   label: 'Location', type: 'text' },
-  { key: 'start_date', label: 'Start Date (from)', type: 'date' },
-  { key: 'end_date',   label: 'End Date (to)',      type: 'date' },
+  { key: 'status',      label: 'Status',   type: 'select', options: STATUSES.map(s => ({ value: s, label: t.statuses[s] })) },
+  { key: 'client_name', label: 'Client',   type: 'text' },
+  { key: 'location',    label: 'Location', type: 'text' },
+  { key: 'start_date',  label: 'Start Date (from)', type: 'date' },
+  { key: 'end_date',    label: 'End Date (to)',      type: 'date' },
 ];
 
 const EMPTY = {
@@ -172,8 +173,9 @@ export default function Projects() {
         </div>
       ),
     },
-    { key: 'location',   label: t.location,  render: r => <span style={{ fontSize:12 }}>{r.location||'—'}</span> },
-    { key: 'start_date', label: t.startDate, style:{ width:110 }, render: r => <span style={{ fontSize:12 }}>{r.start_date?r.start_date.slice(0,10):'—'}</span> },
+    { key: 'client_name', label: t.client,   render: r => <span style={{ fontSize:12 }}>{r.client_name||'—'}</span> },
+    { key: 'location',    label: t.location,  render: r => <span style={{ fontSize:12 }}>{r.location||'—'}</span> },
+    { key: 'start_date',  label: t.startDate, style:{ width:110 }, render: r => <span style={{ fontSize:12 }}>{r.start_date?r.start_date.slice(0,10):'—'}</span> },
     { key: 'end_date',   label: t.endDate,   style:{ width:110 }, render: r => <span style={{ fontSize:12 }}>{r.end_date?r.end_date.slice(0,10):'—'}</span> },
     { key: 'status',     label: t.status,    style:{ width:110 }, render: r => <StatusBadge value={r.status} /> },
     {
