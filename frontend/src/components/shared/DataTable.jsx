@@ -248,7 +248,16 @@ export default function DataTable({
     <div className="dt-wrapper">
       {/* Toolbar */}
       <div className="dt-toolbar">
-        {title && <span className="dt-title">{title}</span>}
+        <div className="dt-title-wrap">
+          {title && (
+            <>
+              <div style={{ width:24, height:24, borderRadius:5, background:'#fff3e0', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <span className="dt-title">{title}</span>
+            </>
+          )}
+        </div>
         <div className="dt-toolbar-right">
           {/* Search */}
           <div className="dt-search-box">
@@ -262,19 +271,34 @@ export default function DataTable({
             <button
               className={`dt-filter-btn${hasActiveFilter ? ' active' : ''}`}
               onClick={() => setFilterOpen(true)}
-              title="Advanced Search"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/>
-                <line x1="12" y1="18" x2="12" y2="18" strokeLinecap="round" strokeWidth="3"/>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
               </svg>
-              {hasActiveFilter && <span className="dt-filter-dot" />}
+              Filter
+              {hasActiveFilter && <span className="dt-filter-dot" style={{ position:'relative', top:'unset', right:'unset', width:6, height:6, borderRadius:'50%', background:'#e97316', display:'inline-block', marginLeft:2 }} />}
+            </button>
+          )}
+
+          {/* View button */}
+          {onView && (
+            <button
+              className="dt-fs-btn"
+              onClick={() => { if (selected.length > 0) onView(selected); }}
+              title={selected.length > 0 ? `View ${selected.length} selected` : 'Select rows to view'}
+              style={{ opacity: selected.length === 0 ? 0.5 : 1 }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+              View{selected.length > 0 ? ` (${selected.length})` : ''}
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
           )}
 
           {/* Refresh */}
           {onRefresh && (
-            <button className="dt-fs-btn" onClick={onRefresh} title="Refresh">
+            <button className="dt-fs-btn" onClick={onRefresh} title="Refresh" style={{ padding:'0 10px', gap:0 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
                 <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
@@ -282,30 +306,11 @@ export default function DataTable({
             </button>
           )}
 
-          {/* View button — only shown when rows selected */}
-          {onView && (
-            <button
-              className={`btn btn-secondary btn-sm${selected.length > 0 ? '' : ''}`}
-              onClick={() => { if (selected.length > 0) onView(selected); }}
-              disabled={selected.length === 0}
-              title={selected.length > 0 ? `View ${selected.length} selected` : 'Select rows to view'}
-              style={{ display:'flex', alignItems:'center', gap:5, opacity: selected.length === 0 ? 0.45 : 1 }}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-              View{selected.length > 0 ? ` (${selected.length})` : ''}
-            </button>
-          )}
-
           {/* New button */}
           {onAdd && (
-            <button className="btn btn-primary btn-sm" onClick={onAdd} style={{ display:'flex', alignItems:'center', gap:5 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              New
+            <button onClick={onAdd} style={{ display:'flex', alignItems:'center', gap:7, background:'#2563eb', border:'none', borderRadius:9, padding:'8px 18px', fontSize:13, fontWeight:600, color:'#fff', cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              New Project
             </button>
           )}
         </div>
@@ -380,6 +385,31 @@ export default function DataTable({
       )}
 
 
+
+      {/* Floating action buttons */}
+      <div className="dt-float-actions">
+        {onView && (
+          <button
+            className="dt-float-view"
+            onClick={() => { if (selected.length > 0) onView(selected); }}
+            disabled={selected.length === 0}
+            title={selected.length > 0 ? `View ${selected.length} selected` : 'Select rows to view'}
+            style={{ opacity: selected.length === 0 ? 0.45 : 1 }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+            </svg>
+          </button>
+        )}
+        {onAdd && (
+          <button className="dt-float-add" onClick={onAdd} title="Add New">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </button>
+        )}
+      </div>
 
       {/* Advanced Filter */}
       <AdvancedFilter
