@@ -22,30 +22,37 @@ function KpiCards({ projects }) {
   const active    = projects.filter(p => p.status === 'active').length;
   const onHold    = projects.filter(p => p.status === 'on_hold').length;
   const completed = projects.filter(p => p.status === 'completed').length;
+  const cancelled = projects.filter(p => p.status === 'cancelled').length;
+  const pct = (n) => total > 0 ? Math.round((n/total)*100) : 0;
 
   const cards = [
-    { label: 'Total Projects',    value: total,     sub: 'All registered projects',  color: '#2563eb', bg: '#eff6ff',
-      icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg> },
-    { label: 'Active Projects',   value: active,    sub: 'Currently active',         color: '#16a34a', bg: '#f0fdf4',
-      icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> },
-    { label: 'On Hold',           value: onHold,    sub: 'Paused projects',          color: '#ea580c', bg: '#fff7ed',
-      icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ea580c" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
-    { label: 'Completed',         value: completed, sub: 'Successfully completed',   color: '#9333ea', bg: '#faf5ff',
-      icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9333ea" strokeWidth="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> },
+    { label:'Total Projects',  value:total,     sub:'All registered projects',  color:'#2563eb', bg:'#eff6ff',   pct: null,
+      icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg> },
+    { label:'Active Projects', value:active,    sub:'Currently active',         color:'#16a34a', bg:'#f0fdf4',   pct: pct(active),   pctColor:'#16a34a', pctBg:'#dcfce7',
+      icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> },
+    { label:'Completed',       value:completed, sub:'Successfully completed',   color:'#9333ea', bg:'#faf5ff',   pct: pct(completed), pctColor:'#9333ea', pctBg:'#f3e8ff',
+      icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9333ea" strokeWidth="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> },
+    { label:'Cancelled',       value:cancelled, sub:'Cancelled projects',       color:'#dc2626', bg:'#fef2f2',   pct: pct(cancelled), pctColor:'#dc2626', pctBg:'#fee2e2',
+      icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> },
   ];
 
   return (
-    <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16, marginBottom:24 }}>
-      {cards.map(c => (
-        <div key={c.label} style={{ background:'#fff', border:'1px solid #f0f0f0', borderRadius:12, padding:'18px 20px', display:'flex', alignItems:'center', gap:16 }}>
-          <div style={{ width:48, height:48, borderRadius:12, background:c.bg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-            {c.icon}
+    <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:22 }}>
+      {cards.map(card => (
+        <div key={card.label} style={{ background:'#fff', border:'1px solid #f0f0f0', borderRadius:14, padding:'18px 20px', position:'relative', overflow:'hidden' }}>
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:10 }}>
+            <div style={{ width:46, height:46, borderRadius:12, background:card.bg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              {card.icon}
+            </div>
+            {card.pct !== null && (
+              <span style={{ fontSize:11, fontWeight:600, padding:'2px 8px', borderRadius:20, background:card.pctBg, color:card.pctColor }}>
+                {card.pct}%
+              </span>
+            )}
           </div>
-          <div>
-            <div style={{ fontSize:12, color:'#6b7280', fontWeight:500 }}>{c.label}</div>
-            <div style={{ fontSize:26, fontWeight:700, color:'#111827', lineHeight:1.1, margin:'2px 0' }}>{c.value}</div>
-            <div style={{ fontSize:11, color:'#9ca3af' }}>{c.sub}</div>
-          </div>
+          <div style={{ fontSize:28, fontWeight:700, color:card.color, lineHeight:1, marginBottom:3 }}>{card.value}</div>
+          <div style={{ fontSize:12, color:'#6b7280', fontWeight:500, marginBottom:2 }}>{card.label}</div>
+          <div style={{ fontSize:11, color:'#9ca3af' }}>{card.sub}</div>
         </div>
       ))}
     </div>
@@ -160,43 +167,37 @@ export default function Projects() {
     } catch (err) { toast(err.message,'error'); }
   }
 
+  const fmt = (val) => {
+    if (!val) return '—';
+    const [y,m,d] = val.slice(0,10).split('-');
+    return `${d}/${m}/${y}`;
+  };
   const DateCell = ({ val }) => val ? (
-    <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:13, color:'#374151', whiteSpace:'nowrap' }}>
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      {val.slice(0,10)}
+    <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:'#374151', whiteSpace:'nowrap' }}>
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      {fmt(val)}
     </div>
   ) : <span style={{ color:'#9ca3af' }}>—</span>;
 
   const columns = [
     { key:'project_code', label:'Project Code', style:{ width:100 },
       render: r => <span style={{ fontSize:13, fontWeight:600, color:'#2563eb' }}>{r.project_code}</span> },
-    { key:'project_name_en', label:'Project Name (English)',
-      render: r => (
-        <div style={{ minWidth:0 }}>
-          <div style={{ fontSize:13, fontWeight:600, color:'#111827', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{r.project_name_en}</div>
-          {r.project_name_ar && (
-            <div style={{ fontSize:12, color:'#9ca3af', marginTop:3, direction:'rtl', textAlign:'right', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
-              {r.project_name_ar}
-            </div>
-          )}
-        </div>
-      )},
+    { key:'project_name_en', label:'Project Name',
+      render: r => <span style={{ fontSize:13, fontWeight:600, color:'#111827' }}>{r.project_name_en}</span> },
     { key:'client_name', label:'Client',    render: r => <span style={{ fontSize:13, color:'#6b7280' }}>{r.client_name||'—'}</span> },
     { key:'location',    label:'Location',  render: r => <span style={{ fontSize:13, color:'#6b7280' }}>{r.location||'—'}</span> },
     { key:'start_date',  label:'Start Date', style:{ width:120 }, render: r => <DateCell val={r.start_date} /> },
     { key:'end_date',    label:'End Date',   style:{ width:120 }, render: r => <DateCell val={r.end_date} /> },
     { key:'status',      label:'Status',     style:{ width:120 }, render: r => <StatusBadge value={r.status} /> },
-    { key:'actions', label:'Actions', style:{ width:120, textAlign:'right' },
+    { key:'actions', label:'', style:{ width:120 },
       render: r => (
-        <div style={{ display:'flex', alignItems:'center', gap:5, justifyContent:'flex-end' }}>
-          <button className="pj-act-edit" onClick={() => openEdit(r)}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        <div className="td-actions">
+          <button className="btn btn-secondary btn-sm" onClick={() => openEdit(r)}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            {t.edit}
           </button>
-          <button className="pj-act-del" onClick={() => setDelModal(r)}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-          </button>
-          <button className="pj-act-more">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+          <button className="btn btn-danger btn-sm" onClick={() => setDelModal(r)}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
           </button>
         </div>
       )},
@@ -209,6 +210,21 @@ export default function Projects() {
         <div>
           <h1 style={{ fontSize:22, fontWeight:700, color:'var(--text)', letterSpacing:'-0.3px' }}>{t.projects}</h1>
           <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:3 }}>Create, view, and manage all your construction projects in one place.</p>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => {
+              const rows = projects.map(p => [p.project_code, p.project_name_en, p.client_name||'', p.location||'', p.start_date?p.start_date.slice(0,10):'', p.end_date?p.end_date.slice(0,10):'', p.status].join(','));
+              const csv = ['Project Code,Project Name,Client,Location,Start Date,End Date,Status', ...rows].join('
+');
+              const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); a.download = 'projects.csv'; a.click();
+            }}
+            style={{ display:'flex', alignItems:'center', gap:5 }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+          </button>
         </div>
       </div>
 
