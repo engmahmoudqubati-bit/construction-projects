@@ -72,56 +72,95 @@ function KpiCards({ projects }) {
 // ── View Detail Panel ────────────────────────────────────────────
 function ProjectViewPanel({ projects, selected, onClose }) {
   const [page, setPage] = useState(0);
-  // If only 1 selected, allow navigating through ALL projects starting from that one
-  const selectedItems = projects.filter(p => selected.includes(p.id));
-  const items = selected.length === 1
-    ? (() => {
-        const idx = projects.findIndex(p => p.id === selected[0]);
-        return idx >= 0 ? [...projects.slice(idx), ...projects.slice(0, idx)] : projects;
-      })()
-    : selectedItems;
+
+  // Build navigation list — if multiple selected use those, else all projects starting from selected
+  const items = (() => {
+    const sel = projects.filter(p => selected.includes(p.id));
+    if (sel.length > 1) return sel;
+    const idx = projects.findIndex(p => selected.includes(p.id));
+    return idx >= 0 ? [...projects.slice(idx), ...projects.slice(0, idx)] : projects;
+  })();
+
   if (!items.length) return null;
-  const p = items[page] || items[0];
-  const field = (label, value) => (
-    <div style={{ marginBottom:14 }}>
-      <div style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.07em', color:'var(--text-muted)', marginBottom:4 }}>{label}</div>
-      <div style={{ fontSize:14, color:'var(--text)', fontWeight:400 }}>{value||'—'}</div>
+  const proj = items[Math.min(page, items.length - 1)];
+
+  const fmt = val => { if(!val) return '—'; const[y,m,d]=val.slice(0,10).split('-'); return `${d}/${m}/${y}`; };
+
+  const statusColor = {
+    active: { bg:'#f0fdf4', color:'#16a34a', dot:'#16a34a' },
+    completed: { bg:'#faf5ff', color:'#9333ea', dot:'#9333ea' },
+    on_hold: { bg:'#fff7ed', color:'#ea580c', dot:'#ea580c' },
+    cancelled: { bg:'#fef2f2', color:'#dc2626', dot:'#dc2626' },
+  }[proj.status] || { bg:'#f3f4f6', color:'#374151', dot:'#374151' };
+
+  const Field = ({ label, value, wide }) => (
+    <div style={{ gridColumn: wide ? '1 / -1' : 'span 1', marginBottom:18 }}>
+      <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', color:'#9ca3af', marginBottom:6 }}>{label}</div>
+      <div style={{ fontSize:14, color:'#111827', fontWeight:400, lineHeight:1.5 }}>{value || '—'}</div>
     </div>
   );
+
   return (
-    <div className="modal-overlay" onClick={e => e.target===e.currentTarget && onClose()}>
-      <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="modal-breadcrumb">
-            <span className="modal-bc-parent">{t.projects}</span>
-            <span className="modal-bc-sep">›</span>
-            <span className="modal-bc-current">View — {p.project_name_en}</span>
+    <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.45)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background:'#fff', borderRadius:16, boxShadow:'0 24px 60px rgba(0,0,0,0.18)', width:'100%', maxWidth:640, overflow:'hidden', animation:'modal-in 0.2s ease' }}
+        onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{ background:'linear-gradient(135deg,#1e40af 0%,#2563eb 100%)', padding:'18px 24px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,0.65)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:4 }}>
+              Projects › View Project
+            </div>
+            <div style={{ fontSize:16, fontWeight:600, color:'#fff' }}>{proj.project_name_en}</div>
           </div>
-          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             {items.length > 1 && (
-              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                <button style={{ background:'rgba(255,255,255,0.18)', border:'none', color:'#fff', borderRadius:6, width:28, height:28, cursor:page===0?'not-allowed':'pointer', opacity:page===0?0.4:1, fontSize:14 }} onClick={() => setPage(p=>Math.max(0,p-1))} disabled={page===0}>‹</button>
-                <span style={{ color:'#fff', fontSize:12 }}>{page+1} / {items.length}</span>
-                <button style={{ background:'rgba(255,255,255,0.18)', border:'none', color:'#fff', borderRadius:6, width:28, height:28, cursor:page>=items.length-1?'not-allowed':'pointer', opacity:page>=items.length-1?0.4:1, fontSize:14 }} onClick={() => setPage(p=>Math.min(items.length-1,p+1))} disabled={page>=items.length-1}>›</button>
+              <div style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.15)', borderRadius:8, padding:'4px 10px' }}>
+                <button onClick={() => setPage(p => Math.max(0,p-1))} disabled={page===0}
+                  style={{ background:'none', border:'none', color:'#fff', cursor:page===0?'not-allowed':'pointer', opacity:page===0?0.35:1, fontSize:16, padding:'0 2px', display:'flex', alignItems:'center' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <span style={{ color:'#fff', fontSize:12, fontWeight:500, minWidth:40, textAlign:'center' }}>{page+1} / {items.length}</span>
+                <button onClick={() => setPage(p => Math.min(items.length-1,p+1))} disabled={page>=items.length-1}
+                  style={{ background:'none', border:'none', color:'#fff', cursor:page>=items.length-1?'not-allowed':'pointer', opacity:page>=items.length-1?0.35:1, fontSize:16, padding:'0 2px', display:'flex', alignItems:'center' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
               </div>
             )}
-            <button className="modal-close-btn" onClick={onClose}>✕</button>
+            <button onClick={onClose}
+              style={{ background:'rgba(255,255,255,0.15)', border:'none', color:'#fff', borderRadius:8, width:30, height:30, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>
+              ✕
+            </button>
           </div>
         </div>
-        <div className="modal-body">
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 32px' }}>
-            {field(t.projectCode,<span style={{ fontFamily:'monospace', fontWeight:700, background:'#eff6ff', color:'#2563eb', padding:'2px 8px', borderRadius:5 }}>{p.project_code}</span>)}
-            {field(t.status,<StatusBadge value={p.status}/>)}
-            {field(t.projectNameEn,p.project_name_en)}
-            {field(t.projectNameAr,<span dir="rtl">{p.project_name_ar}</span>)}
-            {field(t.client,p.client_name)}
-            {field(t.location,p.location)}
-            {field(t.startDate,p.start_date?p.start_date.slice(0,10):null)}
-            {field(t.endDate,p.end_date?p.end_date.slice(0,10):null)}
-          </div>
+
+        {/* Status bar */}
+        <div style={{ background:'#f8fafc', borderBottom:'1px solid #f1f5f9', padding:'10px 24px', display:'flex', alignItems:'center', gap:10 }}>
+          <span style={{ fontSize:11, color:'#9ca3af', fontWeight:500 }}>Status:</span>
+          <span style={{ display:'inline-flex', alignItems:'center', gap:5, background:statusColor.bg, color:statusColor.color, fontSize:11, fontWeight:600, padding:'3px 10px', borderRadius:20 }}>
+            <span style={{ width:6, height:6, borderRadius:'50%', background:statusColor.dot }}></span>
+            {proj.status?.replace('_',' ').toUpperCase()}
+          </span>
+          <span style={{ marginLeft:'auto', fontSize:11, color:'#9ca3af' }}>Code: <strong style={{ color:'#2563eb', fontFamily:'monospace' }}>{proj.project_code}</strong></span>
         </div>
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>✕ Close</button>
+
+        {/* Body */}
+        <div style={{ padding:'24px', display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 32px' }}>
+          <Field label="Project Name (English)" value={proj.project_name_en} />
+          <Field label="Project Name (Arabic)" value={<span dir="rtl">{proj.project_name_ar || '—'}</span>} />
+          <Field label="Client" value={proj.client_name} />
+          <Field label="Location" value={proj.location} />
+          <Field label="Start Date" value={fmt(proj.start_date)} />
+          <Field label="End Date" value={fmt(proj.end_date)} />
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding:'14px 24px', borderTop:'1px solid #f1f5f9', display:'flex', justifyContent:'flex-end', background:'#f8fafc' }}>
+          <button onClick={onClose}
+            style={{ display:'flex', alignItems:'center', gap:6, background:'#fff', border:'1px solid #e5e7eb', borderRadius:8, padding:'7px 16px', fontSize:13, fontWeight:500, color:'#374151', cursor:'pointer', fontFamily:'inherit' }}>
+            ✕ Close
+          </button>
         </div>
       </div>
     </div>

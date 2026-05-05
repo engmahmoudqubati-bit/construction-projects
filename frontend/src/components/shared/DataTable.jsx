@@ -160,25 +160,30 @@ function Pagination({ page, totalPages, total, pageSize, onPage, onPageSize }) {
   });
 
   return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 18px', borderTop:'1px solid #f3f4f6', flexWrap:'wrap', gap:8 }}>
-      <span style={{ fontSize:12, color:'#6b7280' }}>
-        Showing <strong style={{ color:'#111827' }}>{Math.min((page-1)*pageSize+1, total)}–{Math.min(page*pageSize, total)}</strong> of <strong style={{ color:'#111827' }}>{total}</strong> results
+    <div style={{ display:'flex', alignItems:'center', padding:'12px 18px', borderTop:'1px solid #f3f4f6', gap:8 }}>
+      {/* Left: row count */}
+      <span style={{ fontSize:12, color:'#6b7280', fontWeight:500, minWidth:80 }}>
+        <strong style={{ color:'#111827' }}>{total}</strong> rows
       </span>
-      <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+
+      {/* Center: pagination */}
+      <div style={{ display:'flex', alignItems:'center', gap:4, flex:1, justifyContent:'center' }}>
         <button style={{ ...btnStyle(false), padding:'0 10px' }} onClick={() => onPage(page-1)} disabled={page===1}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        {start > 1 && <><button style={btnStyle(false)} onClick={() => onPage(1)}>1</button><span style={{ color:'#9ca3af', padding:'0 2px', fontSize:13 }}>...</span></>}
+        {start > 1 && <><button style={btnStyle(false)} onClick={() => onPage(1)}>1</button><span style={{ color:'#9ca3af', fontSize:13, padding:'0 2px' }}>...</span></>}
         {pages.map(p => (
           <button key={p} style={btnStyle(p===page)} onClick={() => onPage(p)}>{p}</button>
         ))}
-        {end < totalPages && <><span style={{ color:'#9ca3af', padding:'0 2px', fontSize:13 }}>...</span><button style={btnStyle(false)} onClick={() => onPage(totalPages)}>{totalPages}</button></>}
+        {end < totalPages && <><span style={{ color:'#9ca3af', fontSize:13, padding:'0 2px' }}>...</span><button style={btnStyle(false)} onClick={() => onPage(totalPages)}>{totalPages}</button></>}
         <button style={{ ...btnStyle(false), padding:'0 10px' }} onClick={() => onPage(page+1)} disabled={page===totalPages}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
+
+      {/* Right: page size */}
       <select value={pageSize} onChange={e => { onPageSize(Number(e.target.value)); onPage(1); }}
-        style={{ border:'1px solid #e5e7eb', background:'#fff', borderRadius:8, padding:'6px 10px', fontSize:13, color:'#374151', cursor:'pointer', fontFamily:'inherit' }}>
+        style={{ border:'1px solid #e5e7eb', background:'#fff', borderRadius:8, padding:'6px 10px', fontSize:12, color:'#374151', cursor:'pointer', fontFamily:'inherit', minWidth:60 }}>
         {[10,25,50,100].map(n => <option key={n} value={n}>{n}</option>)}
       </select>
     </div>
