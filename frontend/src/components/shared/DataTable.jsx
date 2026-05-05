@@ -148,21 +148,39 @@ function Pagination({ page, totalPages, total, pageSize, onPage, onPageSize }) {
   const end   = Math.min(totalPages, page + 2);
   for (let i = start; i <= end; i++) pages.push(i);
 
+  const btnStyle = (active) => ({
+    minWidth:32, height:32, borderRadius:8,
+    border: active ? '1.5px solid #2563eb' : '1px solid #e5e7eb',
+    background: active ? '#2563eb' : '#fff',
+    color: active ? '#fff' : '#374151',
+    fontWeight: active ? 600 : 400,
+    fontSize:13, cursor:'pointer', fontFamily:'inherit',
+    display:'flex', alignItems:'center', justifyContent:'center',
+    padding:'0 10px', transition:'all 0.12s',
+  });
+
   return (
-    <div className="dt-footer">
-      <span className="dt-record-count">Number of Records: <strong>{total}</strong></span>
-      <div className="dt-pagination">
-        <button className="pg-btn" onClick={() => onPage(page-1)} disabled={page===1}>‹</button>
-        {start > 1 && <><button className="pg-btn" onClick={() => onPage(1)}>1</button><span className="pg-ellipsis">…</span></>}
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 18px', borderTop:'1px solid #f3f4f6', flexWrap:'wrap', gap:8 }}>
+      <span style={{ fontSize:12, color:'#6b7280' }}>
+        Showing <strong style={{ color:'#111827' }}>{Math.min((page-1)*pageSize+1, total)}–{Math.min(page*pageSize, total)}</strong> of <strong style={{ color:'#111827' }}>{total}</strong> results
+      </span>
+      <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+        <button style={{ ...btnStyle(false), padding:'0 10px' }} onClick={() => onPage(page-1)} disabled={page===1}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        {start > 1 && <><button style={btnStyle(false)} onClick={() => onPage(1)}>1</button><span style={{ color:'#9ca3af', padding:'0 2px', fontSize:13 }}>...</span></>}
         {pages.map(p => (
-          <button key={p} className={`pg-btn${p===page?' active':''}`} onClick={() => onPage(p)}>{p}</button>
+          <button key={p} style={btnStyle(p===page)} onClick={() => onPage(p)}>{p}</button>
         ))}
-        {end < totalPages && <><span className="pg-ellipsis">…</span><button className="pg-btn" onClick={() => onPage(totalPages)}>{totalPages}</button></>}
-        <button className="pg-btn" onClick={() => onPage(page+1)} disabled={page===totalPages}>›</button>
-        <select className="pg-size" value={pageSize} onChange={e => { onPageSize(Number(e.target.value)); onPage(1); }}>
-          {[10,25,50,100].map(n => <option key={n} value={n}>{n}</option>)}
-        </select>
+        {end < totalPages && <><span style={{ color:'#9ca3af', padding:'0 2px', fontSize:13 }}>...</span><button style={btnStyle(false)} onClick={() => onPage(totalPages)}>{totalPages}</button></>}
+        <button style={{ ...btnStyle(false), padding:'0 10px' }} onClick={() => onPage(page+1)} disabled={page===totalPages}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
       </div>
+      <select value={pageSize} onChange={e => { onPageSize(Number(e.target.value)); onPage(1); }}
+        style={{ border:'1px solid #e5e7eb', background:'#fff', borderRadius:8, padding:'6px 10px', fontSize:13, color:'#374151', cursor:'pointer', fontFamily:'inherit' }}>
+        {[10,25,50,100].map(n => <option key={n} value={n}>{n}</option>)}
+      </select>
     </div>
   );
 }
