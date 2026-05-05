@@ -386,30 +386,7 @@ export default function DataTable({
 
 
 
-      {/* Floating action buttons */}
-      <div className="dt-float-actions">
-        {onView && (
-          <button
-            className="dt-float-view"
-            onClick={() => { if (selected.length > 0) onView(selected); }}
-            disabled={selected.length === 0}
-            title={selected.length > 0 ? `View ${selected.length} selected` : 'Select rows to view'}
-            style={{ opacity: selected.length === 0 ? 0.45 : 1 }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
-              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-              <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-            </svg>
-          </button>
-        )}
-        {onAdd && (
-          <button className="dt-float-add" onClick={onAdd} title="Add New">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-          </button>
-        )}
-      </div>
+
 
       {/* Advanced Filter */}
       <AdvancedFilter

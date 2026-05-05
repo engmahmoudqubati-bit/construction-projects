@@ -172,9 +172,13 @@ export default function Projects() {
       render: r => <span style={{ fontSize:13, fontWeight:600, color:'#2563eb' }}>{r.project_code}</span> },
     { key:'project_name_en', label:'Project Name (English)',
       render: r => (
-        <div>
-          <div style={{ fontSize:13, fontWeight:600, color:'#111827' }}>{r.project_name_en}</div>
-          {r.project_name_ar && <div style={{ fontSize:12, color:'#9ca3af', marginTop:2, direction:'rtl', textAlign:'right' }}>{r.project_name_ar}</div>}
+        <div style={{ minWidth:0 }}>
+          <div style={{ fontSize:13, fontWeight:600, color:'#111827', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{r.project_name_en}</div>
+          {r.project_name_ar && (
+            <div style={{ fontSize:12, color:'#9ca3af', marginTop:3, direction:'rtl', textAlign:'right', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+              {r.project_name_ar}
+            </div>
+          )}
         </div>
       )},
     { key:'client_name', label:'Client',    render: r => <span style={{ fontSize:13, color:'#6b7280' }}>{r.client_name||'—'}</span> },
