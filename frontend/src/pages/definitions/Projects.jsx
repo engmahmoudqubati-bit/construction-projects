@@ -107,7 +107,7 @@ function ProjectViewPanel({ projects, selected, onClose }) {
         onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div style={{ background:'linear-gradient(135deg,#1e40af 0%,#2563eb 100%)', padding:'18px 24px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ background:'linear-gradient(135deg,#3b82f6 0%,#60a5fa 100%)', padding:'18px 24px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div>
             <div style={{ fontSize:11, color:'rgba(255,255,255,0.65)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:4 }}>
               Projects › View Project
@@ -231,7 +231,7 @@ export default function Projects() {
 
   const columns = [
     { key:'project_code', label:'Project Code', style:{width:110},
-      render:r=><span style={{fontSize:13,fontWeight:600,color:'#2563eb'}}>{r.project_code}</span> },
+      render:r=><span style={{fontSize:13,fontWeight:600,color:'#1d4ed8',background:'#eff6ff',padding:'2px 8px',borderRadius:5,display:'inline-block'}}>{r.project_code}</span> },
     { key:'project_name_en', label:'Project Name',
       render:r=><span style={{fontSize:13,fontWeight:600,color:'#111827'}}>{r.project_name_en}</span> },
     { key:'client_name', label:'Client',   render:r=><span style={{fontSize:12,color:'#6b7280'}}>{r.client_name||'—'}</span> },

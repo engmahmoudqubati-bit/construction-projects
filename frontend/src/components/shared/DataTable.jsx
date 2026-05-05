@@ -151,7 +151,7 @@ function Pagination({ page, totalPages, total, pageSize, onPage, onPageSize }) {
   const btnStyle = (active) => ({
     minWidth:32, height:32, borderRadius:8,
     border: active ? '1.5px solid #2563eb' : '1px solid #e5e7eb',
-    background: active ? '#2563eb' : '#fff',
+    background: active ? '#3b82f6' : '#fff',
     color: active ? '#fff' : '#374151',
     fontWeight: active ? 600 : 400,
     fontSize:13, cursor:'pointer', fontFamily:'inherit',
@@ -299,13 +299,13 @@ export default function DataTable({
             </button>
           )}
 
-          {/* View */}
-          {onView && (
-            <button className="dt-fs-btn" onClick={() => { if (selected.length > 0) onView(selected); }}
-              style={{ opacity: selected.length === 0 ? 0.5 : 1 }}>
+          {/* View — only when rows selected */}
+          {onView && selected.length > 0 && (
+            <button
+              onClick={() => onView(selected)}
+              style={{ display:'flex', alignItems:'center', gap:5, background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:8, padding:'6px 12px', fontSize:12, fontWeight:500, color:'#1d4ed8', cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              View{selected.length > 0 ? ` (${selected.length})` : ''}
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+              View ({selected.length})
             </button>
           )}
 
@@ -324,9 +324,10 @@ export default function DataTable({
             </button>
           )}
 
-          {/* Delete Selected */}
+          {/* Delete — only when rows selected */}
           {selected.length > 0 && (
-            <button className="dt-fs-btn" style={{ color:'#dc2626', borderColor:'#fecaca' }}>
+            <button
+              style={{ display:'flex', alignItems:'center', gap:5, background:'#fff5f5', border:'1px solid #fecaca', borderRadius:8, padding:'6px 12px', fontSize:12, fontWeight:500, color:'#dc2626', cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
               Delete ({selected.length})
             </button>

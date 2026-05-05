@@ -124,7 +124,7 @@ input, select, textarea { font: inherit; }
   display: flex; align-items: center; gap: 10px;
   border-bottom: 1px solid var(--border-light);
   min-height: var(--header-h);
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
 }
 .sidebar-logo .logo-icon { font-size: 22px; flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2)); }
 .sidebar-logo .logo-text {
@@ -365,7 +365,7 @@ tbody td {
   display: flex; align-items: center; justify-content: space-between;
   padding: 18px 24px 16px;
   border-bottom: 1px solid var(--border-light);
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
   flex-shrink: 0;
 }
 .modal-title {
@@ -1094,3 +1094,13 @@ thead th.dt-col-name { border-bottom: 2px solid #f97316; color: #e65100; }
   transition: all 0.15s;
 }
 .pj-act-more:hover { border-color: #d1d5db; color: #374151; }
+
+/* ── Projects table light blue header ── */
+.dt-wrapper thead tr { background: #eff6ff; }
+.dt-wrapper thead th {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-bottom: 2px solid #bfdbfe;
+}
+.dt-wrapper tbody tr.dt-row-selected { background: #dbeafe !important; }
+.dt-wrapper .pg-btn.active { background: #3b82f6; border-color: #3b82f6; }
