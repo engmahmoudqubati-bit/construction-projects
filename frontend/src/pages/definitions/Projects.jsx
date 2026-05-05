@@ -72,7 +72,14 @@ function KpiCards({ projects }) {
 // ── View Detail Panel ────────────────────────────────────────────
 function ProjectViewPanel({ projects, selected, onClose }) {
   const [page, setPage] = useState(0);
-  const items = projects.filter(p => selected.includes(p.id));
+  // If only 1 selected, allow navigating through ALL projects starting from that one
+  const selectedItems = projects.filter(p => selected.includes(p.id));
+  const items = selected.length === 1
+    ? (() => {
+        const idx = projects.findIndex(p => p.id === selected[0]);
+        return idx >= 0 ? [...projects.slice(idx), ...projects.slice(0, idx)] : projects;
+      })()
+    : selectedItems;
   if (!items.length) return null;
   const p = items[page] || items[0];
   const field = (label, value) => (
@@ -202,9 +209,7 @@ export default function Projects() {
           <ActBtn onClick={()=>setDelModal(r)} danger>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
           </ActBtn>
-          <ActBtn>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-          </ActBtn>
+
         </div>
       )},
   ];
@@ -228,7 +233,8 @@ export default function Projects() {
         data={projects}
         loading={loading}
         onAdd={openAdd}
-        onView={(sel)=>{ if(sel.length>0){setViewSelected(sel);setViewOpen(true);} }}
+        onView={(sel)=>{ if(sel.length>0){setViewSelected([...sel]);setViewOpen(true);} }}
+        onViewAll={()=>{ setViewSelected(projects.map(p=>p.id)); setViewOpen(true); }}
         onExport={exportCSV}
         filterFields={FILTER_FIELDS}
         filterStorageKey="projects_filter"

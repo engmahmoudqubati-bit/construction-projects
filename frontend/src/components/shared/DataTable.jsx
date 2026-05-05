@@ -323,7 +323,7 @@ export default function DataTable({
           {selected.length > 0 && (
             <button className="dt-fs-btn" style={{ color:'#dc2626', borderColor:'#fecaca' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-              Delete Selected ({selected.length})
+              Delete ({selected.length})
             </button>
           )}
 
