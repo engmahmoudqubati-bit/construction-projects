@@ -255,14 +255,6 @@ export default function Projects() {
 
   return (
     <div>
-      {/* Page header */}
-      <div style={{ marginBottom:20 }}>
-        <h1 style={{ fontSize:22, fontWeight:700, color:'var(--text)', letterSpacing:'-0.3px' }}>{t.projects}</h1>
-        <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:3 }}>Manage and track all your construction projects in one place.</p>
-      </div>
-
-
-
       {/* KPI Cards */}
       {!loading && <KpiCards projects={projects} />}
 
