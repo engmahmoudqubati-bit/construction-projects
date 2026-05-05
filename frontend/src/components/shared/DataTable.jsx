@@ -193,6 +193,7 @@ export default function DataTable({
   title,
   onAdd,
   onView,
+  onExport,
   onRefresh,
   filterFields = [],
   filterStorageKey = 'dt_filter',
@@ -284,50 +285,51 @@ export default function DataTable({
             {search && <button className="dt-search-clear" onClick={() => setSearch('')}>✕</button>}
           </div>
 
-          {/* Filter button */}
+          {/* Filter */}
           {filterFields.length > 0 && (
-            <button
-              className={`dt-filter-btn${hasActiveFilter ? ' active' : ''}`}
-              onClick={() => setFilterOpen(true)}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-              </svg>
+            <button className={`dt-fs-btn${hasActiveFilter ? ' active' : ''}`} onClick={() => setFilterOpen(true)}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
               Filter
-              {hasActiveFilter && <span className="dt-filter-dot" style={{ position:'relative', top:'unset', right:'unset', width:6, height:6, borderRadius:'50%', background:'#e97316', display:'inline-block', marginLeft:2 }} />}
+              {hasActiveFilter && <span style={{ width:6, height:6, borderRadius:'50%', background:'#e97316', display:'inline-block', marginLeft:2 }} />}
             </button>
           )}
 
-          {/* View button */}
+          {/* View */}
           {onView && (
-            <button
-              className="dt-fs-btn"
-              onClick={() => { if (selected.length > 0) onView(selected); }}
-              title={selected.length > 0 ? `View ${selected.length} selected` : 'Select rows to view'}
-              style={{ opacity: selected.length === 0 ? 0.5 : 1 }}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-              </svg>
+            <button className="dt-fs-btn" onClick={() => { if (selected.length > 0) onView(selected); }}
+              style={{ opacity: selected.length === 0 ? 0.5 : 1 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               View{selected.length > 0 ? ` (${selected.length})` : ''}
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
           )}
 
           {/* Refresh */}
           {onRefresh && (
-            <button className="dt-fs-btn" onClick={onRefresh} title="Refresh" style={{ padding:'0 10px', gap:0 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
-                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-              </svg>
+            <button className="dt-fs-btn" onClick={onRefresh} title="Refresh" style={{ padding:'0 9px' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
             </button>
           )}
 
-          {/* New button */}
+          {/* Export */}
+          {onExport && (
+            <button className="dt-fs-btn" onClick={onExport}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export
+            </button>
+          )}
+
+          {/* Delete Selected */}
+          {selected.length > 0 && (
+            <button className="dt-fs-btn" style={{ color:'#dc2626', borderColor:'#fecaca' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+              Delete Selected ({selected.length})
+            </button>
+          )}
+
+          {/* New */}
           {onAdd && (
-            <button onClick={onAdd} style={{ display:'flex', alignItems:'center', gap:7, background:'#2563eb', border:'none', borderRadius:9, padding:'8px 18px', fontSize:13, fontWeight:600, color:'#fff', cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <button onClick={onAdd} style={{ display:'flex', alignItems:'center', gap:6, background:'#fff', border:'1px solid #e5e7eb', borderRadius:8, padding:'6px 14px', fontSize:12, fontWeight:600, color:'#111827', cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>
               New Project
             </button>
           )}
