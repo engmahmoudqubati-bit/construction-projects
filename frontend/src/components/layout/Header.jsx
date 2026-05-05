@@ -46,10 +46,17 @@ export default function Header({ onToggleSidebar }) {
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
+  const subtitle = location.pathname === '/definitions/projects'
+    ? 'Manage and track all your construction projects in one place.'
+    : null;
+
   return (
     <header className="header">
       <button className="icon-btn" onClick={onToggleSidebar} title="Toggle sidebar">☰</button>
-      <span className="header-title">{TITLES[location.pathname] ?? t.appName}</span>
+      <div style={{ display:'flex', flexDirection:'column', gap:1 }}>
+        <span className="header-title">{TITLES[location.pathname] ?? t.appName}</span>
+        {subtitle && <span style={{ fontSize:11, color:'var(--text-muted)', fontWeight:400 }}>{subtitle}</span>}
+      </div>
 
       <div className="header-actions">
         {/* Dark / Light toggle with label */}
