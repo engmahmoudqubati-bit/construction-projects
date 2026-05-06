@@ -200,6 +200,7 @@ export default function DataTable({
   onView,
   onExport,
   onRefresh,
+  onSelectionChange,
   filterFields = [],
   filterStorageKey = 'dt_filter',
   emptyText = 'No records found',
@@ -254,10 +255,16 @@ export default function DataTable({
   const allSelected = paginated.length > 0 && paginated.every(r => selected.includes(r[rowKey] ?? r.id));
   function toggleAll() {
     const ids = paginated.map(r => r[rowKey] ?? r.id);
-    setSelected(allSelected ? selected.filter(id => !ids.includes(id)) : [...new Set([...selected, ...ids])]);
+    const next = allSelected ? selected.filter(id => !ids.includes(id)) : [...new Set([...selected, ...ids])];
+    setSelected(next);
+    if (onSelectionChange) onSelectionChange(next);
   }
   function toggleRow(id) {
-    setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
+    setSelected(s => {
+      const next = s.includes(id) ? s.filter(x => x !== id) : [...s, id];
+      if (onSelectionChange) onSelectionChange(next);
+      return next;
+    });
   }
 
   const hasActiveFilter = filterApplied && Object.values(filterVals).some(v => v !== '' && v != null);
@@ -299,13 +306,7 @@ export default function DataTable({
             </button>
           )}
 
-          {/* View — light blue, only when rows selected */}
-          {onView && selected.length > 0 && (
-            <button className="dt-btn-blue" onClick={() => onView(selected)}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              View ({selected.length})
-            </button>
-          )}
+
 
           {/* Refresh — gray icon only */}
           {onRefresh && (
@@ -322,21 +323,9 @@ export default function DataTable({
             </button>
           )}
 
-          {/* Delete — light red, only when rows selected */}
-          {selected.length > 0 && (
-            <button className="dt-btn-red">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-              Delete ({selected.length})
-            </button>
-          )}
 
-          {/* New Project — solid blue primary */}
-          {onAdd && (
-            <button className="dt-btn-new" onClick={onAdd}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              New Project
-            </button>
-          )}
+
+
         </div>
       </div>
 

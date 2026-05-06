@@ -4,45 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import t from '../lang';
 
-// ── Deterministic pseudo-random (no flicker on re-render) ──
-function frand(seed) {
-  const x = Math.sin(seed + 1) * 43758.5453;
-  return x - Math.floor(x);
-}
-
-// Generate window rectangles for a building
-function buildingWindows(cols, rows, x0, y0, cellW, cellH, gapX, gapY, seed = 0) {
-  const rects = [];
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const lit = frand(seed + r * 100 + c) > 0.28;
-      const bright = lit ? frand(seed + r * 50 + c * 3) : 0;
-      let fill;
-      if (!lit) {
-        fill = '#040301';
-      } else if (bright > 0.7) {
-        fill = '#e8961e';
-      } else if (bright > 0.45) {
-        fill = '#c87820';
-      } else {
-        fill = '#a86018';
-      }
-      rects.push(
-        <rect
-          key={`${r}-${c}`}
-          x={x0 + c * (cellW + gapX)}
-          y={y0 + r * (cellH + gapY)}
-          width={cellW}
-          height={cellH}
-          fill={fill}
-          opacity={lit ? 0.88 : 1}
-        />
-      );
-    }
-  }
-  return rects;
-}
-
 export default function Login() {
   const { login }   = useAuth();
   const navigate    = useNavigate();
@@ -50,6 +11,7 @@ export default function Login() {
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw]   = useState(false);
+  const [remember, setRemember] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -67,188 +29,178 @@ export default function Login() {
   }
 
   return (
-    <div className="login-shell">
-      {/* ── Background ── */}
-      <div className="login-bg">
-        <svg
-          className="login-bg-svg"
-          viewBox="0 0 1400 900"
-          preserveAspectRatio="xMidYMid slice"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stopColor="#020100" />
-              <stop offset="55%"  stopColor="#080501" />
-              <stop offset="100%" stopColor="#150c03" />
-            </linearGradient>
-            <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stopColor="#0f0803" />
-              <stop offset="100%" stopColor="#000000" />
-            </linearGradient>
-            <linearGradient id="glassSheen" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.04" />
-              <stop offset="50%"  stopColor="#ffffff" stopOpacity="0.01" />
-              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-            </linearGradient>
-            <linearGradient id="glassSheen2" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.0" />
-              <stop offset="40%"  stopColor="#ffffff" stopOpacity="0.03" />
-              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-            </linearGradient>
-            <radialGradient id="warmGlow" cx="35%" cy="95%" r="50%">
-              <stop offset="0%"   stopColor="#c87020" stopOpacity="0.22" />
-              <stop offset="100%" stopColor="#c87020" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="warmGlow2" cx="85%" cy="95%" r="30%">
-              <stop offset="0%"   stopColor="#a05010" stopOpacity="0.14" />
-              <stop offset="100%" stopColor="#a05010" stopOpacity="0" />
-            </radialGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="1.2" result="blur" />
-              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
+    <div style={{ minHeight:'100vh', display:'flex', overflow:'hidden', fontFamily:"'Inter','Segoe UI',system-ui,sans-serif" }}>
 
-          {/* Sky */}
-          <rect width="1400" height="900" fill="url(#skyGrad)" />
+      {/* ── Left: Construction site image panel ── */}
+      <div style={{ flex:1, position:'relative', minHeight:'100vh', display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
 
-          {/* ── MAIN LEFT BUILDING (glass curtain wall) ── */}
-          {/* Structure frame */}
-          <rect x="0" y="0" width="620" height="900" fill="#0a0703" />
-
-          {/* Vertical structural columns */}
-          {[0, 62, 124, 186, 248, 310, 372, 434, 496, 558, 620].map(x => (
-            <rect key={x} x={x} y={0} width={3} height={900} fill="#0d0904" opacity={0.8} />
-          ))}
-          {/* Horizontal floor plates */}
-          {Array.from({ length: 26 }, (_, i) => (
-            <rect key={i} x={0} y={i * 34} width={623} height={2} fill="#0d0904" opacity={0.7} />
-          ))}
-
-          {/* Window panes — main left building */}
-          {buildingWindows(9, 25, 6, 4, 54, 26, 8, 8, 1)}
-
-          {/* Glass sheen / reflection overlay on main building */}
-          <rect x="0" y="0" width="620" height="900" fill="url(#glassSheen)" />
-          {/* Diagonal reflection streak */}
-          <polygon points="80,0 280,0 200,900 0,900" fill="rgba(255,245,220,0.022)" />
-
-          {/* ── SECOND LARGE BUILDING (right side, partial) ── */}
-          <rect x="880" y="80" width="520" height="820" fill="#080601" />
+        {/* Background image simulation with gradient overlay */}
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg, #1a0e00 0%, #3d2200 30%, #6b3d0a 60%, #8b5a1a 80%, #5a3d00 100%)', zIndex:0 }} />
+        {/* Warm sun glow at bottom */}
+        <div style={{ position:'absolute', bottom:0, left:0, right:0, height:'60%', background:'radial-gradient(ellipse at 40% 100%, rgba(255,160,30,0.55) 0%, rgba(220,100,10,0.3) 30%, transparent 70%)', zIndex:1 }} />
+        {/* Sky blue top */}
+        <div style={{ position:'absolute', top:0, left:0, right:0, height:'45%', background:'linear-gradient(180deg, rgba(100,160,220,0.4) 0%, transparent 100%)', zIndex:1 }} />
+        {/* Construction site SVG overlay */}
+        <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', zIndex:2 }} viewBox="0 0 960 740" preserveAspectRatio="xMidYMid slice">
+          {/* Building skeleton */}
+          <rect x="150" y="120" width="220" height="580" fill="rgba(60,40,10,0.7)" rx="2"/>
+          {/* Floor lines */}
+          {[160,210,260,310,360,410,460,510,560,610].map((y,i) => <rect key={i} x="150" y={y} width="220" height="3" fill="rgba(180,120,30,0.6)"/>)}
           {/* Vertical columns */}
-          {[880, 935, 990, 1045, 1100, 1155, 1210, 1265, 1320, 1375, 1400].map(x => (
-            <rect key={x} x={x} y={80} width={2.5} height={820} fill="#0c0903" opacity={0.8} />
-          ))}
-          {/* Horizontal floors */}
-          {Array.from({ length: 22 }, (_, i) => (
-            <rect key={i} x={880} y={80 + i * 37} width={520} height={2} fill="#0c0903" opacity={0.7} />
-          ))}
-          {/* Window panes — right building */}
-          {buildingWindows(8, 20, 886, 84, 47, 29, 8, 8, 500)}
-          {/* Sheen */}
-          <rect x="880" y="80" width="520" height="820" fill="url(#glassSheen2)" />
-
-          {/* ── SMALL BUILDINGS (depth / city) ── */}
-          {/* Centre gap building */}
-          <rect x="630" y="320" width="240" height="580" fill="#060402" />
-          {buildingWindows(4, 14, 638, 330, 48, 32, 8, 8, 900)}
-
-          {/* ── Ground floor / street ── */}
-          <rect x="0" y="840" width="1400" height="60" fill="url(#groundGrad)" />
-          <rect x="0" y="838" width="1400" height="4" fill="rgba(200,120,30,0.08)" />
-
-          {/* ── Ambient warm glow from windows ── */}
-          <rect width="1400" height="900" fill="url(#warmGlow)" />
-          <rect width="1400" height="900" fill="url(#warmGlow2)" />
-
-          {/* ── Final dark cinematic overlay ── */}
-          <rect width="1400" height="900" fill="rgba(0,0,0,0.42)" />
-
-          {/* ── Slight vignette edges ── */}
-          <rect width="1400" height="900"
-            fill="none"
-            style={{ filter: 'none' }}
-          />
-          <rect x="0" y="0" width="200" height="900" fill="rgba(0,0,0,0.18)" />
-          <rect x="1200" y="0" width="200" height="900" fill="rgba(0,0,0,0.22)" />
-          <rect x="0" y="700" width="1400" height="200" fill="rgba(0,0,0,0.25)" />
+          <rect x="150" y="120" width="18" height="580" fill="rgba(180,120,30,0.7)"/>
+          <rect x="240" y="120" width="12" height="580" fill="rgba(180,120,30,0.5)"/>
+          <rect x="350" y="120" width="18" height="580" fill="rgba(180,120,30,0.7)"/>
+          {/* Crane arm */}
+          <rect x="420" y="20" width="8" height="320" fill="rgba(200,140,30,0.9)"/>
+          <rect x="280" y="20" width="150" height="6" fill="rgba(200,140,30,0.9)"/>
+          <rect x="420" y="20" width="120" height="6" fill="rgba(200,140,30,0.9)"/>
+          <line x1="420" y1="26" x2="540" y2="100" stroke="rgba(200,140,30,0.6)" strokeWidth="2"/>
+          <line x1="420" y1="26" x2="285" y2="100" stroke="rgba(200,140,30,0.6)" strokeWidth="2"/>
+          {/* Another building */}
+          <rect x="560" y="200" width="160" height="500" fill="rgba(50,35,10,0.6)" rx="2"/>
+          {[210,255,300,345,390,435,480,525].map((y,i) => <rect key={i} x="560" y={y} width="160" height="2" fill="rgba(160,100,20,0.5)"/>)}
+          <rect x="560" y="200" width="14" height="500" fill="rgba(160,100,20,0.6)"/>
+          <rect x="705" y="200" width="14" height="500" fill="rgba(160,100,20,0.6)"/>
+          {/* Ground */}
+          <rect x="0" y="680" width="960" height="60" fill="rgba(30,20,5,0.8)"/>
+          {/* Helmet/equipment silhouette */}
+          <ellipse cx="200" cy="695" rx="70" ry="30" fill="rgba(240,240,240,0.15)"/>
+          {/* Blueprint rolls */}
+          <ellipse cx="500" cy="698" rx="90" ry="18" fill="rgba(200,200,220,0.12)"/>
+          <ellipse cx="520" cy="695" rx="60" ry="14" fill="rgba(200,200,220,0.15)"/>
         </svg>
+
+        {/* Top left: logo + title */}
+        <div style={{ position:'relative', zIndex:10, padding:'32px 40px', display:'flex', alignItems:'center', gap:14 }}>
+          <div style={{ width:44, height:44, borderRadius:10, background:'rgba(233,115,22,0.2)', border:'1.5px solid rgba(233,115,22,0.5)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e97316" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+          <div>
+            <div style={{ fontSize:16, fontWeight:800, color:'#fff', letterSpacing:'-0.01em' }}>Construction Project</div>
+            <div style={{ fontSize:12, color:'rgba(255,255,255,0.6)', fontWeight:400 }}>Management System</div>
+          </div>
+        </div>
+
+        {/* Center headline */}
+        <div style={{ position:'relative', zIndex:10, padding:'0 40px 0', flex:1, display:'flex', flexDirection:'column', justifyContent:'center' }}>
+          <div style={{ fontSize:14, color:'rgba(233,115,22,0.9)', fontWeight:600, letterSpacing:'0.05em', textTransform:'uppercase', marginBottom:16, display:'flex', alignItems:'center', gap:8 }}>
+            <div style={{ width:32, height:2, background:'#e97316' }}></div>
+            Enterprise Platform
+          </div>
+          <h1 style={{ fontSize:42, fontWeight:800, color:'#fff', lineHeight:1.15, letterSpacing:'-0.02em', marginBottom:16 }}>
+            Plan. Build. Manage.<br/>
+            <span style={{ color:'#e97316' }}>Deliver Excellence.</span>
+          </h1>
+          <p style={{ fontSize:15, color:'rgba(255,255,255,0.65)', lineHeight:1.6, maxWidth:380 }}>
+            Streamline your construction projects<br/>from planning to completion.
+          </p>
+        </div>
+
+        {/* Bottom: feature icons */}
+        <div style={{ position:'relative', zIndex:10, padding:'32px 40px', display:'flex', gap:32 }}>
+          {[
+            { icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>, label:'Project', sub:'Planning' },
+            { icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>, label:'Progress', sub:'Tracking' },
+            { icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>, label:'Team', sub:'Collaboration' },
+            { icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, label:'Quality', sub:'Control' },
+          ].map((item, i) => (
+            <div key={i} style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <div style={{ color:'rgba(255,255,255,0.6)' }}>{item.icon}</div>
+              <div>
+                <div style={{ fontSize:12, fontWeight:600, color:'#fff' }}>{item.label}</div>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>{item.sub}</div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* ── Right panel: login card ── */}
-      <div className="login-panel">
-        <div className="login-card-new">
+      {/* ── Right: Login form panel ── */}
+      <div style={{ width:440, minWidth:380, background:'#fff', display:'flex', alignItems:'center', justifyContent:'center', padding:'40px 40px', boxShadow:'-8px 0 40px rgba(0,0,0,0.2)', position:'relative', zIndex:10 }}>
+        {/* Faint construction grid in background */}
+        <div style={{ position:'absolute', inset:0, opacity:0.04, backgroundImage:'repeating-linear-gradient(0deg,#888 0,#888 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,#888 0,#888 1px,transparent 1px,transparent 40px)', zIndex:0 }} />
 
-          {/* Company logo area */}
-          <div className="login-logo-area">
-            <div className="login-logo-placeholder">
-              <span style={{ fontSize: 32 }}>🏗️</span>
-              <div style={{ lineHeight: 1.3 }}>
-                <div style={{ fontSize: 11, color: '#6b7280', letterSpacing: '0.04em', direction:'rtl' }}>شعار الشركة</div>
-                <div style={{ fontSize: 11, color: '#9ca3af', letterSpacing: '0.04em' }}>Company Logo</div>
+        <div style={{ width:'100%', maxWidth:360, position:'relative', zIndex:1 }}>
+          {/* Company logo */}
+          <div style={{ display:'flex', justifyContent:'center', marginBottom:32 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 20px', border:'1px solid #f0e8d8', borderRadius:12, background:'#fffaf5' }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#e97316" strokeWidth="1.5"><path d="M2 20h20M4 20V10L12 4l8 6v10"/><path d="M10 20v-6h4v6"/><path d="M9 10h.01M15 10h.01"/></svg>
+              <div>
+                <div style={{ fontSize:13, fontWeight:700, color:'#1a0e00', direction:'rtl' }}>شعار الشركة</div>
+                <div style={{ fontSize:11, color:'#9ca3af' }}>Company Logo</div>
               </div>
             </div>
           </div>
 
-          <h2 className="login-welcome">Welcome Back !</h2>
+          <h2 style={{ fontSize:24, fontWeight:800, color:'#111827', textAlign:'center', marginBottom:6, letterSpacing:'-0.02em' }}>Welcome Back!</h2>
+          <p style={{ fontSize:13, color:'#9ca3af', textAlign:'center', marginBottom:28 }}>Sign in to continue to your account</p>
 
           {error && (
-            <div className="login-err-box">⚠ {error}</div>
+            <div style={{ background:'#fef2f2', border:'1px solid #fca5a5', color:'#dc2626', borderRadius:8, padding:'10px 14px', fontSize:13, marginBottom:16, display:'flex', alignItems:'center', gap:6 }}>
+              ⚠ {error}
+            </div>
           )}
 
           <form onSubmit={handleSubmit}>
             {/* Username */}
-            <div className="login-field">
-              <label className="login-label">{t.username}</label>
-              <div className="login-input-wrap">
-                <span className="login-field-icon">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <circle cx="12" cy="8" r="4"/>
-                    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-                  </svg>
+            <div style={{ marginBottom:18 }}>
+              <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#374151', marginBottom:7 }}>{t.username}</label>
+              <div style={{ position:'relative', display:'flex', alignItems:'center' }}>
+                <span style={{ position:'absolute', left:12, color:'#9ca3af', display:'flex', pointerEvents:'none' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </span>
                 <input
-                  className="login-input-new"
-                  type="text"
+                  style={{ width:'100%', padding:'11px 12px 11px 40px', border:'1.5px solid #d1d5db', borderRadius:10, fontSize:14, fontFamily:'inherit', color:'#111827', background:'#fff', outline:'none', boxSizing:'border-box', transition:'border-color 0.15s' }}
                   value={form.username}
-                  onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
-                  required
-                  autoFocus
+                  onChange={e => setForm(f => ({...f, username: e.target.value}))}
+                  placeholder="Enter username"
                   autoComplete="username"
+                  onFocus={e => e.target.style.borderColor='#e97316'}
+                  onBlur={e => e.target.style.borderColor='#d1d5db'}
                 />
               </div>
             </div>
 
             {/* Password */}
-            <div className="login-field">
-              <label className="login-label">{t.password}</label>
-              <div className="login-input-wrap">
-                <span className="login-field-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <rect x="3" y="11" width="18" height="11" rx="2"/>
-                    <path d="M7 11V7a5 5 0 0110 0v4"/>
-                  </svg>
+            <div style={{ marginBottom:16 }}>
+              <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#374151', marginBottom:7 }}>{t.password}</label>
+              <div style={{ position:'relative', display:'flex', alignItems:'center' }}>
+                <span style={{ position:'absolute', left:12, color:'#9ca3af', display:'flex', pointerEvents:'none' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                 </span>
                 <input
-                  className="login-input-new"
+                  style={{ width:'100%', padding:'11px 40px 11px 40px', border:'1.5px solid #d1d5db', borderRadius:10, fontSize:14, fontFamily:'inherit', color:'#111827', background:'#fff', outline:'none', boxSizing:'border-box', transition:'border-color 0.15s' }}
                   type={showPw ? 'text' : 'password'}
                   value={form.password}
-                  onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                  required
+                  onChange={e => setForm(f => ({...f, password: e.target.value}))}
+                  placeholder="Enter password"
                   autoComplete="current-password"
-                  style={{ paddingRight: 40 }}
+                  onFocus={e => e.target.style.borderColor='#e97316'}
+                  onBlur={e => e.target.style.borderColor='#d1d5db'}
                 />
-                <button type="button" className="login-pw-eye" onClick={() => setShowPw(p => !p)} tabIndex={-1}>
+                <button type="button" onClick={() => setShowPw(p => !p)}
+                  style={{ position:'absolute', right:10, background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:4, display:'flex', alignItems:'center' }}>
                   {showPw
-                    ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></svg>
-                    : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                    : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                   }
                 </button>
               </div>
             </div>
 
-            <button type="submit" className="login-submit-btn" disabled={loading}>
+            {/* Remember me + forgot */}
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
+              <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', fontSize:13, color:'#374151' }}>
+                <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)}
+                  style={{ width:15, height:15, accentColor:'#e97316', cursor:'pointer' }} />
+                Remember me
+              </label>
+              <span style={{ fontSize:13, color:'#e97316', fontWeight:500, cursor:'pointer' }}>Forgot Password?</span>
+            </div>
+
+            {/* Submit */}
+            <button type="submit" disabled={loading}
+              style={{ width:'100%', padding:'13px', background:'#e97316', color:'#fff', border:'none', borderRadius:24, fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:'inherit', boxShadow:'0 4px 14px rgba(233,115,22,0.4)', transition:'all 0.15s', opacity: loading ? 0.65 : 1 }}>
               {loading ? 'Signing in...' : 'Continue'}
             </button>
           </form>

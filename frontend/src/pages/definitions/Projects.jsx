@@ -48,7 +48,7 @@ function KpiCards({ projects }) {
   return (
     <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16, marginBottom:24 }}>
       {cards.map(card => (
-        <div key={card.label} style={{ background:'#fff', border:'1px solid #f0f0f0', borderRadius:16, padding:'22px 22px 0', position:'relative', overflow:'hidden', minHeight:150 }}>
+        <div key={card.label} style={{ background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:16, padding:'22px 22px 0', position:'relative', overflow:'hidden', minHeight:150 }}>
           <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:12 }}>
             <div style={{ width:52, height:52, borderRadius:14, background:card.bg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
               {card.icon}
@@ -89,7 +89,7 @@ function ProjectViewPanel({ projects, selected, onClose }) {
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.45)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
       onClick={e => e.target===e.currentTarget && onClose()}>
-      <div style={{ background:'#fff', borderRadius:16, boxShadow:'0 24px 60px rgba(0,0,0,0.18)', width:'100%', maxWidth:640, overflow:'hidden' }}
+      <div style={{ background:'var(--card)', borderRadius:16, boxShadow:'0 24px 60px rgba(0,0,0,0.18)', width:'100%', maxWidth:640, overflow:'hidden' }}
         onClick={e => e.stopPropagation()}>
         <div style={{ background:'linear-gradient(135deg,#6d28d9 0%,#7c3aed 100%)', padding:'18px 24px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div>
@@ -113,7 +113,7 @@ function ProjectViewPanel({ projects, selected, onClose }) {
             <button onClick={onClose} style={{ background:'rgba(255,255,255,0.15)', border:'none', color:'#fff', borderRadius:8, width:30, height:30, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>✕</button>
           </div>
         </div>
-        <div style={{ background:'#f8fafc', borderBottom:'1px solid #f1f5f9', padding:'10px 24px', display:'flex', alignItems:'center', gap:10 }}>
+        <div style={{ background:'var(--card2)', borderBottom:'1px solid var(--border-light)', padding:'10px 24px', display:'flex', alignItems:'center', gap:10 }}>
           <span style={{ fontSize:11, color:'#9ca3af', fontWeight:500 }}>Status:</span>
           <span style={{ display:'inline-flex', alignItems:'center', gap:5, background:statusColor.bg, color:statusColor.color, fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:20, textTransform:'uppercase' }}>
             <span style={{ width:6, height:6, borderRadius:'50%', background:statusColor.color }}></span>
@@ -129,8 +129,8 @@ function ProjectViewPanel({ projects, selected, onClose }) {
           <Field label="Start Date" value={fmt(proj.start_date)} />
           <Field label="End Date" value={fmt(proj.end_date)} />
         </div>
-        <div style={{ padding:'14px 24px', borderTop:'1px solid #f1f5f9', display:'flex', justifyContent:'flex-end', background:'#f8fafc' }}>
-          <button onClick={onClose} style={{ display:'flex', alignItems:'center', gap:6, background:'#fff', border:'1px solid #e5e7eb', borderRadius:8, padding:'7px 16px', fontSize:13, fontWeight:500, color:'#374151', cursor:'pointer', fontFamily:'inherit' }}>✕ Close</button>
+        <div style={{ padding:'14px 24px', borderTop:'1px solid var(--border-light)', display:'flex', justifyContent:'flex-end', background:'var(--card2)' }}>
+          <button onClick={onClose} style={{ display:'flex', alignItems:'center', gap:6, background:'var(--card)', border:'1px solid var(--border)', borderRadius:8, padding:'7px 16px', fontSize:13, fontWeight:500, color:'var(--text)', cursor:'pointer', fontFamily:'inherit' }}>✕ Close</button>
         </div>
       </div>
     </div>
@@ -149,6 +149,7 @@ export default function Projects() {
   const [form,         setForm]         = useState(EMPTY);
   const [saving,       setSaving]       = useState(false);
   const [delModal,     setDelModal]     = useState(null);
+  const [selectedRows, setSelectedRows] = useState([]);
 
   const load = () => {
     setLoading(true);
@@ -206,10 +207,10 @@ export default function Projects() {
     { key:'actions', label:'Actions', style:{width:90,textAlign:'right'},
       render:r=>(
         <div style={{display:'flex',alignItems:'center',gap:6,justifyContent:'flex-end'}}>
-          <button onClick={()=>openEdit(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid #e5e7eb',background:'#fff',color:'#6b7280',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+          <button onClick={()=>openEdit(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid var(--border)',background:'var(--card)',color:'var(--text-muted)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
-          <button onClick={()=>setDelModal(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid #fecaca',background:'#fff5f5',color:'#dc2626',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+          <button onClick={()=>setDelModal(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid #fecaca',background:'var(--danger-bg)',color:'var(--danger)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
           </button>
         </div>
@@ -228,15 +229,15 @@ export default function Projects() {
           <p style={{ fontSize:12, color:'#9ca3af', marginTop:1 }}>Manage and track all your construction projects in one place.</p>
         </div>
         <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:8, background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, padding:'8px 14px', minWidth:200 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, background:'var(--card)', border:'1px solid var(--border)', borderRadius:10, padding:'8px 14px', minWidth:200 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input style={{ border:'none', outline:'none', fontSize:13, color:'#374151', background:'none', width:'100%', fontFamily:'inherit' }} placeholder="Search..." />
+            <input style={{ border:'none', outline:'none', fontSize:13, color:'var(--text)', background:'none', width:'100%', fontFamily:'inherit' }} placeholder="Search..." />
           </div>
-          <button style={{ display:'flex', alignItems:'center', gap:6, background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, padding:'8px 16px', fontSize:13, fontWeight:500, color:'#374151', cursor:'pointer', fontFamily:'inherit' }}>
+          <button style={{ display:'flex', alignItems:'center', gap:6, background:'var(--card)', border:'1px solid var(--border)', borderRadius:10, padding:'8px 16px', fontSize:13, fontWeight:500, color:'var(--text)', cursor:'pointer', fontFamily:'inherit' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
             Filter
           </button>
-          <button onClick={load} style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, padding:'8px 10px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#6b7280' }}>
+          <button onClick={load} style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:10, padding:'8px 10px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--text-muted)' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
           </button>
           <button onClick={exportCSV} style={{ display:'flex', alignItems:'center', gap:6, background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, padding:'8px 16px', fontSize:13, fontWeight:500, color:'#374151', cursor:'pointer', fontFamily:'inherit' }}>
@@ -250,6 +251,23 @@ export default function Projects() {
         </div>
       </div>
 
+      {/* View + Delete buttons above KPI — only when rows selected */}
+      {selectedRows.length > 0 && (
+        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16 }}>
+          <button
+            onClick={() => { setViewSelected([...selectedRows]); setViewOpen(true); }}
+            style={{ display:'flex', alignItems:'center', gap:6, background:'var(--accent-light)', border:'1px solid var(--accent)', borderRadius:10, padding:'8px 16px', fontSize:13, fontWeight:500, color:'var(--accent)', cursor:'pointer', fontFamily:'inherit' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            View ({selectedRows.length})
+          </button>
+          <button
+            style={{ display:'flex', alignItems:'center', gap:6, background:'var(--danger-bg)', border:'1px solid var(--danger)', borderRadius:10, padding:'8px 16px', fontSize:13, fontWeight:500, color:'var(--danger)', cursor:'pointer', fontFamily:'inherit' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+            Delete ({selectedRows.length})
+          </button>
+        </div>
+      )}
+
       {/* KPI Cards */}
       {!loading && <KpiCards projects={projects} />}
 
@@ -258,11 +276,11 @@ export default function Projects() {
         columns={columns}
         data={projects}
         loading={loading}
-        onView={(sel)=>{ if(sel.length>0){setViewSelected([...sel]);setViewOpen(true);} }}
         onExport={exportCSV}
         filterFields={FILTER_FIELDS}
         filterStorageKey="projects_filter"
         onRefresh={load}
+        onSelectionChange={setSelectedRows}
       />
 
       {viewOpen && <ProjectViewPanel projects={projects} selected={viewSelected} onClose={()=>setViewOpen(false)} />}
