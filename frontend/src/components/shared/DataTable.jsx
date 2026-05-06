@@ -201,6 +201,9 @@ export default function DataTable({
   onExport,
   onRefresh,
   onSelectionChange,
+  externalFilterOpen,
+  onExternalFilterClose,
+  onFilterApplied,
   filterFields = [],
   filterStorageKey = 'dt_filter',
   emptyText = 'No records found',
@@ -211,6 +214,7 @@ export default function DataTable({
   const [pageSize,   setPageSize]   = useState(25);
   const [selected,   setSelected]   = useState([]);
   const [filterOpen, setFilterOpen] = useState(false);
+  useEffect(() => { if (externalFilterOpen) setFilterOpen(true); }, [externalFilterOpen]);
 
   // Persistent filter — stored in sessionStorage keyed by filterStorageKey
   const [filterVals, setFilterVals] = useState(() => {
@@ -277,57 +281,6 @@ export default function DataTable({
 
   return (
     <div className="dt-wrapper">
-      {/* Toolbar */}
-      <div className="dt-toolbar">
-        <div className="dt-title-wrap">
-          {title && (
-            <>
-              <div style={{ width:24, height:24, borderRadius:5, background:'#fff3e0', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              </div>
-              <span className="dt-title">{title}</span>
-            </>
-          )}
-        </div>
-        <div className="dt-toolbar-right">
-          {/* Search */}
-          <div className="dt-search-box">
-            <span className="dt-search-icon">🔍</span>
-            <input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
-            {search && <button className="dt-search-clear" onClick={() => setSearch('')}>✕</button>}
-          </div>
-
-          {/* Filter — gray */}
-          {filterFields.length > 0 && (
-            <button className="dt-btn-gray" onClick={() => setFilterOpen(true)}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-              Filter
-              {hasActiveFilter && <span style={{ width:6, height:6, borderRadius:'50%', background:'#e97316', display:'inline-block', marginLeft:2 }} />}
-            </button>
-          )}
-
-
-
-          {/* Refresh — gray icon only */}
-          {onRefresh && (
-            <button className="dt-btn-gray" onClick={onRefresh} title="Refresh" style={{ padding:'6px 9px' }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-            </button>
-          )}
-
-          {/* Export — gray */}
-          {onExport && (
-            <button className="dt-btn-gray" onClick={onExport}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Export
-            </button>
-          )}
-
-
-
-
-        </div>
-      </div>
 
       {/* Active filter banner */}
       {hasActiveFilter && (
@@ -404,12 +357,12 @@ export default function DataTable({
       {/* Advanced Filter */}
       <AdvancedFilter
         open={filterOpen}
-        onClose={() => setFilterOpen(false)}
+        onClose={() => { setFilterOpen(false); if (onExternalFilterClose) onExternalFilterClose(); }}
         fields={filterFields}
         values={filterVals}
         onChange={(k,v) => setFilterVals(f => ({ ...f, [k]:v }))}
-        onApply={() => setFilterApplied(true)}
-        onClear={clearFilter}
+        onApply={() => { setFilterApplied(true); if (onFilterApplied) onFilterApplied(true); }}
+        onClear={() => { clearFilter(); if (onFilterApplied) onFilterApplied(false); }}
         storageKey={filterStorageKey}
       />
     </div>
