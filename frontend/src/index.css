@@ -1095,12 +1095,24 @@ thead th.dt-col-name { border-bottom: 2px solid #f97316; color: #e65100; }
 }
 .pj-act-more:hover { border-color: #d1d5db; color: #374151; }
 
-/* ── Projects table light blue header ── */
-.dt-wrapper thead tr { background: #eff6ff; }
+/* ── Projects table header ── */
+.dt-wrapper thead tr { background: #f0f7ff; }
 .dt-wrapper thead th {
-  background: #eff6ff;
-  color: #1d4ed8;
-  border-bottom: 2px solid #bfdbfe;
+  background: #f0f7ff;
+  color: #111827;
+  font-weight: 700;
+  border-bottom: 1px solid #e0ecff;
 }
-.dt-wrapper tbody tr.dt-row-selected { background: #dbeafe !important; }
-.dt-wrapper .pg-btn.active { background: #3b82f6; border-color: #3b82f6; }
+.dt-wrapper tbody tr.dt-row-sel-purple { background: #ede9fe !important; }
+.dt-wrapper tbody tr:nth-child(odd)  { background: #fafbff; }
+.dt-wrapper tbody tr:nth-child(even) { background: #fff; }
+.dt-wrapper tbody tr:hover { background: #f3f4f6 !important; }
+.dt-wrapper .pg-btn.active { background: #7c3aed; border-color: #7c3aed; }
+
+/* ── DataTable toolbar button styles ── */
+.dt-btn-gray  { display:flex;align-items:center;gap:5px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:500;color:#374151;cursor:pointer;white-space:nowrap;font-family:inherit; }
+.dt-btn-gray:hover { border-color:#d1d5db; }
+.dt-btn-blue  { display:flex;align-items:center;gap:5px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:500;color:#1d4ed8;cursor:pointer;white-space:nowrap;font-family:inherit; }
+.dt-btn-red   { display:flex;align-items:center;gap:5px;background:#fff5f5;border:1px solid #fecaca;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:500;color:#dc2626;cursor:pointer;white-space:nowrap;font-family:inherit; }
+.dt-btn-new   { display:flex;align-items:center;gap:6px;background:#7c3aed;border:none;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:600;color:#fff;cursor:pointer;white-space:nowrap;font-family:inherit; }
+.dt-btn-new:hover { background:#6d28d9; }

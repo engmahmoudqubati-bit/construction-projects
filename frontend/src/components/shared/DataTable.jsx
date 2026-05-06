@@ -290,52 +290,50 @@ export default function DataTable({
             {search && <button className="dt-search-clear" onClick={() => setSearch('')}>✕</button>}
           </div>
 
-          {/* Filter */}
+          {/* Filter — gray */}
           {filterFields.length > 0 && (
-            <button className={`dt-fs-btn${hasActiveFilter ? ' active' : ''}`} onClick={() => setFilterOpen(true)}>
+            <button className="dt-btn-gray" onClick={() => setFilterOpen(true)}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
               Filter
               {hasActiveFilter && <span style={{ width:6, height:6, borderRadius:'50%', background:'#e97316', display:'inline-block', marginLeft:2 }} />}
             </button>
           )}
 
-          {/* View — only when rows selected */}
+          {/* View — light blue, only when rows selected */}
           {onView && selected.length > 0 && (
-            <button
-              onClick={() => onView(selected)}
-              style={{ display:'flex', alignItems:'center', gap:5, background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:8, padding:'6px 12px', fontSize:12, fontWeight:500, color:'#1d4ed8', cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>
+            <button className="dt-btn-blue" onClick={() => onView(selected)}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               View ({selected.length})
             </button>
           )}
 
-          {/* Refresh */}
+          {/* Refresh — gray icon only */}
           {onRefresh && (
-            <button className="dt-fs-btn" onClick={onRefresh} title="Refresh" style={{ padding:'0 9px' }}>
+            <button className="dt-btn-gray" onClick={onRefresh} title="Refresh" style={{ padding:'6px 9px' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
             </button>
           )}
 
-          {/* Export */}
+          {/* Export — gray */}
           {onExport && (
-            <button className="dt-fs-btn" onClick={onExport}>
+            <button className="dt-btn-gray" onClick={onExport}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Export
             </button>
           )}
 
-          {/* Delete — only when rows selected */}
+          {/* Delete — light red, only when rows selected */}
           {selected.length > 0 && (
-            <button
-              style={{ display:'flex', alignItems:'center', gap:5, background:'#fff5f5', border:'1px solid #fecaca', borderRadius:8, padding:'6px 12px', fontSize:12, fontWeight:500, color:'#dc2626', cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>
+            <button className="dt-btn-red">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
               Delete ({selected.length})
             </button>
           )}
 
-          {/* New */}
+          {/* New Project — solid blue primary */}
           {onAdd && (
-            <button onClick={onAdd} style={{ display:'flex', alignItems:'center', gap:6, background:'#fff', border:'1px solid #e5e7eb', borderRadius:8, padding:'6px 14px', fontSize:12, fontWeight:600, color:'#111827', cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>
+            <button className="dt-btn-new" onClick={onAdd}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               New Project
             </button>
           )}
@@ -384,7 +382,7 @@ export default function DataTable({
                   const rowNum = (page-1)*pageSize + i + 1;
                   const isSelected = selected.includes(id);
                   return (
-                    <tr key={id} className={isSelected ? 'dt-row-selected' : ''}>
+                    <tr key={id} className={isSelected ? 'dt-row-sel-purple' : ''}>
                       <td style={{ textAlign:'center' }}>
                         <input type="checkbox" checked={isSelected} onChange={() => toggleRow(id)}
                           style={{ accentColor:'var(--accent)', width:15, height:15, cursor:'pointer' }} />
