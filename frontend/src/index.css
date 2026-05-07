@@ -714,13 +714,6 @@ tbody td {
 /* ══════════════════════════════════════════════════════════════
    MODAL — Breadcrumb header, F10 Save
    ══════════════════════════════════════════════════════════════ */
-.modal-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--border-light);
-  background: var(--card2);
-  flex-shrink: 0;
-}
 .modal-breadcrumb {
   display: flex; align-items: center; gap: 6px; flex-direction: column;
 }
