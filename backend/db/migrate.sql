@@ -59,3 +59,6 @@ ALTER TABLE cp_inspection_transactions   ADD COLUMN IF NOT EXISTS tx_status VARC
 -- delivery:     PATCH /api/delivery/confirm
 -- installation: PATCH /api/installation/confirm
 -- inspection:   PATCH /api/inspection/confirm
+-- Add position_code and is_active to cp_position_roles
+ALTER TABLE cp_position_roles ADD COLUMN IF NOT EXISTS position_code VARCHAR(50);
+ALTER TABLE cp_position_roles ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;

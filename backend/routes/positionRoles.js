@@ -45,7 +45,7 @@ router.post('/', async (req, res) => {
   try {
     await client.query('BEGIN');
     const { rows } = await client.query(
-      'INSERT INTO cp_position_roles (name_ar, name_en) VALUES ($1,$2) RETURNING *',
+      'INSERT INTO cp_position_roles (position_code, name_ar, name_en, is_active) VALUES ($1,$2,$3,$4) RETURNING *',
       [name_ar, name_en]
     );
     await savePerms(client, rows[0].id, pages, actions, projects);

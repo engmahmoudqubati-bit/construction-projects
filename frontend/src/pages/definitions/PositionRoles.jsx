@@ -178,4 +178,24 @@ export default function PositionRoles() {
       </Modal>
     </div>
   );
+}=>toggleProject(p.id)} />
+                  {p.project_name_en}
+                </label>
+              ))}
+              {projects.length===0 && <span style={{fontSize:12,color:'var(--text-muted)'}}>No projects yet</span>}
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={!!delModal} onClose={()=>setDelModal(null)} title="Delete Position Role" parentTitle={t.positionRoles} size="sm" onSave={handleDelete} saveLabel="Delete">
+        <p>{t.confirmDelete}</p>
+        {delModal && <p style={{marginTop:8,fontWeight:700,color:'var(--danger)'}}>{delModal.name_en}</p>}
+      </Modal>
+
+      <Modal open={delSelModal} onClose={()=>setDelSelModal(false)} title={`Delete ${selectedRows.length} Roles`} parentTitle={t.positionRoles} size="sm" onSave={handleDeleteSelected} saveLabel="Delete All">
+        <p>Are you sure you want to delete <strong>{selectedRows.length}</strong> selected role(s)? This cannot be undone.</p>
+      </Modal>
+    </div>
+  );
 }
