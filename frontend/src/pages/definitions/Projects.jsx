@@ -205,9 +205,9 @@ export default function Projects() {
 
   const columns = [
     { key:'project_code', label:'Project Code', style:{width:110},
-      render:r=><span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',background:'#ede9fe',color:'#7c3aed',fontSize:12,fontWeight:700,padding:'4px 10px',borderRadius:8,minWidth:36}}>{r.project_code}</span> },
+      render:r=><span style={{fontSize:13,fontWeight:500,color:'#6b7280'}}>{r.project_code}</span> },
     { key:'project_name_en', label:'Project Name',
-      render:r=><span style={{fontSize:13,fontWeight:700,color:'#111827'}}>{r.project_name_en}</span> },
+      render:r=><span style={{fontSize:13,fontWeight:600,color:'#111827'}}>{r.project_name_en}</span> },
     { key:'client_name', label:'Client', render:r=><span style={{fontSize:13,color:'#6b7280'}}>{r.client_name||'—'}</span> },
     { key:'location', label:'Location',
       render:r=><div style={{display:'flex',alignItems:'center',gap:5,fontSize:13,color:'#6b7280'}}>{locIcon}{r.location||'—'}</div> },
