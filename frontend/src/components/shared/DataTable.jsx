@@ -217,9 +217,12 @@ export default function DataTable({
   const [pageSize,   setPageSize]   = useState(25);
   const [selected,   setSelected]   = useState([]);
   const [filterOpen, setFilterOpen] = useState(false);
-  // Open filter whenever trigger counter increments
+  const prevTrigger = useRef(0);
   useEffect(() => {
-    if (externalFilterOpen) setFilterOpen(true);
+    if (externalFilterOpen && externalFilterOpen !== prevTrigger.current) {
+      prevTrigger.current = externalFilterOpen;
+      setFilterOpen(true);
+    }
   }, [externalFilterOpen]);
 
   // Persistent filter — stored in sessionStorage keyed by filterStorageKey

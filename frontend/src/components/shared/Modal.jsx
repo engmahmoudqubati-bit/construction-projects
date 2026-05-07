@@ -1,13 +1,11 @@
 import { useEffect } from 'react';
 
-// parentTitle → "Parent Form" — appears before > in breadcrumb
-// onSave → if provided, F10 triggers it and footer shows Save button
 export default function Modal({
   open, onClose, title, parentTitle,
   size = 'md', children,
   onSave, saveLabel = 'Save',
   saving = false,
-  footer,        // fallback custom footer
+  footer,
 }) {
   useEffect(() => {
     if (!open) return;
@@ -29,20 +27,19 @@ export default function Modal({
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className={`modal modal-${size}`} onClick={e => e.stopPropagation()}>
 
-        {/* Breadcrumb header */}
+        {/* Header — matches view window exactly */}
         <div className="modal-header">
-          <div className="modal-breadcrumb">
+          <div style={{ display:'flex', flexDirection:'column', gap:3 }}>
             {parentTitle && (
-              <>
-                <span className="modal-bc-parent">{parentTitle}</span>
-                <span className="modal-bc-sep">›</span>
-              </>
+              <span style={{ fontSize:11, color:'rgba(255,255,255,0.65)', textTransform:'uppercase', letterSpacing:'0.08em', fontWeight:500 }}>
+                {parentTitle} › {title}
+              </span>
             )}
-            <span className="modal-bc-current">{title}</span>
+            <span style={{ fontSize:17, fontWeight:700, color:'#fff', letterSpacing:'-0.01em' }}>
+              {parentTitle ? title : title}
+            </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <button className="modal-close-btn" onClick={onClose} title="Close (Esc)">✕</button>
-          </div>
+          <button className="modal-close-btn" onClick={onClose} title="Close (Esc)">✕</button>
         </div>
 
         {/* Body */}
@@ -52,7 +49,7 @@ export default function Modal({
         {onSave ? (
           <div className="modal-footer">
             <button className="btn btn-secondary" onClick={onClose} disabled={saving}>
-              <span style={{ fontSize: 12 }}>✕</span> Exit
+              <span style={{ fontSize:12 }}>✕</span> Exit
             </button>
             <button className="btn btn-save" onClick={onSave} disabled={saving}>
               {saving
