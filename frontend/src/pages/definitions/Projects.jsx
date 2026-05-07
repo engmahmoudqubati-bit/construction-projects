@@ -259,9 +259,10 @@ export default function Projects() {
               <button onClick={() => setSearchQuery('')} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', fontSize:13, padding:0, lineHeight:1 }}>✕</button>
             )}
           </div>
-          <button style={{ display:'flex', alignItems:'center', gap:6, background:'var(--card)', border:'1px solid var(--border)', borderRadius:10, padding:'8px 16px', fontSize:13, fontWeight:500, color:'var(--text)', cursor:'pointer', fontFamily:'inherit' }}>
+          <button onClick={() => setFilterTrigger(t => t + 1)} style={{ display:'flex', alignItems:'center', gap:6, background: filterApplied ? 'var(--accent-light)' : 'var(--card)', border: filterApplied ? '1px solid var(--accent)' : '1px solid var(--border)', borderRadius:10, padding:'8px 16px', fontSize:13, fontWeight:500, color: filterApplied ? 'var(--accent)' : 'var(--text)', cursor:'pointer', fontFamily:'inherit' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
             Filter
+            {filterApplied && <span style={{ width:7, height:7, borderRadius:'50%', background:'#e97316', display:'inline-block', marginLeft:2 }} />}
           </button>
           <button onClick={load} style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:10, padding:'8px 10px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--text-muted)' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
