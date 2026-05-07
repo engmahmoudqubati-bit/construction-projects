@@ -745,17 +745,17 @@ tbody td {
   background: var(--danger-bg); color: var(--danger); border-color: var(--danger);
 }
 .btn-save {
-  background: #e97316; color: #fff;
+  background: #7c3aed; color: #fff;
   border: none; border-radius: var(--radius-sm);
   padding: 8px 20px; font-size: 13px; font-weight: 700;
   cursor: pointer; font-family: inherit;
   display: inline-flex; align-items: center; gap: 8px;
   transition: background var(--transition), box-shadow var(--transition);
-  box-shadow: 0 2px 8px rgba(233,115,22,0.3);
+  box-shadow: 0 2px 8px rgba(124,58,237,0.3);
 }
 .btn-save:hover:not(:disabled) {
-  background: #c96010;
-  box-shadow: 0 4px 14px rgba(233,115,22,0.4);
+  background: #6d28d9;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.4);
 }
 .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-save kbd {
