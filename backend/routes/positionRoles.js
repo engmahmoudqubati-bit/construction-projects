@@ -38,7 +38,7 @@ router.get('/:id/permissions', async (req, res) => {
 
 // Create
 router.post('/', async (req, res) => {
-  const { name_ar, name_en, pages = [], actions = [], projects = [] } = req.body;
+  const { position_code, name_ar, name_en, is_active, pages = [], actions = [], projects = [] } = req.body;
   if (!name_ar || !name_en)
     return res.status(400).json({ message: 'name_ar and name_en are required' });
   const client = await pool.connect();
@@ -46,7 +46,7 @@ router.post('/', async (req, res) => {
     await client.query('BEGIN');
     const { rows } = await client.query(
       'INSERT INTO cp_position_roles (position_code, name_ar, name_en, is_active) VALUES ($1,$2,$3,$4) RETURNING *',
-      [name_ar, name_en]
+      [position_code||null, name_ar, name_en, is_active!==false]
     );
     await savePerms(client, rows[0].id, pages, actions, projects);
     await client.query('COMMIT');
@@ -59,13 +59,13 @@ router.post('/', async (req, res) => {
 
 // Update
 router.put('/:id', async (req, res) => {
-  const { name_ar, name_en, pages = [], actions = [], projects = [] } = req.body;
+  const { position_code, name_ar, name_en, is_active, pages = [], actions = [], projects = [] } = req.body;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const { rows } = await client.query(
-      'UPDATE cp_position_roles SET name_ar=$1,name_en=$2 WHERE id=$3 RETURNING *',
-      [name_ar, name_en, req.params.id]
+      'UPDATE cp_position_roles SET position_code=$1, name_ar=$2, name_en=$3, is_active=$4 WHERE id=$5 RETURNING *',
+      [position_code||null, name_ar, name_en, is_active!==false, req.params.id]
     );
     if (!rows[0]) { await client.query('ROLLBACK'); return res.status(404).json({ message: 'Not found' }); }
     await client.query('DELETE FROM cp_position_role_permissions WHERE role_id=$1', [req.params.id]);
