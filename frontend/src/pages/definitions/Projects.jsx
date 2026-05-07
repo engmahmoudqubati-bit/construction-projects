@@ -151,7 +151,7 @@ export default function Projects() {
   const [delModal,     setDelModal]     = useState(null);
   const [selectedRows,  setSelectedRows]  = useState([]);
   const [searchQuery,   setSearchQuery]   = useState('');
-  const [filterOpen,    setFilterOpen]    = useState(false);
+  const [filterTrigger, setFilterTrigger] = useState(0); // increment to open filter
   const [filterApplied, setFilterApplied] = useState(() => {
     try { const v = JSON.parse(sessionStorage.getItem('filter_projects_filter') || '{}'); return Object.values(v).some(x => x); } catch { return false; }
   });
@@ -306,8 +306,8 @@ export default function Projects() {
         filterStorageKey="projects_filter"
         onRefresh={load}
         onSelectionChange={setSelectedRows}
-        externalFilterOpen={filterOpen}
-        onExternalFilterClose={() => setFilterOpen(false)}
+        externalFilterOpen={filterTrigger}
+        onExternalFilterClose={() => {}}
         onFilterApplied={setFilterApplied}
         externalSearch={searchQuery}
       />
