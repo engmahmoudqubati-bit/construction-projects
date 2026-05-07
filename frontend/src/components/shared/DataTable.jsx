@@ -204,12 +204,15 @@ export default function DataTable({
   externalFilterOpen,
   onExternalFilterClose,
   onFilterApplied,
+  externalSearch,
   filterFields = [],
   filterStorageKey = 'dt_filter',
   emptyText = 'No records found',
   rowKey = 'id',
 }) {
-  const [search,     setSearch]     = useState('');
+  const [internalSearch, setInternalSearch] = useState('');
+  const search = externalSearch !== undefined ? externalSearch : internalSearch;
+  const setSearch = externalSearch !== undefined ? () => {} : setInternalSearch;
   const [page,       setPage]       = useState(1);
   const [pageSize,   setPageSize]   = useState(25);
   const [selected,   setSelected]   = useState([]);

@@ -150,6 +150,7 @@ export default function Projects() {
   const [saving,       setSaving]       = useState(false);
   const [delModal,     setDelModal]     = useState(null);
   const [selectedRows,  setSelectedRows]  = useState([]);
+  const [searchQuery,   setSearchQuery]   = useState('');
   const [filterOpen,    setFilterOpen]    = useState(false);
   const [filterApplied, setFilterApplied] = useState(() => {
     try { const v = JSON.parse(sessionStorage.getItem('filter_projects_filter') || '{}'); return Object.values(v).some(x => x); } catch { return false; }
@@ -178,6 +179,19 @@ export default function Projects() {
   async function handleDelete() {
     try { await api.deleteProject(delModal.id); setProjects(ps=>ps.filter(x=>x.id!==delModal.id)); toast(t.deleteSuccess); setDelModal(null); }
     catch(err) { toast(err.message,'error'); }
+  }
+
+  const [delSelectedModal, setDelSelectedModal] = useState(false);
+  async function handleDeleteSelected() {
+    let failed = 0;
+    for (const id of selectedRows) {
+      try { await api.deleteProject(id); }
+      catch { failed++; }
+    }
+    setProjects(ps => ps.filter(x => !selectedRows.includes(x.id)));
+    setSelectedRows([]);
+    setDelSelectedModal(false);
+    toast(failed > 0 ? `Deleted with ${failed} error(s)` : t.deleteSuccess);
   }
   function exportCSV() {
     const rows = projects.map(p=>[p.project_code,p.project_name_en,p.client_name||'',p.location||'',p.start_date?p.start_date.slice(0,10):'',p.end_date?p.end_date.slice(0,10):'',p.status].join(','));
@@ -233,9 +247,17 @@ export default function Projects() {
           <p style={{ fontSize:12, color:'#9ca3af', marginTop:1 }}>Manage and track all your construction projects in one place.</p>
         </div>
         <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:8, background:'var(--card)', border:'1px solid var(--border)', borderRadius:10, padding:'8px 14px', minWidth:200 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, background:'var(--card)', border:'1px solid var(--border)', borderRadius:10, padding:'8px 14px', minWidth:220 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input style={{ border:'none', outline:'none', fontSize:13, color:'var(--text)', background:'none', width:'100%', fontFamily:'inherit' }} placeholder="Search..." />
+            <input
+              style={{ border:'none', outline:'none', fontSize:13, color:'var(--text)', background:'none', width:'100%', fontFamily:'inherit' }}
+              placeholder="Search projects..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', fontSize:13, padding:0, lineHeight:1 }}>✕</button>
+            )}
           </div>
           <button style={{ display:'flex', alignItems:'center', gap:6, background:'var(--card)', border:'1px solid var(--border)', borderRadius:10, padding:'8px 16px', fontSize:13, fontWeight:500, color:'var(--text)', cursor:'pointer', fontFamily:'inherit' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
@@ -258,6 +280,7 @@ export default function Projects() {
           )}
           {selectedRows.length > 0 && (
             <button
+              onClick={() => setDelSelectedModal(true)}
               style={{ display:'flex', alignItems:'center', gap:6, background:'var(--danger-bg)', border:'1px solid var(--danger)', borderRadius:10, padding:'8px 16px', fontSize:13, fontWeight:500, color:'var(--danger)', cursor:'pointer', fontFamily:'inherit' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
               Delete ({selectedRows.length})
@@ -286,6 +309,7 @@ export default function Projects() {
         externalFilterOpen={filterOpen}
         onExternalFilterClose={() => setFilterOpen(false)}
         onFilterApplied={setFilterApplied}
+        externalSearch={searchQuery}
       />
 
       {viewOpen && <ProjectViewPanel projects={projects} selected={viewSelected} onClose={()=>setViewOpen(false)} />}
@@ -312,6 +336,10 @@ export default function Projects() {
       <Modal open={!!delModal} onClose={()=>setDelModal(null)} title="Delete Project" parentTitle={t.projects} size="sm" onSave={handleDelete} saveLabel="Delete">
         <p>{t.confirmDelete}</p>
         {delModal && <p style={{marginTop:8,fontWeight:700,color:'var(--danger)'}}>{delModal.project_name_en}</p>}
+      </Modal>
+
+      <Modal open={delSelectedModal} onClose={()=>setDelSelectedModal(false)} title={`Delete ${selectedRows.length} Projects`} parentTitle={t.projects} size="sm" onSave={handleDeleteSelected} saveLabel="Delete All">
+        <p>Are you sure you want to delete <strong>{selectedRows.length}</strong> selected project(s)? This action cannot be undone.</p>
       </Modal>
     </div>
   );
