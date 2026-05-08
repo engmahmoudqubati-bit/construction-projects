@@ -12,10 +12,12 @@ router.get('/', async (_req, res) => {
       `SELECT i.*,
               c.classification_name, c.classification_code AS class_code,
               p.classification_name AS parent_classification_name,
-              p.classification_code AS parent_code
+              p.classification_code AS parent_code,
+              m.unit_code, m.desc_en AS unit_desc_en
        FROM cp_items i
        LEFT JOIN cp_item_classifications c ON c.id = i.classification_id
        LEFT JOIN cp_item_classifications p ON p.id = c.parent_id
+       LEFT JOIN cp_measurements m ON m.id = i.measurement_id
        ORDER BY p.classification_name NULLS FIRST, c.classification_name, i.item_name`
     );
     res.json(rows);
@@ -50,7 +52,7 @@ router.get('/next-code/:classificationId', async (req, res) => {
 });
 
 router.post('/', requirePage('definitions_items'), role('admin','project_manager'), async (req, res) => {
-  const { item_code, item_name, classification_id, unit_of_measure } = req.body;
+  const { item_code, item_name, item_name_ar, classification_id, unit_of_measure, measurement_id } = req.body;
   if (!item_name) return res.status(400).json({ message: 'item_name is required' });
 
   let finalCode = item_code;
@@ -80,9 +82,9 @@ router.post('/', requirePage('definitions_items'), role('admin','project_manager
 
   try {
     const { rows } = await pool.query(
-      `INSERT INTO cp_items (item_code,item_name,classification_id,unit_of_measure)
-       VALUES ($1,$2,$3,$4) RETURNING *`,
-      [finalCode, item_name, classification_id||null, unit_of_measure||null]
+      `INSERT INTO cp_items (item_code,item_name,item_name_ar,classification_id,unit_of_measure,measurement_id)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [finalCode, item_name, item_name_ar||null, classification_id||null, unit_of_measure||null, measurement_id||null]
     );
     res.status(201).json(rows[0]);
   } catch (err) {
@@ -92,12 +94,12 @@ router.post('/', requirePage('definitions_items'), role('admin','project_manager
 });
 
 router.put('/:id', requirePage('definitions_items'), role('admin','project_manager'), async (req, res) => {
-  const { item_code, item_name, classification_id, unit_of_measure, is_active } = req.body;
+  const { item_code, item_name, item_name_ar, classification_id, unit_of_measure, measurement_id, is_active } = req.body;
   try {
     const { rows } = await pool.query(
-      `UPDATE cp_items SET item_code=$1,item_name=$2,classification_id=$3,unit_of_measure=$4,is_active=$5
-       WHERE id=$6 RETURNING *`,
-      [item_code, item_name, classification_id||null, unit_of_measure||null, is_active??true, req.params.id]
+      `UPDATE cp_items SET item_code=$1,item_name=$2,item_name_ar=$3,classification_id=$4,unit_of_measure=$5,measurement_id=$6,is_active=$7
+       WHERE id=$8 RETURNING *`,
+      [item_code, item_name, item_name_ar||null, classification_id||null, unit_of_measure||null, measurement_id||null, is_active??true, req.params.id]
     );
     if (!rows[0]) return res.status(404).json({ message: 'Item not found' });
     res.json(rows[0]);

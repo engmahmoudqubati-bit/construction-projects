@@ -10,6 +10,7 @@ import Users              from './pages/definitions/Users';
 import Projects           from './pages/definitions/Projects';
 import ItemClassifications from './pages/definitions/ItemClassifications';
 import Items              from './pages/definitions/Items';
+import Measurements       from './pages/definitions/Measurements';
 import Companies          from './pages/definitions/Companies';
 import PositionRoles      from './pages/definitions/PositionRoles';
 import Planning           from './pages/planning/Planning';

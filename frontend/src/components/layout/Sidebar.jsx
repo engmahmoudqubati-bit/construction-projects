@@ -12,6 +12,7 @@ const NAV = [
   { label: t.projects,           icon: '🏗️', path: '/definitions/projects',        pageKey: 'definitions_projects' },
   { label: t.itemClassifications,icon: '🗂️', path: '/definitions/classifications',  pageKey: 'definitions_classifications' },
   { label: t.items,              icon: '📦', path: '/definitions/items',            pageKey: 'definitions_items' },
+  { label: 'Measurements',       icon: '📐', path: '/definitions/measurements',      pageKey: 'definitions_items' },
 
   { section: t.planning },
   { label: t.planning,   icon: '📋', path: '/planning',                    pageKey: 'planning' },

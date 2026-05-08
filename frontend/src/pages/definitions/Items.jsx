@@ -3,14 +3,17 @@ import { api } from '../../api/client';
 import DataTable from '../../components/shared/DataTable';
 import Modal     from '../../components/shared/Modal';
 import { useToast } from '../../components/shared/Toast';
+import { useAuth } from '../../context/AuthContext';
 import t from '../../lang';
 
-const EMPTY = { item_code:'', item_name:'', item_name_ar:'', classification_id:'', unit_of_measure:'', is_active:true };
+const EMPTY = { item_code:'', item_name:'', item_name_ar:'', classification_id:'', measurement_id:'', unit_of_measure:'', is_active:true };
 
 export default function Items() {
   const toast = useToast();
+  const { canAction } = useAuth();
   const [items,        setItems]        = useState([]);
   const [classes,      setClasses]      = useState([]);
+  const [measurements, setMeasurements] = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [modal,        setModal]        = useState(false);
   const [editing,      setEditing]      = useState(null);
@@ -25,8 +28,8 @@ export default function Items() {
 
   const load = () => {
     setLoading(true);
-    Promise.all([api.getItems(), api.getClassifications()])
-      .then(([i,c]) => { setItems(i); setClasses(c); })
+    Promise.all([api.getItems(), api.getClassifications(), api.getMeasurements()])
+      .then(([i,cl,m]) => { setItems(i); setClasses(cl); setMeasurements(m); })
       .catch(() => toast(t.errorOccurred,'error'))
       .finally(() => setLoading(false));
   };
@@ -41,7 +44,7 @@ export default function Items() {
 
   function openAdd()   { setForm(EMPTY); setEditing(null); setModal(true); }
   function openEdit(i) {
-    setForm({ item_code:i.item_code, item_name:i.item_name, item_name_ar:i.item_name_ar||'', classification_id:i.classification_id||'', unit_of_measure:i.unit_of_measure||'', is_active:i.is_active!==false });
+    setForm({ item_code:i.item_code, item_name:i.item_name, item_name_ar:i.item_name_ar||'', classification_id:i.classification_id||'', measurement_id:i.measurement_id||'', unit_of_measure:i.unit_of_measure||'', is_active:i.is_active!==false });
     setEditing(i); setModal(true);
   }
 
@@ -49,7 +52,7 @@ export default function Items() {
     if (!form.item_code||!form.item_name) return toast('Code and name are required','error');
     setSaving(true);
     try {
-      const payload = { ...form, classification_id:form.classification_id||null, is_active:form.is_active!==false };
+      const payload = { ...form, classification_id:form.classification_id||null, measurement_id:form.measurement_id||null, is_active:form.is_active!==false };
       if (editing) {
         const u = await api.updateItem(editing.id, payload);
         setItems(is => is.map(x => x.id===editing.id ? u : x));
@@ -67,6 +70,14 @@ export default function Items() {
     catch(err) { toast(err.message,'error'); }
   }
 
+  async function handleToggleActive(item) {
+    try {
+      const u = await api.updateItem(item.id, { ...item, is_active: !item.is_active });
+      setItems(is => is.map(x => x.id===item.id ? {...x, is_active:!item.is_active} : x));
+      toast('Updated');
+    } catch(err) { toast(err.message,'error'); }
+  }
+
   async function handleDeleteSelected() {
     for (const id of selectedRows) { try { await api.deleteItem(id); } catch {} }
     setItems(is => is.filter(x => !selectedRows.includes(x.id)));
@@ -79,10 +90,14 @@ export default function Items() {
     const a = document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='items.csv'; a.click();
   }
 
-  // Build classification dropdown — grouped by level
+  // Build classification dropdown — show only leaf nodes
   const L1 = classes.filter(c => !c.parent_id);
   const L2 = classes.filter(c => c.parent_id && !c.grandparent_id);
   const L3 = classes.filter(c => c.grandparent_id);
+  // Leaf = node with no children
+  const allIds = new Set(classes.map(c => c.id));
+  const parentIds = new Set(classes.filter(c => c.parent_id).map(c => c.parent_id));
+  const leafNodes = classes.filter(c => !parentIds.has(c.id));
 
   const columns = [
     { key:'item_code', label:'Code', style:{width:100},
@@ -97,7 +112,7 @@ export default function Items() {
     { key:'classification_name', label:'Classification',
       render: r => <span style={{fontSize:12,color:'#6b7280'}}>{r.classification_name||'—'}</span> },
     { key:'unit_of_measure', label:'Unit',
-      render: r => <span style={{fontSize:12,color:'#6b7280'}}>{r.unit_of_measure||'—'}</span> },
+      render: r => <span style={{fontSize:12,color:'#6b7280'}}>{r.unit_code||r.unit_of_measure||'—'}</span> },
     { key:'is_active', label:'Status', style:{width:90},
       render: r => <span style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:11,fontWeight:600,padding:'3px 10px',borderRadius:20,background:r.is_active!==false?'#dcfce7':'#fee2e2',color:r.is_active!==false?'#16a34a':'#dc2626'}}>
         <span style={{width:6,height:6,borderRadius:'50%',background:'currentColor'}}></span>
@@ -106,10 +121,10 @@ export default function Items() {
     { key:'actions', label:'Actions', style:{width:90,textAlign:'right'},
       render: r => (
         <div style={{display:'flex',alignItems:'center',gap:6,justifyContent:'flex-end'}}>
-          <button onClick={()=>openEdit(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid var(--border)',background:'var(--card)',color:'var(--text-muted)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+          <button onClick={()=>canAction('can_edit') && openEdit(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid var(--border)',background:'var(--card)',color:canAction('can_edit')?'var(--text-muted)':'#d1d5db',display:'flex',alignItems:'center',justifyContent:'center',cursor:canAction('can_edit')?'pointer':'not-allowed',opacity:canAction('can_edit')?1:0.5}}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
-          <button onClick={()=>setDelModal(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid #fecaca',background:'var(--danger-bg)',color:'var(--danger)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+          <button onClick={()=>canAction('can_delete') && setDelModal(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid #fecaca',background:'var(--danger-bg)',color:'var(--danger)',display:'flex',alignItems:'center',justifyContent:'center',cursor:canAction('can_delete')?'pointer':'not-allowed',opacity:canAction('can_delete')?1:0.4}}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
           </button>
         </div>
@@ -148,7 +163,7 @@ export default function Items() {
               Delete ({selectedRows.length})
             </button>
           )}
-          <button onClick={openAdd} style={{display:'flex',alignItems:'center',gap:7,background:'#7c3aed',border:'none',borderRadius:10,padding:'9px 18px',fontSize:13,fontWeight:600,color:'#fff',cursor:'pointer',fontFamily:'inherit'}}>
+          {canAction('can_create') && <button onClick={openAdd} style={{display:'flex',alignItems:'center',gap:7,background:'#7c3aed',border:'none',borderRadius:10,padding:'9px 18px',fontSize:13,fontWeight:600,color:'#fff',cursor:'pointer',fontFamily:'inherit'}}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             New Item
           </button>
@@ -190,28 +205,20 @@ export default function Items() {
             <label className="form-label">Classification</label>
             <select className="form-control" value={form.classification_id} onChange={e=>setForm(f=>({...f,classification_id:e.target.value}))}>
               <option value="">— None —</option>
-              {L1.map(l1 => (
-                <optgroup key={l1.id} label={l1.classification_name}>
-                  {L2.filter(l2=>l2.parent_id===l1.id).length===0
-                    ? <option value={l1.id}>{l1.classification_name}</option>
-                    : L2.filter(l2=>l2.parent_id===l1.id).map(l2=>(
-                        <optgroup key={l2.id} label={`  └ ${l2.classification_name}`}>
-                          {L3.filter(l3=>l3.parent_id===l2.id).length===0
-                            ? <option value={l2.id}>{l2.classification_name}</option>
-                            : L3.filter(l3=>l3.parent_id===l2.id).map(l3=>(
-                                <option key={l3.id} value={l3.id}>{'    └ '}{l3.classification_name}</option>
-                              ))
-                          }
-                        </optgroup>
-                      ))
-                  }
-                </optgroup>
-              ))}
+              {leafNodes.map(leaf => {
+                const path = [leaf.grandparent_name, leaf.parent_name, leaf.classification_name].filter(Boolean);
+                return <option key={leaf.id} value={leaf.id}>{path.join(' › ')}</option>;
+              })}
             </select>
           </div>
           <div className="form-group">
             <label className="form-label">Unit of Measure</label>
-            <input className="form-control" value={form.unit_of_measure} placeholder="e.g. m², pcs, kg" onChange={e=>setForm(f=>({...f,unit_of_measure:e.target.value}))} />
+            <select className="form-control" value={form.measurement_id} onChange={e=>setForm(f=>({...f,measurement_id:e.target.value}))}>
+              <option value="">— Select Unit —</option>
+              {measurements.filter(m=>m.is_active!==false).map(m=>(
+                <option key={m.id} value={m.id}>{m.unit_code} — {m.desc_en}</option>
+              ))}
+            </select>
           </div>
         </div>
       </Modal>

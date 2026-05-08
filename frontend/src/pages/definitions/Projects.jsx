@@ -4,6 +4,7 @@ import DataTable   from '../../components/shared/DataTable';
 import Modal       from '../../components/shared/Modal';
 import StatusBadge from '../../components/shared/StatusBadge';
 import { useToast } from '../../components/shared/Toast';
+import { useAuth } from '../../context/AuthContext';
 import t from '../../lang';
 
 const STATUSES = ['active','completed','on_hold','cancelled'];
@@ -140,6 +141,7 @@ function ProjectViewPanel({ projects, selected, onClose }) {
 // ── Main ─────────────────────────────────────────────────────────
 export default function Projects() {
   const toast = useToast();
+  const { canAction } = useAuth();
   const [projects,     setProjects]     = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [modal,        setModal]        = useState(false);
@@ -225,10 +227,10 @@ export default function Projects() {
     { key:'actions', label:'Actions', style:{width:90,textAlign:'right'},
       render:r=>(
         <div style={{display:'flex',alignItems:'center',gap:6,justifyContent:'flex-end'}}>
-          <button onClick={()=>openEdit(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid var(--border)',background:'var(--card)',color:'var(--text-muted)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+          <button onClick={()=>canAction('can_edit') && openEdit(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid var(--border)',background:'var(--card)',color:canAction('can_edit')?'var(--text-muted)':'#d1d5db',display:'flex',alignItems:'center',justifyContent:'center',cursor:canAction('can_edit')?'pointer':'not-allowed',opacity:canAction('can_edit')?1:0.5}}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
-          <button onClick={()=>setDelModal(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid #fecaca',background:'var(--danger-bg)',color:'var(--danger)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+          <button onClick={()=>canAction('can_delete') && setDelModal(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid #fecaca',background:'var(--danger-bg)',color:'var(--danger)',display:'flex',alignItems:'center',justifyContent:'center',cursor:canAction('can_delete')?'pointer':'not-allowed',opacity:canAction('can_delete')?1:0.4}}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
           </button>
         </div>

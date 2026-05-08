@@ -3,6 +3,7 @@ import { api } from '../../api/client';
 import DataTable from '../../components/shared/DataTable';
 import Modal     from '../../components/shared/Modal';
 import { useToast } from '../../components/shared/Toast';
+import { useAuth } from '../../context/AuthContext';
 import t from '../../lang';
 
 const FILTER_FIELDS = [
@@ -37,6 +38,7 @@ function buildTree(list) {
 
 export default function ItemClassifications() {
   const toast = useToast();
+  const { canAction } = useAuth();
   const [list,         setList]         = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [modal,        setModal]        = useState(false);
@@ -49,6 +51,7 @@ export default function ItemClassifications() {
   const [filterApplied,setFilterApplied]= useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const [delSelModal,  setDelSelModal]  = useState(false);
+  const [viewModal,    setViewModal]    = useState(null);
 
   function load() {
     setLoading(true);
@@ -89,6 +92,14 @@ export default function ItemClassifications() {
   async function handleDelete() {
     try { await api.deleteClassification(delModal.id); setList(l=>l.filter(x=>x.id!==delModal.id)); toast(t.deleteSuccess); setDelModal(null); }
     catch(err) { toast(err.message,'error'); }
+  }
+
+  async function handleToggleActive(item) {
+    try {
+      await api.updateClassification(item.id, { ...item, is_active: !item.is_active });
+      setList(l => l.map(x => x.id===item.id ? {...x, is_active:!item.is_active} : x));
+      toast('Updated');
+    } catch(err) { toast(err.message,'error'); }
   }
 
   async function handleDeleteSelected() {
@@ -133,10 +144,10 @@ export default function ItemClassifications() {
     { key:'actions', label:'Actions', style:{width:90,textAlign:'right'},
       render: r => (
         <div style={{display:'flex',alignItems:'center',gap:6,justifyContent:'flex-end'}}>
-          <button onClick={()=>openEdit(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid var(--border)',background:'var(--card)',color:'var(--text-muted)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+          <button onClick={()=>canAction('can_edit') && openEdit(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid var(--border)',background:'var(--card)',color:canAction('can_edit')?'var(--text-muted)':'#d1d5db',display:'flex',alignItems:'center',justifyContent:'center',cursor:canAction('can_edit')?'pointer':'not-allowed',opacity:canAction('can_edit')?1:0.5}}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
-          <button onClick={()=>setDelModal(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid #fecaca',background:'var(--danger-bg)',color:'var(--danger)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+          <button onClick={()=>canAction('can_delete') && setDelModal(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid #fecaca',background:'var(--danger-bg)',color:'var(--danger)',display:'flex',alignItems:'center',justifyContent:'center',cursor:canAction('can_delete')?'pointer':'not-allowed',opacity:canAction('can_delete')?1:0.4}}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
           </button>
         </div>
@@ -180,7 +191,7 @@ export default function ItemClassifications() {
               Delete ({selectedRows.length})
             </button>
           )}
-          <button onClick={openAdd} style={{display:'flex',alignItems:'center',gap:7,background:'#7c3aed',border:'none',borderRadius:10,padding:'9px 18px',fontSize:13,fontWeight:600,color:'#fff',cursor:'pointer',fontFamily:'inherit'}}>
+          {canAction('can_create') && <button onClick={openAdd} style={{display:'flex',alignItems:'center',gap:7,background:'#7c3aed',border:'none',borderRadius:10,padding:'9px 18px',fontSize:13,fontWeight:600,color:'#fff',cursor:'pointer',fontFamily:'inherit'}}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             New Classification
           </button>

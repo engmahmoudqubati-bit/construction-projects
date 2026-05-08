@@ -15,6 +15,7 @@ app.use('/api/users',           require('./routes/users'));
 app.use('/api/projects',        require('./routes/projects'));
 app.use('/api/classifications', require('./routes/classifications'));
 app.use('/api/items',           require('./routes/items'));
+app.use('/api/measurements',     require('./routes/measurements'));
 app.use('/api/planning',        require('./routes/planning'));
 app.use('/api/delivery',        require('./routes/delivery'));
 app.use('/api/installation',    require('./routes/installation'));

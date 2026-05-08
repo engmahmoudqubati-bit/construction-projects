@@ -65,3 +65,17 @@ ALTER TABLE cp_position_roles ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT
 
 -- Add name_ar to item classifications
 ALTER TABLE cp_item_classifications ADD COLUMN IF NOT EXISTS classification_name_ar VARCHAR(255);
+
+-- Measurements table
+CREATE TABLE IF NOT EXISTS cp_measurements (
+  id          SERIAL PRIMARY KEY,
+  unit_code   VARCHAR(50) UNIQUE NOT NULL,
+  desc_en     VARCHAR(200) NOT NULL,
+  desc_ar     VARCHAR(200),
+  is_active   BOOLEAN DEFAULT true,
+  created_at  TIMESTAMP DEFAULT NOW()
+);
+
+-- Add measurement_id to cp_items
+ALTER TABLE cp_items ADD COLUMN IF NOT EXISTS measurement_id INTEGER REFERENCES cp_measurements(id) ON DELETE RESTRICT;
+-- Keep unit_of_measure for backward compat
