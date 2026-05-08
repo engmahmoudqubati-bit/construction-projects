@@ -3,6 +3,7 @@ import { api } from '../../api/client';
 import DataTable from '../../components/shared/DataTable';
 import Modal     from '../../components/shared/Modal';
 import { useToast } from '../../components/shared/Toast';
+import ViewPanel from '../../components/shared/ViewPanel';
 import { useAuth } from '../../context/AuthContext';
 
 const FILTER_FIELDS = [
@@ -27,6 +28,8 @@ export default function Measurements() {
   const [selectedRows, setSelectedRows] = useState([]);
   const [delSelModal,  setDelSelModal]  = useState(false);
   const [viewModal,    setViewModal]    = useState(null);
+  const [viewSelected, setViewSelected] = useState([]);
+  const [viewPanelOpen,setViewPanelOpen]= useState(false);
 
   const load = () => {
     setLoading(true);
@@ -72,7 +75,7 @@ export default function Measurements() {
       render: r=>(
         <div>
           <div style={{fontSize:13,fontWeight:600,color:'#111827'}}>{r.desc_en}</div>
-          {r.desc_ar && <div style={{fontSize:11,color:'#9ca3af',direction:'rtl'}}>{r.desc_ar}</div>}
+
         </div>
       )},
     { key:'is_active', label:'Status', style:{width:90},
@@ -87,12 +90,12 @@ export default function Measurements() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
           {canAction('can_edit') && (
-            <button onClick={()=>openEdit(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid var(--border)',background:'var(--card)',color:'var(--text-muted)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            <button onClick={()=>canAction('can_edit')&&openEdit(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid var(--border)',background:'var(--card)',color:'var(--text-muted)',display:canAction('can_edit')?'flex':'none',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
           )}
           {canAction('can_delete') && (
-            <button onClick={()=>setDelModal(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid #fecaca',background:'var(--danger-bg)',color:'var(--danger)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+            <button onClick={()=>canAction('can_delete')&&setDelModal(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid #fecaca',background:'var(--danger-bg)',color:'var(--danger)',display:canAction('can_delete')?'flex':'none',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
             </button>
           )}
@@ -121,10 +124,19 @@ export default function Measurements() {
           <button onClick={load} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,padding:'8px 10px',cursor:'pointer',display:'flex',alignItems:'center',color:'var(--text-muted)'}}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
           </button>
-          <button onClick={exportCSV} style={{display:'flex',alignItems:'center',gap:6,background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,padding:'8px 16px',fontSize:13,fontWeight:500,color:'var(--text)',cursor:'pointer',fontFamily:'inherit'}}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Export
-          </button>
+          {selectedRows.length > 0 && canAction('can_view_selected') && (
+            <button onClick={()=>{ setViewSelected([...selectedRows]); setViewPanelOpen(true); }}
+              style={{display:'flex',alignItems:'center',gap:6,background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:10,padding:'8px 16px',fontSize:13,fontWeight:500,color:'#1d4ed8',cursor:'pointer',fontFamily:'inherit'}}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              View ({selectedRows.length})
+            </button>
+          )}
+          {canAction('can_export') && (
+            <button onClick={exportCSV} style={{display:'flex',alignItems:'center',gap:6,background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,padding:'8px 16px',fontSize:13,fontWeight:500,color:'var(--text)',cursor:'pointer',fontFamily:'inherit'}}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export
+            </button>
+          )}
           {selectedRows.length>0 && canAction('can_delete') && (
             <button onClick={()=>setDelSelModal(true)} style={{display:'flex',alignItems:'center',gap:6,background:'var(--danger-bg)',border:'1px solid var(--danger)',borderRadius:10,padding:'8px 16px',fontSize:13,fontWeight:500,color:'var(--danger)',cursor:'pointer',fontFamily:'inherit'}}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
@@ -147,6 +159,19 @@ export default function Measurements() {
         onFilterApplied={setFilterApplied} externalSearch={searchQuery} />
 
       {/* View Modal */}
+
+      {/* View Selected Panel */}
+      {viewPanelOpen && viewSelected.length > 0 && (() => {
+        const items2 = list.filter(r => viewSelected.includes(r.id));
+        return (
+          <ViewPanel
+            title="Unit"
+            items={items2}
+            fields={r=>[['Code',r.unit_code],['Description (EN)',r.desc_en],['Description (AR)',r.desc_ar||'—'],['Status',r.is_active!==false?'Active':'Inactive']]}
+            onClose={()=>setViewPanelOpen(false)}
+          />
+        );
+      })()}
       {viewModal && (
         <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.45)',backdropFilter:'blur(4px)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={()=>setViewModal(null)}>
           <div style={{background:'var(--card)',borderRadius:16,boxShadow:'0 24px 60px rgba(0,0,0,0.18)',width:'100%',maxWidth:480,overflow:'hidden'}} onClick={e=>e.stopPropagation()}>

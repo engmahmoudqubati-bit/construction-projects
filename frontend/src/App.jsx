@@ -66,6 +66,7 @@ function AppShell() {
             <Route path="/definitions/projects"       element={<RequirePage pageKey="definitions_projects"><Projects /></RequirePage>} />
             <Route path="/definitions/classifications" element={<RequirePage pageKey="definitions_classifications"><ItemClassifications /></RequirePage>} />
             <Route path="/definitions/items"          element={<RequirePage pageKey="definitions_items"><Items /></RequirePage>} />
+            <Route path="/definitions/measurements"   element={<RequirePage pageKey="definitions_measurements"><Measurements /></RequirePage>} />
             <Route path="/planning"                   element={<RequirePage pageKey="planning"><Planning /></RequirePage>} />
             <Route path="/transactions/delivery"      element={<RequirePage pageKey="delivery"><Delivery /></RequirePage>} />
             <Route path="/transactions/installation"  element={<RequirePage pageKey="installation"><Installation /></RequirePage>} />

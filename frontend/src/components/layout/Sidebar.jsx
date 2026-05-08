@@ -11,11 +11,11 @@ const NAV = [
   { label: t.users,              icon: '👥', path: '/definitions/users',           role: 'admin' },
   { label: t.projects,           icon: '🏗️', path: '/definitions/projects',        pageKey: 'definitions_projects' },
   { label: t.itemClassifications,icon: '🗂️', path: '/definitions/classifications',  pageKey: 'definitions_classifications' },
+  { label: 'Measurements',       icon: '📐', path: '/definitions/measurements',      pageKey: 'definitions_measurements' },
   { label: t.items,              icon: '📦', path: '/definitions/items',            pageKey: 'definitions_items' },
-  { label: 'Measurements',       icon: '📐', path: '/definitions/measurements',      pageKey: 'definitions_items' },
 
-  { section: t.planning },
-  { label: t.planning,   icon: '📋', path: '/planning',                    pageKey: 'planning' },
+  { section: 'BOQ' },
+  { label: 'Bill of Quantity (BOQ)', icon: '📋', path: '/planning', pageKey: 'planning' },
 
   { section: t.transactions },
   { label: t.delivery,     icon: '🚚', path: '/transactions/delivery',     pageKey: 'delivery' },

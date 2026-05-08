@@ -79,3 +79,12 @@ CREATE TABLE IF NOT EXISTS cp_measurements (
 -- Add measurement_id to cp_items
 ALTER TABLE cp_items ADD COLUMN IF NOT EXISTS measurement_id INTEGER REFERENCES cp_measurements(id) ON DELETE RESTRICT;
 -- Keep unit_of_measure for backward compat
+
+-- Add missing columns to cp_items
+ALTER TABLE cp_items ADD COLUMN IF NOT EXISTS item_name_ar VARCHAR(255);
+ALTER TABLE cp_items ADD COLUMN IF NOT EXISTS measurement_id INTEGER REFERENCES cp_measurements(id) ON DELETE RESTRICT;
+
+-- Update BOQ status column
+ALTER TABLE cp_project_planning DROP CONSTRAINT IF EXISTS cp_project_planning_status_check;
+ALTER TABLE cp_project_planning ADD CONSTRAINT cp_project_planning_status_check
+  CHECK (status IN ('draft','prepared','confirmed','incomplete','saved','approved'));

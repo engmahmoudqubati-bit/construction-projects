@@ -57,6 +57,10 @@ export const api = {
   deleteClassification: (id)    => request('DELETE', `/api/classifications/${id}`),
 
   getItems:       ()      => request('GET',    '/api/items'),
+  getMeasurements:       ()      => request('GET',    '/api/measurements'),
+  createMeasurement:     (d)     => request('POST',   '/api/measurements', d),
+  updateMeasurement:     (id, d) => request('PUT',    '/api/measurements/' + id, d),
+  deleteMeasurement:     (id)    => request('DELETE', '/api/measurements/' + id),
   getNextItemCode:(clsId) => request('GET',    `/api/items/next-code/${clsId}`),
   createItem:     (b)     => request('POST',   '/api/items', b),
   updateItem:     (id, b) => request('PUT',    `/api/items/${id}`, b),
