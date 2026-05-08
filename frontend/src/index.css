@@ -941,14 +941,14 @@ thead th.dt-col-name { border-bottom: 2px solid #f97316; color: #e65100; }
 }
 .adv-clear-btn:hover { border-color: var(--danger); color: var(--danger); }
 .adv-apply-btn {
-  background: var(--accent); color: #fff;
+  background: linear-gradient(135deg,#6d28d9 0%,#7c3aed 100%); color: #fff;
   border: none; border-radius: var(--radius-sm);
   padding: 8px 20px; font-size: 13px; font-family: inherit;
   cursor: pointer; display: flex; align-items: center; gap: 8px;
-  font-weight: 700; box-shadow: 0 2px 8px rgba(26,115,232,0.3);
+  font-weight: 700; box-shadow: 0 2px 8px rgba(124,58,237,0.35);
   transition: all var(--transition);
 }
-.adv-apply-btn:hover { background: var(--accent-hover); }
+.adv-apply-btn:hover { opacity: 0.9; }
 
 /* ── Section divider ────────────────────────────────────────── */
 .section-divider {
