@@ -35,7 +35,7 @@ export default function Login() {
       <div style={{ flex:1, position:'relative', minHeight:'100vh', display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
 
         {/* Real construction site photo */}
-        <div style={{ position:'absolute', inset:0, backgroundImage:"url('/login-bg.png')", backgroundSize:'cover', backgroundPosition:'center', zIndex:0 }} />
+        <div style={{ position:'absolute', inset:0, backgroundImage:`url('${import.meta.env.BASE_URL}login-bg.png')`, backgroundSize:'cover', backgroundPosition:'center', zIndex:0 }} />
         {/* Dark overlay for text readability */}
         <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.45)', zIndex:1 }} />
 
