@@ -68,12 +68,14 @@ router.get('/me', auth, async (req, res) => {
     let projectAccess     = [];
     let actionPermissions = [];
     if (rows[0].role !== 'admin') {
-      const [pagesRes, projRes] = await Promise.all([
+      const [pagesRes, projRes, actionsRes] = await Promise.all([
         pool.query('SELECT page_key FROM cp_user_page_permissions WHERE user_id=$1', [req.user.id]),
         pool.query('SELECT project_id FROM cp_user_project_access WHERE user_id=$1', [req.user.id]),
+        pool.query(`SELECT DISTINCT perm_key FROM cp_position_role_permissions WHERE role_id=(SELECT position_role_id FROM cp_users WHERE id=$1) AND perm_type='action'`, [req.user.id]),
       ]);
-      pagePermissions = pagesRes.rows.map(r => r.page_key);
-      projectAccess   = projRes.rows.map(r => r.project_id);
+      pagePermissions   = pagesRes.rows.map(r => r.page_key);
+      projectAccess     = projRes.rows.map(r => r.project_id);
+      actionPermissions = actionsRes.rows.map(r => r.perm_key);
     }
 
     res.json({
