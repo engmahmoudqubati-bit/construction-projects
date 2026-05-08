@@ -67,18 +67,28 @@ function AdvancedFilter({ open, onClose, fields, values, onChange, onApply, onCl
     <>
       <div className="adv-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
         <div className="adv-modal">
-          <div className="adv-header">
-            <span className="adv-icon">⚙️</span>
-            <span className="adv-title">Advanced Search</span>
-            {favorites.length > 0 && (
-              <button className="adv-fav-btn" onClick={() => setFavOpen(v => !v)} title="Load favorite">
-                ⭐ <span style={{ fontSize:11 }}>({favorites.length})</span>
+          <div style={{ background:'linear-gradient(135deg,#6d28d9 0%,#7c3aed 100%)', padding:'18px 24px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
+            <div style={{ display:'flex', flexDirection:'column', gap:3 }}>
+              <span style={{ fontSize:11, color:'rgba(255,255,255,0.65)', textTransform:'uppercase', letterSpacing:'0.08em', fontWeight:500 }}>Definitions › Filter</span>
+              <span style={{ fontSize:17, fontWeight:700, color:'#fff', letterSpacing:'-0.01em' }}>Advanced Search</span>
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              {/* Load favorites */}
+              <button onClick={() => setFavOpen(v => !v)}
+                style={{ display:'flex', alignItems:'center', gap:5, background:'rgba(255,255,255,0.15)', border:'none', borderRadius:8, padding:'6px 12px', fontSize:12, fontWeight:600, color:'#fff', cursor:'pointer', fontFamily:'inherit' }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill={favorites.length>0?"#fbbf24":"none"} stroke="#fbbf24" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                {favorites.length > 0 ? `(${favorites.length})` : 'Favorites'}
               </button>
-            )}
-            <button className="adv-fav-btn" onClick={() => { if (hasValues) setSaveFavOpen(true); }} title="Save as favorite" style={{ opacity: hasValues ? 1 : 0.4 }}>
-              🤍
-            </button>
-            <button className="adv-close-btn" onClick={onClose}>✕</button>
+              {/* Save favorite */}
+              <button onClick={() => { if (hasValues) setSaveFavOpen(true); }}
+                title="Save as favorite"
+                style={{ width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,0.15)', border:'none', borderRadius:8, cursor: hasValues ? 'pointer' : 'not-allowed', opacity: hasValues ? 1 : 0.45 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+              </button>
+              {/* Close */}
+              <button onClick={onClose}
+                style={{ width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,0.18)', border:'none', borderRadius:8, cursor:'pointer', fontSize:13, color:'#fff' }}>✕</button>
+            </div>
           </div>
 
           {/* Favorites dropdown */}
