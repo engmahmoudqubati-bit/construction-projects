@@ -29,10 +29,10 @@ export default function Login() {
   }
 
   return (
-    <div style={{ minHeight:'100vh', display:'flex', overflow:'hidden', fontFamily:"'Inter','Segoe UI',system-ui,sans-serif" }}>
+    <div style={{ minHeight:'100vh', display:'flex', overflow:'hidden', fontFamily:"'Inter','Segoe UI',system-ui,sans-serif", position:'relative' }}>
 
       {/* ── Left: Construction site image panel ── */}
-      <div style={{ flex:1, position:'relative', minHeight:'100vh', display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
+      <div style={{ flex:1, position:'relative', minHeight:'100vh', display:'flex', flexDirection:'column', justifyContent:'space-between', overflow:'hidden' }}>
 
         {/* Real construction site photo */}
         <div style={{ position:'absolute', inset:0, backgroundImage:`url('${import.meta.env.BASE_URL}login-bg.png')`, backgroundSize:'cover', backgroundPosition:'center', zIndex:0 }} />
@@ -85,7 +85,7 @@ export default function Login() {
       </div>
 
       {/* ── Right: Login form panel ── */}
-      <div style={{ width:440, minWidth:380, background:'#fff', display:'flex', alignItems:'center', justifyContent:'center', padding:'40px 40px', boxShadow:'-8px 0 40px rgba(0,0,0,0.2)', position:'relative', zIndex:10 }}>
+      <div style={{ width:440, minWidth:380, background:'#fff', display:'flex', alignItems:'center', justifyContent:'center', padding:'40px 40px', boxShadow:'-8px 0 40px rgba(0,0,0,0.2)', position:'relative', zIndex:20, flexShrink:0 }}>
         {/* Faint construction grid in background */}
         <div style={{ position:'absolute', inset:0, opacity:0.04, backgroundImage:'repeating-linear-gradient(0deg,#888 0,#888 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,#888 0,#888 1px,transparent 1px,transparent 40px)', zIndex:0 }} />
 
