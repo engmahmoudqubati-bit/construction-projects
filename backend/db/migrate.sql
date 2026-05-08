@@ -62,3 +62,6 @@ ALTER TABLE cp_inspection_transactions   ADD COLUMN IF NOT EXISTS tx_status VARC
 -- Add position_code and is_active to cp_position_roles
 ALTER TABLE cp_position_roles ADD COLUMN IF NOT EXISTS position_code VARCHAR(50);
 ALTER TABLE cp_position_roles ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+
+-- Add name_ar to item classifications
+ALTER TABLE cp_item_classifications ADD COLUMN IF NOT EXISTS classification_name_ar VARCHAR(255);

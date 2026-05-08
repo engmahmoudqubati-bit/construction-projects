@@ -34,44 +34,13 @@ export default function Login() {
       {/* ── Left: Construction site image panel ── */}
       <div style={{ flex:1, position:'relative', minHeight:'100vh', display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
 
-        {/* Background image simulation with gradient overlay */}
-        <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg, #1a0e00 0%, #3d2200 30%, #6b3d0a 60%, #8b5a1a 80%, #5a3d00 100%)', zIndex:0 }} />
-        {/* Warm sun glow at bottom */}
-        <div style={{ position:'absolute', bottom:0, left:0, right:0, height:'60%', background:'radial-gradient(ellipse at 40% 100%, rgba(255,160,30,0.55) 0%, rgba(220,100,10,0.3) 30%, transparent 70%)', zIndex:1 }} />
-        {/* Sky blue top */}
-        <div style={{ position:'absolute', top:0, left:0, right:0, height:'45%', background:'linear-gradient(180deg, rgba(100,160,220,0.4) 0%, transparent 100%)', zIndex:1 }} />
-        {/* Construction site SVG overlay */}
-        <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', zIndex:2 }} viewBox="0 0 960 740" preserveAspectRatio="xMidYMid slice">
-          {/* Building skeleton */}
-          <rect x="150" y="120" width="220" height="580" fill="rgba(60,40,10,0.7)" rx="2"/>
-          {/* Floor lines */}
-          {[160,210,260,310,360,410,460,510,560,610].map((y,i) => <rect key={i} x="150" y={y} width="220" height="3" fill="rgba(180,120,30,0.6)"/>)}
-          {/* Vertical columns */}
-          <rect x="150" y="120" width="18" height="580" fill="rgba(180,120,30,0.7)"/>
-          <rect x="240" y="120" width="12" height="580" fill="rgba(180,120,30,0.5)"/>
-          <rect x="350" y="120" width="18" height="580" fill="rgba(180,120,30,0.7)"/>
-          {/* Crane arm */}
-          <rect x="420" y="20" width="8" height="320" fill="rgba(200,140,30,0.9)"/>
-          <rect x="280" y="20" width="150" height="6" fill="rgba(200,140,30,0.9)"/>
-          <rect x="420" y="20" width="120" height="6" fill="rgba(200,140,30,0.9)"/>
-          <line x1="420" y1="26" x2="540" y2="100" stroke="rgba(200,140,30,0.6)" strokeWidth="2"/>
-          <line x1="420" y1="26" x2="285" y2="100" stroke="rgba(200,140,30,0.6)" strokeWidth="2"/>
-          {/* Another building */}
-          <rect x="560" y="200" width="160" height="500" fill="rgba(50,35,10,0.6)" rx="2"/>
-          {[210,255,300,345,390,435,480,525].map((y,i) => <rect key={i} x="560" y={y} width="160" height="2" fill="rgba(160,100,20,0.5)"/>)}
-          <rect x="560" y="200" width="14" height="500" fill="rgba(160,100,20,0.6)"/>
-          <rect x="705" y="200" width="14" height="500" fill="rgba(160,100,20,0.6)"/>
-          {/* Ground */}
-          <rect x="0" y="680" width="960" height="60" fill="rgba(30,20,5,0.8)"/>
-          {/* Helmet/equipment silhouette */}
-          <ellipse cx="200" cy="695" rx="70" ry="30" fill="rgba(240,240,240,0.15)"/>
-          {/* Blueprint rolls */}
-          <ellipse cx="500" cy="698" rx="90" ry="18" fill="rgba(200,200,220,0.12)"/>
-          <ellipse cx="520" cy="695" rx="60" ry="14" fill="rgba(200,200,220,0.15)"/>
-        </svg>
+        {/* Real construction site photo */}
+        <div style={{ position:'absolute', inset:0, backgroundImage:"url('/login-bg.png')", backgroundSize:'cover', backgroundPosition:'center', zIndex:0 }} />
+        {/* Dark overlay for text readability */}
+        <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.45)', zIndex:1 }} />
 
         {/* Top left: logo + title */}
-        <div style={{ position:'relative', zIndex:10, padding:'32px 40px', display:'flex', alignItems:'center', gap:14 }}>
+        <div style={{ position:'relative', zIndex:2, padding:'32px 40px', display:'flex', alignItems:'center', gap:14 }}>
           <div style={{ width:44, height:44, borderRadius:10, background:'rgba(233,115,22,0.2)', border:'1.5px solid rgba(233,115,22,0.5)', display:'flex', alignItems:'center', justifyContent:'center' }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e97316" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           </div>
@@ -82,7 +51,7 @@ export default function Login() {
         </div>
 
         {/* Center headline */}
-        <div style={{ position:'relative', zIndex:10, padding:'0 40px 0', flex:1, display:'flex', flexDirection:'column', justifyContent:'center' }}>
+        <div style={{ position:'relative', zIndex:2, padding:'0 40px 0', flex:1, display:'flex', flexDirection:'column', justifyContent:'center' }}>
           <div style={{ fontSize:14, color:'rgba(233,115,22,0.9)', fontWeight:600, letterSpacing:'0.05em', textTransform:'uppercase', marginBottom:16, display:'flex', alignItems:'center', gap:8 }}>
             <div style={{ width:32, height:2, background:'#e97316' }}></div>
             Enterprise Platform
@@ -97,7 +66,7 @@ export default function Login() {
         </div>
 
         {/* Bottom: feature icons */}
-        <div style={{ position:'relative', zIndex:10, padding:'32px 40px', display:'flex', gap:32 }}>
+        <div style={{ position:'relative', zIndex:2, padding:'32px 40px', display:'flex', gap:32 }}>
           {[
             { icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>, label:'Project', sub:'Planning' },
             { icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>, label:'Progress', sub:'Tracking' },

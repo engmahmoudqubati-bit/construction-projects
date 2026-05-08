@@ -148,9 +148,9 @@ export default function Users() {
           </div> },
     { key:'full_name_en', label:'Full Name',
       render: r => (
-        <div>
-          <div style={{fontSize:13,fontWeight:600,color:'#111827'}}>{r.full_name_en||r.full_name||'—'}</div>
-          {r.full_name_ar && <div style={{fontSize:11,color:'#6b7280',direction:'rtl',textAlign:'right'}}>{r.full_name_ar}</div>}
+        <div style={{maxWidth:220}}>
+          <div style={{fontSize:13,fontWeight:600,color:'#111827',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{r.full_name_en||r.full_name||'—'}</div>
+          {r.full_name_ar && <div style={{fontSize:11,color:'#6b7280',direction:'rtl',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{r.full_name_ar}</div>}
         </div>
       )},
     { key:'username', label:'Username',
