@@ -3,6 +3,7 @@ import { api } from '../../api/client';
 import DataTable from '../../components/shared/DataTable';
 import Modal     from '../../components/shared/Modal';
 import { useToast } from '../../components/shared/Toast';
+import { useAuth } from '../../context/AuthContext';
 import t from '../../lang';
 
 const FILTER_FIELDS = [
@@ -22,6 +23,7 @@ const EMPTY = {
 
 export default function Users() {
   const toast = useToast();
+  const { canAction } = useAuth();
   const fileRef = useRef();
   const [users,        setUsers]        = useState([]);
   const [posRoles,     setPosRoles]     = useState([]);
@@ -51,7 +53,6 @@ export default function Users() {
   function openAdd() { setForm(EMPTY); setEditing(null); setPhotoPreview(null); setModal(true); }
 
   async function openEdit(user) {
-    const perms = await api.getUserPerms(user.id);
     setForm({
       user_code: user.user_code||'',
       full_name_en: user.full_name_en||user.full_name||'',
@@ -63,19 +64,13 @@ export default function Users() {
       position_role_id: user.position_role_id||'',
       photo_url: user.photo_url||'',
       role: user.role,
-      page_permissions: perms.pages||[],
-      project_access: perms.projects||[],
+
     });
     setPhotoPreview(user.photo_url||null);
     setEditing(user); setModal(true);
   }
 
-  function togglePage(key) {
-    setForm(f => ({ ...f, page_permissions: f.page_permissions.includes(key) ? f.page_permissions.filter(k=>k!==key) : [...f.page_permissions,key] }));
-  }
-  function toggleProject(id) {
-    setForm(f => ({ ...f, project_access: f.project_access.includes(id) ? f.project_access.filter(p=>p!==id) : [...f.project_access,id] }));
-  }
+
 
   function handlePhotoChange(e) {
     const file = e.target.files[0];
@@ -180,10 +175,10 @@ export default function Users() {
               fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
             {r.is_active ? 'Deactivate' : 'Activate'}
           </button>
-          <button onClick={()=>openEdit(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid var(--border)',background:'var(--card)',color:'var(--text-muted)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+          <button onClick={()=>canAction('can_edit') && openEdit(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid var(--border)',background:'var(--card)',color:canAction('can_edit')?'var(--text-muted)':'#d1d5db',display:'flex',alignItems:'center',justifyContent:'center',cursor:canAction('can_edit')?'pointer':'not-allowed',opacity:canAction('can_edit')?1:0.5}}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
-          <button onClick={()=>setDelModal(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid #fecaca',background:'var(--danger-bg)',color:'var(--danger)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+          <button onClick={()=>canAction('can_delete') && setDelModal(r)} style={{width:32,height:32,borderRadius:8,border:'1px solid #fecaca',background:'var(--danger-bg)',color:'var(--danger)',display:'flex',alignItems:'center',justifyContent:'center',cursor:canAction('can_delete')?'pointer':'not-allowed',opacity:canAction('can_delete')?1:0.4}}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
           </button>
         </div>
@@ -223,7 +218,7 @@ export default function Users() {
               Delete ({selectedRows.length})
             </button>
           )}
-          <button onClick={openAdd} style={{display:'flex',alignItems:'center',gap:7,background:'#7c3aed',border:'none',borderRadius:10,padding:'9px 18px',fontSize:13,fontWeight:600,color:'#fff',cursor:'pointer',fontFamily:'inherit'}}>
+          {canAction('can_create') && <button onClick={openAdd} style={{display:'flex',alignItems:'center',gap:7,background:'#7c3aed',border:'none',borderRadius:10,padding:'9px 18px',fontSize:13,fontWeight:600,color:'#fff',cursor:'pointer',fontFamily:'inherit'}}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             New User
           </button>
@@ -324,41 +319,11 @@ export default function Users() {
           </div>
         </div>
 
-        {/* Permissions */}
+        {/* Permissions note */}
         <hr className="section-divider" />
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">{t.pagePermissions}</label>
-            <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:4}}>
-              {[
-                {key:'definitions_projects',label:t.projects},
-                {key:'definitions_classifications',label:t.itemClassifications},
-                {key:'definitions_items',label:t.items},
-                {key:'planning',label:t.planning},
-                {key:'delivery',label:t.delivery},
-                {key:'installation',label:t.installation},
-                {key:'inspection',label:t.inspection},
-                {key:'reports',label:t.reports},
-              ].map(({key,label}) => (
-                <label key={key} className="perm-item">
-                  <input type="checkbox" checked={form.page_permissions.includes(key)} onChange={()=>togglePage(key)} />
-                  {label}
-                </label>
-              ))}
-            </div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">{t.projectAccess}</label>
-            <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:4,maxHeight:220,overflowY:'auto'}}>
-              {projects.map(p => (
-                <label key={p.id} className="perm-item">
-                  <input type="checkbox" checked={form.project_access.includes(p.id)} onChange={()=>toggleProject(p.id)} />
-                  {p.project_name_en}
-                </label>
-              ))}
-              {projects.length===0 && <span style={{fontSize:12,color:'var(--text-muted)'}}>No projects yet</span>}
-            </div>
-          </div>
+        <div style={{background:'var(--card2)',border:'1px solid var(--border-light)',borderRadius:8,padding:'12px 16px',fontSize:13,color:'var(--text-muted)'}}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight:6,verticalAlign:'middle'}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Permissions are managed through <strong>Position Roles</strong>. Assign a position role above to apply permissions.
         </div>
       </Modal>
 

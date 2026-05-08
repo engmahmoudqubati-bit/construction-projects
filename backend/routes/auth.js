@@ -21,16 +21,19 @@ router.post('/login', async (req, res) => {
     if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
 
     // Load permissions for non-admin users
-    let pagePermissions = [];
-    let projectAccess   = [];
+    let pagePermissions   = [];
+    let projectAccess     = [];
+    let actionPermissions = [];
 
     if (user.role !== 'admin') {
-      const [pagesRes, projRes] = await Promise.all([
-        pool.query('SELECT page_key FROM cp_user_page_permissions WHERE user_id=$1', [user.id]),
-        pool.query('SELECT project_id FROM cp_user_project_access WHERE user_id=$1', [user.id]),
-      ]);
-      pagePermissions = pagesRes.rows.map(r => r.page_key);
-      projectAccess   = projRes.rows.map(r => r.project_id);
+      const pagesRes   = await pool.query('SELECT page_key FROM cp_user_page_permissions WHERE user_id=$1', [user.id]);
+      const projRes    = await pool.query('SELECT project_id FROM cp_user_project_access WHERE user_id=$1', [user.id]);
+      pagePermissions  = pagesRes.rows.map(r => r.page_key);
+      projectAccess    = projRes.rows.map(r => r.project_id);
+      if (user.position_role_id) {
+        const actRes   = await pool.query("SELECT perm_key FROM cp_position_role_permissions WHERE role_id=$1 AND perm_type='action'", [user.position_role_id]);
+        actionPermissions = actRes.rows.map(r => r.perm_key);
+      }
     }
 
     const token = jwt.sign(
@@ -45,7 +48,7 @@ router.post('/login', async (req, res) => {
         id: user.id, full_name: user.full_name,
         username: user.username, role: user.role, email: user.email,
       },
-      permissions: { pages: pagePermissions, projects: projectAccess },
+      permissions: { pages: pagePermissions, actions: actionPermissions, projects: projectAccess },
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -60,20 +63,24 @@ router.get('/me', auth, async (req, res) => {
     );
     if (!rows[0]) return res.status(404).json({ message: 'User not found' });
 
-    let pagePermissions = [];
-    let projectAccess   = [];
+    let pagePermissions   = [];
+    let projectAccess     = [];
+    let actionPermissions = [];
     if (rows[0].role !== 'admin') {
-      const [pagesRes, projRes] = await Promise.all([
-        pool.query('SELECT page_key FROM cp_user_page_permissions WHERE user_id=$1', [req.user.id]),
-        pool.query('SELECT project_id FROM cp_user_project_access WHERE user_id=$1', [req.user.id]),
-      ]);
+      const pagesRes  = await pool.query('SELECT page_key FROM cp_user_page_permissions WHERE user_id=$1', [req.user.id]);
+      const projRes   = await pool.query('SELECT project_id FROM cp_user_project_access WHERE user_id=$1', [req.user.id]);
       pagePermissions = pagesRes.rows.map(r => r.page_key);
       projectAccess   = projRes.rows.map(r => r.project_id);
+      const userRes   = await pool.query('SELECT position_role_id FROM cp_users WHERE id=$1', [req.user.id]);
+      if (userRes.rows[0] && userRes.rows[0].position_role_id) {
+        const actRes  = await pool.query("SELECT perm_key FROM cp_position_role_permissions WHERE role_id=$1 AND perm_type='action'", [userRes.rows[0].position_role_id]);
+        actionPermissions = actRes.rows.map(r => r.perm_key);
+      }
     }
 
     res.json({
       user: rows[0],
-      permissions: { pages: pagePermissions, projects: projectAccess },
+      permissions: { pages: pagePermissions, actions: actionPermissions, projects: projectAccess },
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -96,6 +96,8 @@ router.delete('/:id', async (req, res) => {
 });
 
 async function savePerms(client, roleId, pages, actions, projects) {
+  // Delete ALL existing perms first, then re-insert checked ones
+  await client.query('DELETE FROM cp_position_role_permissions WHERE role_id=$1', [roleId]);
   for (const k of pages) {
     await client.query(
       'INSERT INTO cp_position_role_permissions (role_id,perm_type,perm_key) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING',
