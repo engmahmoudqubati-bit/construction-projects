@@ -26,7 +26,7 @@ router.get('/', async (req, res) => {
          ON t.project_id=pp.project_id AND t.item_id=pp.item_id AND t.transaction_date=$2
        LEFT JOIN cp_delivery_transactions t2
          ON t2.project_id=pp.project_id AND t2.item_id=pp.item_id
-       WHERE pp.project_id=$1 AND pp.status='confirmed'
+       WHERE pp.project_id=$1 AND pp.status IN ('approved','saved')
        GROUP BY pp.item_id, pp.planned_qty, i.item_code, i.item_name, i.unit_of_measure,
                 c.classification_name, pc.classification_name,
                 t.id, t.qty_delivered, t.delivery_ref, t.notes, t.tx_status
