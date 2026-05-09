@@ -122,3 +122,32 @@ router.delete('/:id', async (req, res) => {
 });
 
 module.exports = router;
+
+// GET /matrix — all delivery entries for a project grouped by item × date
+router.get('/matrix', async (req, res) => {
+  const { projectId } = req.query;
+  if (!projectId) return res.status(400).json({ message: 'projectId required' });
+  if (!canAccessProject(req, projectId)) return res.status(403).json({ message: 'No access' });
+  try {
+    const { rows } = await pool.query(
+      `SELECT pp.item_id, pp.planned_qty,
+              i.item_code, i.item_name,
+              COALESCE(m.unit_code, i.unit_of_measure) AS unit_of_measure,
+              c.classification_name,
+              pc.classification_name AS parent_classification_name,
+              t.transaction_date::text AS transaction_date,
+              t.qty_delivered, t.tx_status, t.delivery_ref
+       FROM cp_project_planning pp
+       JOIN cp_items i ON i.id = pp.item_id
+       LEFT JOIN cp_measurements m          ON m.id  = i.measurement_id
+       LEFT JOIN cp_item_classifications c  ON c.id  = i.classification_id
+       LEFT JOIN cp_item_classifications pc ON pc.id = c.parent_id
+       LEFT JOIN cp_delivery_transactions t
+         ON t.project_id=pp.project_id AND t.item_id=pp.item_id
+       WHERE pp.project_id=$1 AND pp.status IN ('approved','saved')
+       ORDER BY pc.classification_name NULLS LAST, c.classification_name, i.item_name, t.transaction_date`,
+      [projectId]
+    );
+    res.json(rows);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
