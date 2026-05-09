@@ -99,7 +99,7 @@ router.get('/', async (req, res) => {
     const { rows: items } = await pool.query(
       `SELECT pp.item_id, pp.planned_qty,
               i.item_code, i.item_name,
-              COALESCE(m.unit_code, i.unit_of_measure) AS unit_of_measure,
+              COALESCE(m.desc_en, m.unit_code, i.unit_of_measure) AS unit_of_measure,
               c.classification_name,
               pc.classification_name AS parent_classification_name
        FROM cp_project_planning pp

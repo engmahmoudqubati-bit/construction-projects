@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
     const { rows } = await pool.query(
       `SELECT pp.item_id, pp.planned_qty,
               i.item_code, i.item_name,
-              COALESCE(m.unit_code, i.unit_of_measure) AS unit_of_measure,
+              COALESCE(m.desc_en, m.unit_code, i.unit_of_measure) AS unit_of_measure,
               c.classification_name,
               pc.classification_name AS parent_classification_name,
               t.id AS tx_id, t.qty_delivered, t.delivery_ref, t.notes, t.tx_status,
@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
          ON t2.project_id=pp.project_id AND t2.item_id=pp.item_id
        WHERE pp.project_id=$1 AND pp.status IN ('approved','saved')
        GROUP BY pp.item_id, pp.planned_qty, i.item_code, i.item_name, i.unit_of_measure,
-                m.unit_code, c.classification_name, pc.classification_name,
+                m.unit_code, m.desc_en, c.classification_name, pc.classification_name,
                 t.id, t.qty_delivered, t.delivery_ref, t.notes, t.tx_status
        ORDER BY pc.classification_name NULLS LAST, c.classification_name, i.item_name`,
       [projectId, date]
@@ -151,7 +151,7 @@ router.get('/matrix', async (req, res) => {
     const { rows } = await pool.query(
       `SELECT pp.item_id, pp.planned_qty,
               i.item_code, i.item_name,
-              COALESCE(m.unit_code, i.unit_of_measure) AS unit_of_measure,
+              COALESCE(m.desc_en, m.unit_code, i.unit_of_measure) AS unit_of_measure,
               c.classification_name,
               pc.classification_name AS parent_classification_name,
               t.transaction_date::text AS transaction_date,
