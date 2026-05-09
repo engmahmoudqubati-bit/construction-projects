@@ -121,6 +121,25 @@ router.delete('/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+
+// GET /totals — total confirmed delivered qty per item for a project (all dates)
+router.get('/totals', async (req, res) => {
+  const { projectId } = req.query;
+  if (!projectId) return res.status(400).json({ message: 'projectId required' });
+  if (!canAccessProject(req, projectId)) return res.status(403).json({ message: 'No access' });
+  try {
+    const { rows } = await pool.query(
+      `SELECT t.item_id,
+              COALESCE(SUM(t.qty_delivered) FILTER (WHERE t.tx_status='confirmed'), 0) AS total_delivered
+       FROM cp_delivery_transactions t
+       WHERE t.project_id=$1
+       GROUP BY t.item_id`,
+      [projectId]
+    );
+    res.json(rows);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 module.exports = router;
 
 // GET /matrix — all delivery entries for a project grouped by item × date

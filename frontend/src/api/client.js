@@ -83,6 +83,7 @@ export const api = {
   confirmDelivery: (project_id, transaction_date) => request('PATCH', '/api/delivery/confirm', { project_id, transaction_date }),
   unpostDelivery:  (project_id, transaction_date) => request('PATCH', '/api/delivery/unpost',  { project_id, transaction_date }),
   deleteDelivery:  (id) => request('DELETE', `/api/delivery/${id}`),
+  getDeliveryTotals: (projectId) => request('GET', `/api/delivery/totals?projectId=${projectId}`),
   getInstallation:      (projectId, date) => request('GET', `/api/installation?projectId=${projectId}&date=${date}`),
   saveInstallation:     (body) => request('POST', '/api/installation', body),
   confirmInstallation:  (project_id, transaction_date) => request('PATCH', '/api/installation/confirm', { project_id, transaction_date }),

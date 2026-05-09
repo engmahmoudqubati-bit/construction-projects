@@ -132,19 +132,53 @@ function AllocationModal({ projectId, levels, items, onClose, onSaved }) {
   const [alloc, setAlloc] = useState({});  // { 'itemId_levelId': qty }
   const [saving, setSaving] = useState(false);
 
+  const [deliveredMap, setDeliveredMap] = useState({});  // { item_id: total_delivered }
+
   useEffect(() => {
+    // Load existing allocation
     api.getInstallationAllocation(projectId).then(data => {
       const map = {};
       data.forEach(a => { map[`${a.item_id}_${a.level_id}`] = fmt2(a.suggested_qty); });
       setAlloc(map);
     }).catch(() => {});
+
+    // Load total confirmed delivery per item for this project (all dates)
+    api.getDeliveryTotals(projectId)
+      .then(rows => {
+        if (Array.isArray(rows)) {
+          const dm = {};
+          rows.forEach(r => { dm[r.item_id] = parseFloat(r.total_delivered) || 0; });
+          setDeliveredMap(dm);
+        }
+      }).catch(() => {});
   }, [projectId]);
 
-  function setQty(itemId, levelId, val) {
+  function setQty(itemId, levelId, val, maxDelivered) {
+    // Prevent total allocation across all levels from exceeding total delivered
+    const parsed = parseFloat(val) || 0;
+    const currentAlloc = Object.entries(alloc)
+      .filter(([k]) => k.startsWith(`${itemId}_`) && k !== `${itemId}_${levelId}`)
+      .reduce((s, [, v]) => s + (parseFloat(v) || 0), 0);
+    if (maxDelivered > 0 && parsed + currentAlloc > maxDelivered) {
+      const allowed = Math.max(0, maxDelivered - currentAlloc).toFixed(2);
+      setAlloc(prev => ({ ...prev, [`${itemId}_${levelId}`]: allowed }));
+      return;
+    }
     setAlloc(prev => ({ ...prev, [`${itemId}_${levelId}`]: val }));
   }
 
   async function handleSave() {
+    // Validate: no item's total allocation should exceed its total delivered
+    const overItems = items.filter(item => {
+      const delivered = deliveredMap[item.item_id] || 0;
+      if (delivered === 0) return false;
+      const allocated = levels.reduce((s,lv) => s+(parseFloat(alloc[`${item.item_id}_${lv.id}`])||0), 0);
+      return allocated > delivered + 0.01;
+    });
+    if (overItems.length > 0) {
+      toast(`${overItems.length} item(s) exceed delivered qty — please correct before saving`, 'error');
+      return;
+    }
     setSaving(true);
     try {
       const allocations = [];
@@ -165,8 +199,10 @@ function AllocationModal({ projectId, levels, items, onClose, onSaved }) {
   const thS = { background:'#f0f7ff', color:'#111827', fontWeight:700, fontSize:11, padding:'8px 12px', textAlign:'left', borderBottom:'1px solid #e0ecff', whiteSpace:'nowrap' };
 
   return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.45)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
-      <div style={{ background:'var(--card)', borderRadius:16, boxShadow:'0 24px 60px rgba(0,0,0,0.18)', width:'100%', maxWidth:860, maxHeight:'85vh', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+    <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.45)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'20px 16px' }}>
+      <div style={{ background:'var(--card)', borderRadius:16, boxShadow:'0 24px 60px rgba(0,0,0,0.18)', width:'100%',
+        maxWidth: levels.length <= 3 ? 860 : levels.length <= 6 ? 1100 : '96vw',
+        maxHeight:'92vh', display:'flex', flexDirection:'column', overflow:'hidden' }}>
         {/* Header */}
         <div style={{ background:'linear-gradient(135deg,#6d28d9 0%,#7c3aed 100%)', padding:'18px 24px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
           <div>
@@ -193,27 +229,41 @@ function AllocationModal({ projectId, levels, items, onClose, onSaved }) {
             </thead>
             <tbody>
               {items.map((item, idx) => {
-                const planned  = parseFloat(item.planned_qty)||0;
-                const allocated = levels.reduce((s,lv) => s + (parseFloat(alloc[`${item.item_id}_${lv.id}`])||0), 0);
-                const remaining = planned - allocated;
+                const planned    = parseFloat(item.planned_qty)||0;
+                const delivered  = deliveredMap[item.item_id] || 0;
+                const maxAlloc   = delivered > 0 ? delivered : planned;  // cap at delivered; fallback to planned
+                const allocated  = levels.reduce((s,lv) => s + (parseFloat(alloc[`${item.item_id}_${lv.id}`])||0), 0);
+                const remaining  = maxAlloc - allocated;
+                const overAlloc  = allocated > maxAlloc + 0.01;
                 return (
                   <tr key={item.item_id} style={{ borderBottom:'1px solid #f3f4f6', background: idx%2===0?'#fafbff':'#fff' }}>
                     <td style={{ padding:'8px 12px', fontSize:11, color:'#6b7280', fontFamily:'monospace' }}>{item.item_code}</td>
                     <td style={{ padding:'8px 12px', fontSize:12, fontWeight:600, color:'#111827' }}>{item.item_name}</td>
                     <td style={{ padding:'8px 12px', textAlign:'right', fontSize:12, fontWeight:600 }}>{fmt2(planned)}</td>
-                    <td style={{ padding:'8px 12px', textAlign:'right', fontSize:12, color:'#6b7280' }}>{fmt2(item.total_delivered||0)}</td>
-                    {levels.map(lv => (
-                      <td key={lv.id} style={{ padding:'4px 6px', textAlign:'center' }}>
-                        <input type="number" min="0" step="0.01"
-                          value={alloc[`${item.item_id}_${lv.id}`] || ''}
-                          onChange={e => setQty(item.item_id, lv.id, e.target.value)}
-                          onBlur={e => { const v=parseFloat(e.target.value); setQty(item.item_id, lv.id, isNaN(v)?'':v.toFixed(2)); }}
-                          style={{ width:80, textAlign:'center', border:`1.5px solid ${Math.abs(remaining)<0.01?'#bbf7d0':remaining<0?'#fecaca':'#e5e7eb'}`, borderRadius:7, padding:'5px 6px', fontSize:12, fontFamily:'inherit', background:'#fff', outline:'none' }} />
-                      </td>
-                    ))}
-                    <td style={{ padding:'8px 12px', textAlign:'right', fontWeight:700, color: Math.abs(remaining)<0.01?'#16a34a':'#111827', fontSize:12 }}>{fmt2(allocated)}</td>
+                    <td style={{ padding:'8px 12px', textAlign:'right', fontSize:12, fontWeight:700, color: delivered>0?'#16a34a':'#9ca3af' }}>
+                      {delivered > 0 ? fmt2(delivered) : '—'}
+                    </td>
+                    {levels.map(lv => {
+                      const thisVal = alloc[`${item.item_id}_${lv.id}`] || '';
+                      const otherAlloc = levels.filter(l=>l.id!==lv.id).reduce((s,l)=>s+(parseFloat(alloc[`${item.item_id}_${l.id}`])||0),0);
+                      const available = Math.max(0, maxAlloc - otherAlloc);
+                      return (
+                        <td key={lv.id} style={{ padding:'4px 6px', textAlign:'center' }}>
+                          <input type="number" min="0" step="0.01" max={available}
+                            value={thisVal}
+                            onChange={e => setQty(item.item_id, lv.id, e.target.value, maxAlloc)}
+                            onBlur={e => { const v=parseFloat(e.target.value); setQty(item.item_id, lv.id, isNaN(v)?'':v.toFixed(2), maxAlloc); }}
+                            style={{ width:84, textAlign:'center',
+                              border:`1.5px solid ${overAlloc?'#fecaca':Math.abs(remaining)<0.01?'#bbf7d0':'#e5e7eb'}`,
+                              borderRadius:7, padding:'5px 6px', fontSize:12, fontFamily:'inherit', background:'#fff', outline:'none' }} />
+                        </td>
+                      );
+                    })}
+                    <td style={{ padding:'8px 12px', textAlign:'right', fontWeight:700, color: overAlloc?'#dc2626':Math.abs(remaining)<0.01?'#16a34a':'#111827', fontSize:12 }}>
+                      {overAlloc && <span title="Exceeds delivered qty">⚠ </span>}{fmt2(allocated)}
+                    </td>
                     <td style={{ padding:'8px 12px', textAlign:'right', fontWeight:700, color: remaining<-0.01?'#dc2626':remaining>0.01?'#f59e0b':'#16a34a', fontSize:12 }}>
-                      {Math.abs(remaining)<0.01 ? '✓' : fmt2(remaining)}
+                      {Math.abs(remaining)<0.01 ? '✓' : overAlloc ? '⚠ Over' : fmt2(remaining)}
                     </td>
                   </tr>
                 );
