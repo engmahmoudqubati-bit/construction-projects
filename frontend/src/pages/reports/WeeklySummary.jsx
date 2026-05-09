@@ -186,9 +186,27 @@ export default function WeeklySummary() {
   }, [reportData]);
 
   const fSel = { background:'var(--card)', border:'2px solid #7c3aed', borderRadius:10, padding:'8px 14px', fontSize:14, fontWeight:600, color:'var(--text)', cursor:'pointer', fontFamily:'inherit', outline:'none', height:40 };
-  const thS = { background:'#f0f7ff', color:'#111827', fontWeight:700, fontSize:11, padding:'10px 12px', textAlign:'left', borderBottom:'1px solid #e0ecff', whiteSpace:'nowrap', letterSpacing:'0.02em' };
-  const thR = { ...thS, textAlign:'right' };
-  const thC = { ...thS, textAlign:'center' };
+  // Fixed column widths for perfect alignment
+  const COL = {
+    code:     { width:80,  minWidth:80  },
+    name:     { width:180, minWidth:160 },
+    unit:     { width:60,  minWidth:60  },
+    planned:  { width:95,  minWidth:90  },
+    delDate:  { width:120, minWidth:110 },
+    delPct:   { width:120, minWidth:110 },
+    instThis: { width:100, minWidth:90  },
+    instLast: { width:100, minWidth:90  },
+    instDate: { width:130, minWidth:110 },
+    instPct:  { width:120, minWidth:110 },
+  };
+  const thBase = { background:'#f0f7ff', color:'#111827', fontWeight:700, fontSize:11,
+    padding:'10px 12px', borderBottom:'1px solid #e0ecff', whiteSpace:'nowrap',
+    letterSpacing:'0.02em', verticalAlign:'bottom', overflow:'hidden' };
+  const thS = { ...thBase, textAlign:'left' };
+  const thR = { ...thBase, textAlign:'right' };
+  const thC = { ...thBase, textAlign:'center' };
+  const tdBase = { padding:'10px 12px', verticalAlign:'middle', overflow:'hidden' };
+  const tdR = { ...tdBase, textAlign:'right' };
 
   return (
     <div>
@@ -328,7 +346,19 @@ export default function WeeklySummary() {
           {/* Main table */}
           <div style={{ background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:14, overflow:'hidden' }}>
             <div style={{ overflowX:'auto' }}>
-              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+              <table style={{ width:'100%', minWidth:1050, borderCollapse:'collapse', fontSize:12, tableLayout:'fixed' }}>
+                <colgroup>
+                  <col style={{ width:'7.5%'  }} />
+                  <col style={{ width:'16%'   }} />
+                  <col style={{ width:'5.5%'  }} />
+                  <col style={{ width:'9%'    }} />
+                  <col style={{ width:'11%'   }} />
+                  <col style={{ width:'11%'   }} />
+                  <col style={{ width:'9.5%'  }} />
+                  <col style={{ width:'9.5%'  }} />
+                  <col style={{ width:'11%'   }} />
+                  <col style={{ width:'10%'   }} />
+                </colgroup>
                 <thead>
                   {/* Column group headers */}
                   <tr>
@@ -341,16 +371,16 @@ export default function WeeklySummary() {
                     </th>
                   </tr>
                   <tr>
-                    <th style={thS}>Item Code</th>
-                    <th style={{ ...thS, minWidth:180 }}>Item Name</th>
-                    <th style={thS}>Unit</th>
-                    <th style={{ ...thS, textAlign:'right', borderRight:'2px solid #e0ecff' }}>Planned Qty</th>
-                    <th style={{ ...thR, background:'#e0f2fe' }}>Delivered to Date</th>
-                    <th style={{ ...thR, background:'#e0f2fe', borderRight:'2px solid #bae6fd' }}>Delivery %</th>
-                    <th style={{ ...thR, background:'#f0fdf4' }}>This Week</th>
-                    <th style={{ ...thR, background:'#f0fdf4' }}>Last Week</th>
-                    <th style={{ ...thR, background:'#f0fdf4' }}>Installed to Date</th>
-                    <th style={{ ...thR, background:'#f0fdf4', borderRight:'2px solid #bbf7d0' }}>Install %</th>
+                    <th style={{ ...thS,                                                    }}>Item Code</th>
+                    <th style={{ ...thS,                                                    }}>Item Name</th>
+                    <th style={{ ...thC,                                                    }}>Unit</th>
+                    <th style={{ ...thR, borderRight:'2px solid #e0ecff'                   }}>Planned Qty</th>
+                    <th style={{ ...thR, background:'#e0f2fe'                              }}>Delivered to Date</th>
+                    <th style={{ ...thC, background:'#e0f2fe', borderRight:'2px solid #bae6fd' }}>Delivery %</th>
+                    <th style={{ ...thR, background:'#f0fdf4'                              }}>This Week</th>
+                    <th style={{ ...thR, background:'#f0fdf4'                              }}>Last Week</th>
+                    <th style={{ ...thR, background:'#f0fdf4'                              }}>Installed to Date</th>
+                    <th style={{ ...thC, background:'#f0fdf4', borderRight:'2px solid #bbf7d0' }}>Install %</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -364,15 +394,15 @@ export default function WeeklySummary() {
                       <>
                         {/* Classification group header */}
                         <tr key={`g-${group}`} style={{ background:'#ede9fe' }}>
-                          <td colSpan={4} style={{ padding:'7px 12px', fontSize:11, fontWeight:700, color:'#7c3aed', letterSpacing:'0.04em', borderRight:'2px solid #e0ecff' }}>{group}</td>
-                          <td style={{ padding:'7px 12px', textAlign:'right', fontSize:11, fontWeight:700, color:'#0369a1', background:'#dbeafe' }}>{fmt2(gDelToDate)}</td>
-                          <td style={{ padding:'7px 12px', textAlign:'right', fontSize:11, fontWeight:700, color:'#0369a1', background:'#dbeafe', borderRight:'2px solid #bae6fd' }}>
+                          <td colSpan={4} style={{ padding:'8px 12px', fontSize:11, fontWeight:700, color:'#7c3aed', letterSpacing:'0.04em', borderRight:'2px solid #e0ecff' }}>{group}</td>
+                          <td style={{ padding:'8px 12px', textAlign:'right', fontSize:11, fontWeight:700, color:'#0369a1', background:'#dbeafe' }}>{fmt2(gDelToDate)}</td>
+                          <td style={{ padding:'8px 12px', textAlign:'right', fontSize:11, fontWeight:700, color:'#0369a1', background:'#dbeafe', borderRight:'2px solid #bae6fd' }}>
                             {gPlanned > 0 ? `${((gDelToDate/gPlanned)*100).toFixed(1)}%` : '—'}
                           </td>
-                          <td style={{ padding:'7px 12px', textAlign:'right', fontSize:11, fontWeight:700, color:'#15803d', background:'#dcfce7' }}>{fmt2(gInstThisW)}</td>
-                          <td style={{ padding:'7px 12px', textAlign:'right', fontSize:11, color:'#6b7280', background:'#dcfce7' }}>{fmt2(gInstLastW)}</td>
-                          <td style={{ padding:'7px 12px', textAlign:'right', fontSize:11, fontWeight:700, color:'#15803d', background:'#dcfce7' }}>{fmt2(gInstToDate)}</td>
-                          <td style={{ padding:'7px 12px', textAlign:'right', fontSize:11, fontWeight:700, color:'#15803d', background:'#dcfce7', borderRight:'2px solid #bbf7d0' }}>
+                          <td style={{ padding:'8px 12px', textAlign:'right', fontSize:11, fontWeight:700, color:'#15803d', background:'#dcfce7' }}>{fmt2(gInstThisW)}</td>
+                          <td style={{ padding:'8px 12px', textAlign:'right', fontSize:11, color:'#6b7280', background:'#dcfce7' }}>{fmt2(gInstLastW)}</td>
+                          <td style={{ padding:'8px 12px', textAlign:'right', fontSize:11, fontWeight:700, color:'#15803d', background:'#dcfce7' }}>{fmt2(gInstToDate)}</td>
+                          <td style={{ padding:'8px 12px', textAlign:'right', fontSize:11, fontWeight:700, color:'#15803d', background:'#dcfce7', borderRight:'2px solid #bbf7d0' }}>
                             {gPlanned > 0 ? `${((gInstToDate/gPlanned)*100).toFixed(1)}%` : '—'}
                           </td>
                         </tr>
@@ -389,36 +419,36 @@ export default function WeeklySummary() {
 
                           return (
                             <tr key={row.item_id} style={{ borderBottom:'1px solid #f3f4f6', background: idx%2===0?'#fafbff':'#fff' }}>
-                              <td style={{ padding:'10px 12px', fontFamily:'monospace', fontSize:11, color:'#6b7280' }}>{row.item_code}</td>
-                              <td style={{ padding:'10px 12px', fontWeight:600, color:'#111827' }}>{row.item_name}</td>
-                              <td style={{ padding:'10px 12px', fontSize:11, color:'#6b7280' }}>{row.unit_of_measure||'—'}</td>
-                              <td style={{ padding:'10px 12px', textAlign:'right', fontWeight:600, color:'#111827', borderRight:'2px solid #e0ecff' }}>{fmt2(planned)}</td>
+                              <td style={{ ...tdBase, fontFamily:'monospace', fontSize:11, color:'#6b7280' }}>{row.item_code}</td>
+                              <td style={{ ...tdBase, fontWeight:600, color:'#111827' }}>{row.item_name}</td>
+                              <td style={{ ...tdBase, textAlign:'center', fontSize:11, color:'#6b7280' }}>{row.unit_of_measure||'—'}</td>
+                              <td style={{ ...tdR, fontWeight:600, color:'#111827', borderRight:'2px solid #e0ecff' }}>{fmt2(planned)}</td>
 
                               {/* Delivery columns */}
-                              <td style={{ padding:'10px 12px', textAlign:'right', fontWeight:600, color:'#0369a1', background:'#f0f9ff' }}>{fmt2(delToDate)}</td>
-                              <td style={{ padding:'10px 12px', borderRight:'2px solid #bae6fd', background:'#f0f9ff' }}>
-                                <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-                                  <div style={{ flex:1, height:5, background:'#e5e7eb', borderRadius:99, overflow:'hidden', minWidth:40 }}>
+                              <td style={{ ...tdR, fontWeight:600, color:'#0369a1', background:'#f0f9ff' }}>{fmt2(delToDate)}</td>
+                              <td style={{ ...tdBase, background:'#f0f9ff', borderRight:'2px solid #bae6fd' }}>
+                                <div style={{ display:'flex', alignItems:'center', gap:5, justifyContent:'flex-end' }}>
+                                  <div style={{ width:50, height:5, background:'#e5e7eb', borderRadius:99, overflow:'hidden', flexShrink:0 }}>
                                     <div style={{ height:'100%', borderRadius:99, width:`${Math.min(100,delPct)}%`, background: pctColor(delPct) }} />
                                   </div>
-                                  <span style={{ fontSize:11, fontWeight:700, color: pctColor(delPct), minWidth:36 }}>{delPct.toFixed(1)}%</span>
+                                  <span style={{ fontSize:11, fontWeight:700, color: pctColor(delPct), width:38, textAlign:'right', flexShrink:0 }}>{delPct.toFixed(1)}%</span>
                                 </div>
                               </td>
 
                               {/* Installation columns */}
-                              <td style={{ padding:'10px 12px', textAlign:'right', fontWeight:700, color: instThisW>0?'#15803d':'#9ca3af', background:'#f0fdf4' }}>
+                              <td style={{ ...tdR, fontWeight:700, color: instThisW>0?'#15803d':'#9ca3af', background:'#f0fdf4' }}>
                                 {instThisW > 0 ? fmt2(instThisW) : '—'}
                               </td>
-                              <td style={{ padding:'10px 12px', textAlign:'right', color: instLastW>0?'#6b7280':'#d1d5db', background:'#f0fdf4' }}>
+                              <td style={{ ...tdR, color: instLastW>0?'#6b7280':'#d1d5db', background:'#f0fdf4' }}>
                                 {instLastW > 0 ? fmt2(instLastW) : '—'}
                               </td>
-                              <td style={{ padding:'10px 12px', textAlign:'right', fontWeight:600, color:'#15803d', background:'#f0fdf4' }}>{fmt2(instToDate)}</td>
-                              <td style={{ padding:'10px 12px', borderRight:'2px solid #bbf7d0', background:'#f0fdf4' }}>
-                                <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-                                  <div style={{ flex:1, height:5, background:'#e5e7eb', borderRadius:99, overflow:'hidden', minWidth:40 }}>
+                              <td style={{ ...tdR, fontWeight:600, color:'#15803d', background:'#f0fdf4' }}>{fmt2(instToDate)}</td>
+                              <td style={{ ...tdBase, background:'#f0fdf4', borderRight:'2px solid #bbf7d0' }}>
+                                <div style={{ display:'flex', alignItems:'center', gap:5, justifyContent:'flex-end' }}>
+                                  <div style={{ width:50, height:5, background:'#e5e7eb', borderRadius:99, overflow:'hidden', flexShrink:0 }}>
                                     <div style={{ height:'100%', borderRadius:99, width:`${Math.min(100,instPct)}%`, background: pctColor(instPct) }} />
                                   </div>
-                                  <span style={{ fontSize:11, fontWeight:700, color: pctColor(instPct), minWidth:36 }}>{instPct.toFixed(1)}%</span>
+                                  <span style={{ fontSize:11, fontWeight:700, color: pctColor(instPct), width:38, textAlign:'right', flexShrink:0 }}>{instPct.toFixed(1)}%</span>
                                 </div>
                               </td>
                             </tr>
@@ -432,21 +462,21 @@ export default function WeeklySummary() {
                 {/* Totals footer */}
                 <tfoot>
                   <tr style={{ background:'#f0f7ff', borderTop:'2px solid #e0ecff' }}>
-                    <td colSpan={3} style={{ padding:'11px 12px', fontWeight:700, fontSize:12, color:'#111827' }}>
+                    <td colSpan={3} style={{ ...tdBase, fontWeight:700, fontSize:12, color:'#111827' }}>
                       TOTAL — {reportData.rows.length} items
                     </td>
-                    <td style={{ padding:'11px 12px', textAlign:'right', fontWeight:700, color:'#111827', borderRight:'2px solid #e0ecff' }}>{fmt2(totals.planned)}</td>
-                    <td style={{ padding:'11px 12px', textAlign:'right', fontWeight:700, color:'#0369a1', background:'#e0f2fe' }}>{fmt2(totals.delToDate)}</td>
-                    <td style={{ padding:'11px 12px', borderRight:'2px solid #bae6fd', background:'#e0f2fe' }}>
-                      <span style={{ fontWeight:700, color: totals.planned>0 ? (totals.delToDate/totals.planned>=1?'#16a34a':'#0369a1') : '#9ca3af' }}>
+                    <td style={{ ...tdR, fontWeight:700, color:'#111827', borderRight:'2px solid #e0ecff' }}>{fmt2(totals.planned)}</td>
+                    <td style={{ ...tdR, fontWeight:700, color:'#0369a1', background:'#e0f2fe' }}>{fmt2(totals.delToDate)}</td>
+                    <td style={{ ...tdBase, background:'#e0f2fe', borderRight:'2px solid #bae6fd', textAlign:'right' }}>
+                      <span style={{ fontWeight:700, color: totals.planned>0?(totals.delToDate/totals.planned>=1?'#16a34a':'#0369a1'):'#9ca3af' }}>
                         {totals.planned > 0 ? `${((totals.delToDate/totals.planned)*100).toFixed(1)}%` : '—'}
                       </span>
                     </td>
-                    <td style={{ padding:'11px 12px', textAlign:'right', fontWeight:700, color:'#15803d', background:'#dcfce7' }}>{fmt2(totals.instThisW)}</td>
-                    <td style={{ padding:'11px 12px', textAlign:'right', color:'#6b7280', background:'#dcfce7' }}>{fmt2(totals.instLastW)}</td>
-                    <td style={{ padding:'11px 12px', textAlign:'right', fontWeight:700, color:'#15803d', background:'#dcfce7' }}>{fmt2(totals.instToDate)}</td>
-                    <td style={{ padding:'11px 12px', borderRight:'2px solid #bbf7d0', background:'#dcfce7' }}>
-                      <span style={{ fontWeight:700, color: totals.planned>0 ? (totals.instToDate/totals.planned>=1?'#16a34a':'#15803d') : '#9ca3af' }}>
+                    <td style={{ ...tdR, fontWeight:700, color:'#15803d', background:'#dcfce7' }}>{fmt2(totals.instThisW)}</td>
+                    <td style={{ ...tdR, color:'#6b7280', background:'#dcfce7' }}>{fmt2(totals.instLastW)}</td>
+                    <td style={{ ...tdR, fontWeight:700, color:'#15803d', background:'#dcfce7' }}>{fmt2(totals.instToDate)}</td>
+                    <td style={{ ...tdBase, background:'#dcfce7', borderRight:'2px solid #bbf7d0', textAlign:'right' }}>
+                      <span style={{ fontWeight:700, color: totals.planned>0?(totals.instToDate/totals.planned>=1?'#16a34a':'#15803d'):'#9ca3af' }}>
                         {totals.planned > 0 ? `${((totals.instToDate/totals.planned)*100).toFixed(1)}%` : '—'}
                       </span>
                     </td>

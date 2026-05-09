@@ -191,3 +191,52 @@ router.get('/weekly', async (req, res) => {
     res.json({ rows, firstDeliveryDate: firstRows[0]?.first_date || null });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
+
+// ── Daily Productivity Per Week ───────────────────────────────────────────────
+router.get('/daily-productivity', async (req, res) => {
+  const { projectId, weekStart, weekEnd } = req.query;
+  if (!projectId || !weekStart || !weekEnd)
+    return res.status(400).json({ message: 'projectId, weekStart, weekEnd required' });
+  try {
+    // Get all planned items for this project
+    const { rows: items } = await pool.query(
+      `SELECT pp.item_id, pp.planned_qty,
+              i.item_code, i.item_name,
+              COALESCE(m.desc_en, m.unit_code, i.unit_of_measure) AS unit_of_measure,
+              c.classification_name,
+              pc.classification_name AS parent_classification_name
+       FROM cp_project_planning pp
+       JOIN cp_items i ON i.id = pp.item_id
+       LEFT JOIN cp_measurements m ON m.id = i.measurement_id
+       LEFT JOIN cp_item_classifications c  ON c.id = i.classification_id
+       LEFT JOIN cp_item_classifications pc ON pc.id = c.parent_id
+       WHERE pp.project_id=$1 AND pp.status IN ('approved','saved')
+       ORDER BY pc.classification_name NULLS LAST, c.classification_name, i.item_name`,
+      [projectId]
+    );
+
+    // Get daily installation qty per item per day within the week
+    const { rows: daily } = await pool.query(
+      `SELECT item_id,
+              transaction_date::text AS transaction_date,
+              SUM(qty_installed) AS qty_installed
+       FROM cp_installation_transactions
+       WHERE project_id=$1
+         AND tx_status='confirmed'
+         AND transaction_date BETWEEN $2 AND $3
+       GROUP BY item_id, transaction_date
+       ORDER BY transaction_date`,
+      [projectId, weekStart, weekEnd]
+    );
+
+    // First delivery date for week numbering
+    const { rows: firstRows } = await pool.query(
+      `SELECT MIN(transaction_date)::text AS first_date
+       FROM cp_delivery_transactions
+       WHERE project_id=$1 AND tx_status='confirmed'`,
+      [projectId]
+    );
+
+    res.json({ items, daily, firstDeliveryDate: firstRows[0]?.first_date || null });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});

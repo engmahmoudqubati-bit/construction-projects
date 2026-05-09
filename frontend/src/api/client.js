@@ -107,6 +107,7 @@ export const api = {
   getInspectionStats:      (pid) => request('GET', `/api/dashboard/inspection-stats${qs({ projectId: pid })}`),
   getDeliveryProgress:     (pid) => request('GET', `/api/dashboard/delivery-progress${qs({ projectId: pid })}`),
 
+  getDailyProductivity: (projectId, weekStart, weekEnd) => request('GET', `/api/reports/daily-productivity?projectId=${projectId}&weekStart=${weekStart}&weekEnd=${weekEnd}`),
   getWeeklyReport: (projectId, weekStart, weekEnd) => request('GET', `/api/reports/weekly?projectId=${projectId}&weekStart=${weekStart}&weekEnd=${weekEnd}`),
   getReportProgress:        (pid)    => request('GET', `/api/reports/progress${qs({ projectId: pid })}`),
   getReportProjectsSummary: ()       => request('GET', '/api/reports/projects-summary'),
