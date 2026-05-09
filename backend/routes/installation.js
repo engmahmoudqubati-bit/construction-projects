@@ -112,17 +112,14 @@ router.get('/', async (req, res) => {
       [projectId]
     );
 
-    // Get all levels
-    const { rows: levels } = await pool.query(
-      `SELECT * FROM cp_project_levels WHERE project_id=$1 ORDER BY sort_order, level_code`,
-      [projectId]
-    );
-
-    // Get allocations
-    const { rows: allocs } = await pool.query(
-      `SELECT item_id, level_id, suggested_qty FROM cp_installation_level_allocation WHERE project_id=$1`,
-      [projectId]
-    );
+    // Get all levels (safe if table doesn't exist yet)
+    let levels = [], allocs = [];
+    try {
+      const lv = await pool.query(`SELECT * FROM cp_project_levels WHERE project_id=$1 ORDER BY sort_order, level_code`, [projectId]);
+      levels = lv.rows;
+      const al = await pool.query(`SELECT item_id, level_id, suggested_qty FROM cp_installation_level_allocation WHERE project_id=$1`, [projectId]);
+      allocs = al.rows;
+    } catch (e) { /* tables not yet created — return empty */ }
 
     // Get today's transactions per item+level
     const { rows: todayTx } = await pool.query(
