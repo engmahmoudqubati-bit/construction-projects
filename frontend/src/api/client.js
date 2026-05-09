@@ -81,6 +81,7 @@ export const api = {
   getDelivery:     (pid, date) => request('GET',  `/api/delivery${qs({ projectId: pid, date })}`),
   saveDelivery:    (b)         => request('POST', '/api/delivery', b),
   confirmDelivery: (project_id, transaction_date) => request('PATCH', '/api/delivery/confirm', { project_id, transaction_date }),
+  unpostDelivery:  (project_id, transaction_date) => request('PATCH', '/api/delivery/unpost',  { project_id, transaction_date }),
 
   getInstallation:     (pid, date) => request('GET',  `/api/installation${qs({ projectId: pid, date })}`),
   saveInstallation:    (b)         => request('POST', '/api/installation', b),

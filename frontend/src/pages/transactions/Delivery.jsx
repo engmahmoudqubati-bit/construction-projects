@@ -61,7 +61,8 @@ export default function Delivery() {
   const [rows,       setRows]       = useState([]);
   const [loading,    setLoading]    = useState(false);
   const [saving,     setSaving]     = useState(false);
-  const [confirming, setConfirming] = useState(false);
+  const [confirming,  setConfirming]  = useState(false);
+  const [unposting,   setUnposting]   = useState(false);
 
   // Search / filter / pagination
   const [search,     setSearch]     = useState('');
@@ -94,20 +95,37 @@ export default function Delivery() {
     setRows(rs => rs.map(r => r.item_id === itemId ? { ...r, [field]: val } : r));
   }
 
+  // Save current qty inputs to backend as draft
+  async function saveEntries() {
+    if (!projectId || !date) return;
+    const entries = rows
+      .filter(r => r.qty_input !== '' && parseFloat(r.qty_input) > 0)
+      .map(r => ({
+        item_id: r.item_id,
+        qty_delivered: parseFloat(r.qty_input),
+        delivery_ref: r.ref_input || null,
+        notes: r.notes_input || null,
+      }));
+    await api.saveDelivery({ project_id: projectId, transaction_date: date, entries });
+  }
+
+  async function handleDraft() {
+    if (!projectId || !date) return toast('Select project and date', 'error');
+    setSaving(true);
+    try {
+      const res = await saveEntries();
+      toast(`Saved as Draft (${(res && res.saved) || ''} entries)`);
+      load();
+    } catch (err) { toast(err.message, 'error'); }
+    finally { setSaving(false); }
+  }
+
   async function handleSave() {
     if (!projectId || !date) return toast('Select project and date', 'error');
     setSaving(true);
     try {
-      const entries = rows
-        .filter(r => r.qty_input !== '' && parseFloat(r.qty_input) > 0)
-        .map(r => ({
-          item_id: r.item_id,
-          qty_delivered: parseFloat(r.qty_input),
-          delivery_ref: r.ref_input || null,
-          notes: r.notes_input || null,
-        }));
-      const res = await api.saveDelivery({ project_id: projectId, transaction_date: date, entries });
-      toast(`${t.saveSuccess} (${res.saved} rows)`);
+      await saveEntries();
+      toast('Status: Saved');
       load();
     } catch (err) { toast(err.message, 'error'); }
     finally { setSaving(false); }
@@ -118,10 +136,21 @@ export default function Delivery() {
     setConfirming(true);
     try {
       const res = await api.confirmDelivery(projectId, date);
-      toast(`Confirmed ${res.confirmed} entries`);
+      toast(`Status: Confirmed (${res.confirmed} entries)`);
       load();
     } catch (err) { toast(err.message, 'error'); }
     finally { setConfirming(false); }
+  }
+
+  async function handleUnpost() {
+    if (!projectId || !date) return;
+    setUnposting(true);
+    try {
+      const res = await api.unpostDelivery(projectId, date);
+      toast(`Unposted — ${res.unposted} entries reverted to Draft`);
+      load();
+    } catch (err) { toast(err.message, 'error'); }
+    finally { setUnposting(false); }
   }
 
   function exportCSV() {
@@ -198,7 +227,10 @@ export default function Delivery() {
 
   const draftCount     = rows.filter(r => r.tx_id && r.tx_status === 'draft').length;
   const confirmedCount = rows.filter(r => r.tx_id && r.tx_status === 'confirmed').length;
-  const canConfirm     = draftCount > 0;
+  const hasEditable    = draftCount > 0;
+  const hasConfirmed   = confirmedCount > 0;
+  const canConfirm     = hasEditable;
+  const canUnpost      = hasConfirmed && canAction('can_confirm');
 
   // KPI totals (always from all rows, not filtered)
   const totalPlanned   = rows.reduce((s, r) => s + (parseFloat(r.planned_qty) || 0), 0);
@@ -244,21 +276,7 @@ export default function Delivery() {
             Delivering construction materials to project sites, ensuring timely supply, accurate quantities, and smooth site operations.
           </p>
         </div>
-        {/* BOQ-style action buttons */}
-        {projectId && rows.length > 0 && (
-          <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
-            <button onClick={handleSave} disabled={saving} style={btnStyle('var(--card)', 'var(--text)', 'var(--border)')}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-              {saving ? t.saving : 'Save'}
-            </button>
-            {canConfirm && (
-              <button onClick={handleConfirm} disabled={confirming} style={btnStyle('#16a34a')}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                {confirming ? t.saving : `Confirm (${draftCount})`}
-              </button>
-            )}
-          </div>
-        )}
+{/* No action buttons in header — all in table footer like BOQ */}
       </div>
 
       {/* Filter bar */}
@@ -513,18 +531,33 @@ export default function Delivery() {
             pageSize={pageSize} onPage={setPage} onPageSize={setPageSize}
           />
 
-          {/* Bottom action bar */}
-          <div style={{ padding: '12px 18px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-            <button onClick={handleSave} disabled={saving} style={btnStyle('var(--card)', 'var(--text)', 'var(--border)')}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-              {saving ? t.saving : 'Save'}
-            </button>
-            {canConfirm && (
-              <button onClick={handleConfirm} disabled={confirming} style={btnStyle('#16a34a')}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                {confirming ? t.saving : 'Confirm'}
-              </button>
-            )}
+          {/* Bottom action bar — matches BOQ: Draft / Save / Confirm / Unpost */}
+          <div style={{ padding: '14px 18px', borderTop: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', background: 'var(--card2)' }}>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', marginRight: 8 }}>{rows.length} items</span>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {hasEditable && (
+                <>
+                  <button onClick={handleDraft} disabled={saving} style={btnStyle('var(--card)', 'var(--text)', 'var(--border)')}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    {saving ? t.saving : 'Draft'}
+                  </button>
+                  <button onClick={handleSave} disabled={saving} style={btnStyle('#2563eb')}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    {saving ? t.saving : 'Save'}
+                  </button>
+                  <button onClick={handleConfirm} disabled={confirming} style={btnStyle('#16a34a')}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    {confirming ? t.saving : `Confirm (${draftCount})`}
+                  </button>
+                </>
+              )}
+              {canUnpost && (
+                <button onClick={handleUnpost} disabled={unposting} style={btnStyle('#dc2626')}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+                  {unposting ? 'Unposting...' : 'Unpost'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

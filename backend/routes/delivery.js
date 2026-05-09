@@ -80,6 +80,30 @@ router.patch('/confirm', async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+
+// Unpost — revert confirmed entries back to draft (requires can_confirm permission)
+router.patch('/unpost', async (req, res) => {
+  const { project_id, transaction_date } = req.body;
+  if (!project_id || !transaction_date) return res.status(400).json({ message: 'project_id and transaction_date required' });
+  if (!canAccessProject(req, project_id)) return res.status(403).json({ message: 'No access' });
+  try {
+    const userPerms = await pool.query(
+      `SELECT perm_key FROM cp_position_role_permissions
+       WHERE role_id=(SELECT position_role_id FROM cp_users WHERE id=$1)
+         AND perm_type='action' AND perm_key='can_confirm'`,
+      [req.user.id]
+    );
+    if (req.user.role !== 'admin' && userPerms.rows.length === 0)
+      return res.status(403).json({ message: 'No permission to unpost' });
+    const { rowCount } = await pool.query(
+      `UPDATE cp_delivery_transactions SET tx_status='draft'
+       WHERE project_id=$1 AND transaction_date=$2 AND tx_status='confirmed'`,
+      [project_id, transaction_date]
+    );
+    res.json({ unposted: rowCount });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 router.delete('/:id', async (req, res) => {
   try {
     const { rowCount } = await pool.query(
