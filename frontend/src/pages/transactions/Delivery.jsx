@@ -1,15 +1,60 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from '../../api/client';
 import { useToast } from '../../components/shared/Toast';
 import RefreshButton from '../../components/shared/RefreshButton';
+import { useAuth } from '../../context/AuthContext';
 import t from '../../lang';
 
 const today = () => new Date().toISOString().slice(0, 10);
+const fmt2   = (v) => (parseFloat(v) || 0).toFixed(2);
+const fmt3   = (v) => (parseFloat(v) || 0).toFixed(3);
 
-const fmt = (v, dec = 3) => (parseFloat(v) || 0).toFixed(dec);
+// ── Pagination (same style as DataTable) ─────────────────────────
+function Pagination({ page, totalPages, total, pageSize, onPage, onPageSize }) {
+  const pages = [];
+  const start = Math.max(1, page - 2);
+  const end   = Math.min(totalPages, page + 2);
+  for (let i = start; i <= end; i++) pages.push(i);
+
+  const btn = (active) => ({
+    minWidth: 32, height: 32, borderRadius: 8,
+    border: active ? '1.5px solid #2563eb' : '1px solid #e5e7eb',
+    background: active ? '#3b82f6' : '#fff',
+    color: active ? '#fff' : '#374151',
+    fontWeight: active ? 600 : 400,
+    fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    padding: '0 10px', transition: 'all 0.12s',
+  });
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', padding: '12px 18px', borderTop: '1px solid #f3f4f6', gap: 8 }}>
+      <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 500, minWidth: 80 }}>
+        <strong style={{ color: '#111827' }}>{total}</strong> rows
+      </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, justifyContent: 'center' }}>
+        <button style={{ ...btn(false), padding: '0 10px' }} onClick={() => onPage(page - 1)} disabled={page === 1}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        {start > 1 && <><button style={btn(false)} onClick={() => onPage(1)}>1</button><span style={{ color: '#9ca3af', fontSize: 13, padding: '0 2px' }}>...</span></>}
+        {pages.map(p => <button key={p} style={btn(p === page)} onClick={() => onPage(p)}>{p}</button>)}
+        {end < totalPages && <><span style={{ color: '#9ca3af', fontSize: 13, padding: '0 2px' }}>...</span><button style={btn(false)} onClick={() => onPage(totalPages)}>{totalPages}</button></>}
+        <button style={{ ...btn(false), padding: '0 10px' }} onClick={() => onPage(page + 1)} disabled={page === totalPages}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <select value={pageSize} onChange={e => { onPageSize(Number(e.target.value)); onPage(1); }}
+        style={{ border: '1px solid #e5e7eb', background: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 12, color: '#374151', cursor: 'pointer', fontFamily: 'inherit', minWidth: 60 }}>
+        {[10, 25, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
+      </select>
+    </div>
+  );
+}
 
 export default function Delivery() {
   const toast = useToast();
+  const { canAction } = useAuth();
+
   const [projects,   setProjects]   = useState([]);
   const [projectId,  setProjectId]  = useState('');
   const [date,       setDate]       = useState(today());
@@ -17,6 +62,13 @@ export default function Delivery() {
   const [loading,    setLoading]    = useState(false);
   const [saving,     setSaving]     = useState(false);
   const [confirming, setConfirming] = useState(false);
+
+  // Search / filter / pagination
+  const [search,     setSearch]     = useState('');
+  const [filterClass, setFilterClass] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [page,       setPage]       = useState(1);
+  const [pageSize,   setPageSize]   = useState(25);
 
   useEffect(() => { api.getProjects().then(setProjects).catch(() => {}); }, []);
 
@@ -27,10 +79,11 @@ export default function Delivery() {
       const data = await api.getDelivery(projectId, date);
       setRows(data.map(r => ({
         ...r,
-        qty_input:   r.qty_delivered ?? '',
+        qty_input:   r.qty_delivered != null ? parseFloat(r.qty_delivered).toFixed(2) : '',
         ref_input:   r.delivery_ref  ?? '',
         notes_input: r.notes         ?? '',
       })));
+      setPage(1);
     } catch (err) { toast(err.message, 'error'); }
     finally { setLoading(false); }
   }, [projectId, date, toast]);
@@ -71,9 +124,70 @@ export default function Delivery() {
     finally { setConfirming(false); }
   }
 
+  function exportCSV() {
+    const headers = ['Item Code','Item Name','Unit','Planned Qty','Total Delivered','Remaining','Delivery Qty','Ref/PO Number','Notes','Status'];
+    const csvRows = rows.map(r => {
+      const planned   = parseFloat(r.planned_qty) || 0;
+      const delivered = parseFloat(r.total_delivered_all) || 0;
+      const remaining = Math.max(0, planned - delivered);
+      return [
+        r.item_code, r.item_name, r.unit_of_measure || '',
+        fmt2(planned), fmt2(delivered), fmt2(remaining),
+        r.qty_input || '', r.ref_input || '', r.notes_input || '',
+        r.tx_status || '',
+      ].join(',');
+    });
+    const csv = [headers.join(','), ...csvRows].join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = `delivery_${projectId}_${date}.csv`;
+    a.click();
+  }
+
   const projectLabel = p => [p.project_name_en, p.project_name_ar].filter(Boolean).join(' / ');
 
-  const grouped = rows.reduce((acc, row) => {
+  // All unique classifications for filter dropdown
+  const classifications = useMemo(() => {
+    const seen = new Set();
+    return rows
+      .map(r => r.parent_classification_name
+        ? `${r.parent_classification_name} › ${r.classification_name || ''}`
+        : r.classification_name || 'Uncategorized')
+      .filter(v => { if (seen.has(v)) return false; seen.add(v); return true; });
+  }, [rows]);
+
+  // Apply search + filters
+  const filteredRows = useMemo(() => {
+    let result = rows;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(r =>
+        (r.item_code || '').toLowerCase().includes(q) ||
+        (r.item_name || '').toLowerCase().includes(q) ||
+        (r.classification_name || '').toLowerCase().includes(q)
+      );
+    }
+    if (filterClass) {
+      result = result.filter(r => {
+        const key = r.parent_classification_name
+          ? `${r.parent_classification_name} › ${r.classification_name || ''}`
+          : r.classification_name || 'Uncategorized';
+        return key === filterClass;
+      });
+    }
+    if (filterStatus === 'draft')     result = result.filter(r => r.tx_status === 'draft');
+    if (filterStatus === 'confirmed') result = result.filter(r => r.tx_status === 'confirmed');
+    if (filterStatus === 'no_entry')  result = result.filter(r => !r.tx_id);
+    return result;
+  }, [rows, search, filterClass, filterStatus]);
+
+  // Pagination on filtered rows
+  const totalFiltered = filteredRows.length;
+  const totalPages    = Math.max(1, Math.ceil(totalFiltered / pageSize));
+  const pagedRows     = filteredRows.slice((page - 1) * pageSize, page * pageSize);
+
+  // Re-group paged rows
+  const grouped = pagedRows.reduce((acc, row) => {
     const key = row.parent_classification_name
       ? `${row.parent_classification_name} › ${row.classification_name || ''}`
       : row.classification_name || 'Uncategorized';
@@ -86,30 +200,34 @@ export default function Delivery() {
   const confirmedCount = rows.filter(r => r.tx_id && r.tx_status === 'confirmed').length;
   const canConfirm     = draftCount > 0;
 
-  // Project-level summary totals
+  // KPI totals (always from all rows, not filtered)
   const totalPlanned   = rows.reduce((s, r) => s + (parseFloat(r.planned_qty) || 0), 0);
   const totalDelivered = rows.reduce((s, r) => s + (parseFloat(r.total_delivered_all) || 0), 0);
-  const totalToday     = rows.reduce((s, r) => s + (parseFloat(r.qty_input) || 0), 0);
   const totalRemaining = Math.max(0, totalPlanned - totalDelivered);
+  const totalToday     = rows.reduce((s, r) => s + (parseFloat(r.qty_input) || 0), 0);
   const overallPct     = totalPlanned > 0 ? Math.min(100, (totalDelivered / totalPlanned) * 100) : 0;
 
   const filterSelectStyle = {
-    background: 'var(--card)',
-    border: '2px solid #0ea5e9',
-    borderRadius: 10,
-    padding: '8px 14px',
-    fontSize: 14,
-    fontWeight: 600,
-    color: 'var(--text)',
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    minWidth: 280,
-    outline: 'none',
-    height: 40,
-    transition: 'border-color 0.15s',
+    background: 'var(--card)', border: '2px solid #0ea5e9', borderRadius: 10,
+    padding: '8px 14px', fontSize: 14, fontWeight: 600, color: 'var(--text)',
+    cursor: 'pointer', fontFamily: 'inherit', minWidth: 280, outline: 'none',
+    height: 40, transition: 'border-color 0.15s',
   };
-
   const filterDateStyle = { ...filterSelectStyle, minWidth: 160, cursor: 'default' };
+
+  const btnStyle = (bg, color = '#fff', border = bg) => ({
+    display: 'flex', alignItems: 'center', gap: 6, background: bg,
+    border: `1px solid ${border}`, borderRadius: 10, padding: '8px 18px',
+    fontSize: 13, fontWeight: 600, color, cursor: 'pointer', fontFamily: 'inherit',
+    whiteSpace: 'nowrap',
+  });
+
+  const thStyle = {
+    fontWeight: 700, fontSize: 11.5, textTransform: 'uppercase',
+    letterSpacing: '0.05em', color: '#1e40af', padding: '10px 12px',
+    background: '#f0f7ff', borderBottom: '2px solid #bfdbfe',
+    whiteSpace: 'nowrap',
+  };
 
   return (
     <div>
@@ -126,25 +244,28 @@ export default function Delivery() {
             Delivering construction materials to project sites, ensuring timely supply, accurate quantities, and smooth site operations.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-          {projectId && date && (
-            <button className="btn btn-secondary" onClick={handleSave} disabled={saving}>
-              {saving ? t.saving : t.saveEntries}
+        {/* BOQ-style action buttons */}
+        {projectId && rows.length > 0 && (
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+            <button onClick={handleSave} disabled={saving} style={btnStyle('var(--card)', 'var(--text)', 'var(--border)')}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              {saving ? t.saving : 'Save'}
             </button>
-          )}
-          {canConfirm && (
-            <button className="btn btn-success" onClick={handleConfirm} disabled={confirming}>
-              {confirming ? t.saving : `✓ ${t.confirm} (${draftCount})`}
-            </button>
-          )}
-        </div>
+            {canConfirm && (
+              <button onClick={handleConfirm} disabled={confirming} style={btnStyle('#16a34a')}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                {confirming ? t.saving : `Confirm (${draftCount})`}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Filter bar */}
       <div className="filter-bar">
         <div className="filter-group">
           <label>🏗️ {t.selectProject}:</label>
-          <select value={projectId} onChange={e => setProjectId(e.target.value)} style={filterSelectStyle}>
+          <select value={projectId} onChange={e => { setProjectId(e.target.value); setSearch(''); setFilterClass(''); setFilterStatus(''); }} style={filterSelectStyle}>
             <option value="">— {t.selectProject} —</option>
             {projects.map(p => <option key={p.id} value={p.id}>{projectLabel(p)}</option>)}
           </select>
@@ -153,26 +274,76 @@ export default function Delivery() {
           <label>📅 {t.selectDate}:</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)} style={filterDateStyle} />
         </div>
+
+        {/* Search */}
+        {projectId && (
+          <div className="filter-group">
+            <label>🔍 Search:</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: 'var(--card)', border: '1.5px solid var(--border)', borderRadius: 8, height: 40, paddingLeft: 10, minWidth: 180 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input style={{ border: 'none', outline: 'none', fontSize: 13, color: 'var(--text)', background: 'none', width: '100%', padding: '0 8px', fontFamily: 'inherit' }}
+                placeholder="Item code / name..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+              {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: '0 8px', fontSize: 14 }}>✕</button>}
+            </div>
+          </div>
+        )}
+
+        {/* Classification filter */}
+        {projectId && classifications.length > 0 && (
+          <div className="filter-group">
+            <label>📁 Classification:</label>
+            <select value={filterClass} onChange={e => { setFilterClass(e.target.value); setPage(1); }}
+              style={{ ...filterDateStyle, minWidth: 180, border: '1.5px solid var(--border)', fontWeight: 400, fontSize: 13 }}>
+              <option value="">All Classifications</option>
+              {classifications.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        )}
+
+        {/* Status filter */}
+        {projectId && (
+          <div className="filter-group">
+            <label>📋 Status:</label>
+            <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
+              style={{ ...filterDateStyle, minWidth: 140, border: '1.5px solid var(--border)', fontWeight: 400, fontSize: 13 }}>
+              <option value="">All Status</option>
+              <option value="draft">Draft</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="no_entry">No Entry</option>
+            </select>
+          </div>
+        )}
+
         {projectId && date && <RefreshButton onRefresh={load} />}
+
+        {/* Export button */}
         {rows.length > 0 && (
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-            {draftCount > 0    && <span className="badge badge-draft">{draftCount} draft</span>}
+          <button onClick={exportCSV} style={{ ...btnStyle('var(--card)', 'var(--text)', 'var(--border)'), height: 38, alignSelf: 'flex-end', fontSize: 12 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+          </button>
+        )}
+
+        {rows.length > 0 && (
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+            {draftCount > 0     && <span className="badge badge-draft">{draftCount} draft</span>}
             {confirmedCount > 0 && <span className="badge badge-confirmed">{confirmedCount} confirmed</span>}
           </div>
         )}
       </div>
 
-      {/* Summary KPI bar */}
+      {/* KPI summary cards */}
       {!loading && rows.length > 0 && (
         <div style={{ display: 'flex', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
           {[
-            { label: 'Planned (Total)',      value: fmt(totalPlanned, 2),   color: '#6366f1', bg: '#eef2ff' },
-            { label: 'Delivered (All Time)', value: fmt(totalDelivered, 2), color: '#0ea5e9', bg: '#e0f2fe' },
-            { label: 'Remaining',            value: fmt(totalRemaining, 2), color: '#f59e0b', bg: '#fffbeb' },
-            { label: "Today's Entries",      value: fmt(totalToday, 2),     color: '#10b981', bg: '#ecfdf5' },
-            { label: 'Overall Progress',     value: `${overallPct.toFixed(1)}%`, color: overallPct >= 100 ? '#10b981' : overallPct >= 60 ? '#0ea5e9' : '#f59e0b', bg: '#f0fdf4' },
+            { label: 'Planned (Total)',      value: fmt2(totalPlanned),   color: '#6366f1', bg: '#eef2ff' },
+            { label: 'Delivered (All Time)', value: fmt2(totalDelivered), color: '#0ea5e9', bg: '#e0f2fe' },
+            { label: 'Remaining',            value: fmt2(totalRemaining), color: '#f59e0b', bg: '#fffbeb' },
+            { label: "Today's Entries",      value: fmt2(totalToday),     color: '#10b981', bg: '#ecfdf5' },
+            { label: 'Overall Progress',     value: `${overallPct.toFixed(1)}%`,
+              color: overallPct >= 100 ? '#10b981' : overallPct >= 60 ? '#0ea5e9' : '#f59e0b', bg: '#f0fdf4' },
           ].map(k => (
-            <div key={k.label} style={{ flex: '1 1 140px', background: k.bg, border: `1px solid ${k.color}22`, borderRadius: 12, padding: '12px 16px' }}>
+            <div key={k.label} style={{ flex: '1 1 140px', background: k.bg, border: `1px solid ${k.color}33`, borderRadius: 12, padding: '12px 16px' }}>
               <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: k.color, marginBottom: 4 }}>{k.label}</div>
               <div style={{ fontSize: 20, fontWeight: 700, color: k.color }}>{k.value}</div>
             </div>
@@ -181,33 +352,32 @@ export default function Delivery() {
       )}
 
       {!projectId && <div className="empty-state"><div className="empty-icon">🚚</div><p>{t.selectProject}</p></div>}
-      {loading && <div className="spinner-wrap"><div className="spinner" /></div>}
+      {loading    && <div className="spinner-wrap"><div className="spinner" /></div>}
       {!loading && projectId && rows.length === 0 && (
         <div className="empty-state"><div className="empty-icon">📦</div><p>{t.noItemsLinked}</p></div>
       )}
 
       {!loading && rows.length > 0 && (
-        <div className="card">
+        <div className="card" style={{ overflow: 'hidden' }}>
           <div className="table-wrapper">
-            <table className="tx-table">
+            <table className="tx-table" style={{ width: '100%' }}>
               <thead>
                 <tr>
-                  <th>{t.itemCode}</th>
-                  <th>{t.itemName}</th>
-                  <th>{t.unitOfMeasure}</th>
-                  <th style={{ textAlign: 'right' }}>Planned Qty</th>
-                  <th style={{ textAlign: 'right' }}>Total Delivered</th>
-                  <th style={{ textAlign: 'right' }}>Remaining</th>
-                  <th style={{ minWidth: 120 }}>Progress</th>
-                  <th style={{ minWidth: 110 }}>Today's Qty</th>
-                  <th style={{ minWidth: 120 }}>{t.deliveryRef}</th>
-                  <th style={{ minWidth: 150 }}>{t.notes}</th>
-                  <th>{t.status}</th>
+                  <th style={thStyle}>Item Code</th>
+                  <th style={thStyle}>Item Name</th>
+                  <th style={thStyle}>Unit</th>
+                  <th style={{ ...thStyle, textAlign: 'right' }}>Planned Qty</th>
+                  <th style={{ ...thStyle, textAlign: 'right' }}>Total Delivered</th>
+                  <th style={{ ...thStyle, textAlign: 'right' }}>Remaining</th>
+                  <th style={{ ...thStyle, minWidth: 110 }}>Progress</th>
+                  <th style={{ ...thStyle, minWidth: 110 }}>Delivery Qty</th>
+                  <th style={{ ...thStyle, minWidth: 130 }}>Ref/PO Number</th>
+                  <th style={{ ...thStyle, minWidth: 150 }}>Notes</th>
+                  <th style={thStyle}>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {Object.entries(grouped).map(([group, items]) => {
-                  // Group subtotals
                   const gPlanned   = items.reduce((s, r) => s + (parseFloat(r.planned_qty) || 0), 0);
                   const gDelivered = items.reduce((s, r) => s + (parseFloat(r.total_delivered_all) || 0), 0);
                   const gRemaining = Math.max(0, gPlanned - gDelivered);
@@ -218,84 +388,82 @@ export default function Delivery() {
                         <td colSpan={4} style={{ padding: '7px 14px', fontSize: 11, fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                           📁 {group}
                         </td>
-                        <td style={{ padding: '7px 14px', fontSize: 11, fontWeight: 700, color: '#0ea5e9', textAlign: 'right' }}>{fmt(gDelivered, 2)}</td>
-                        <td style={{ padding: '7px 14px', fontSize: 11, fontWeight: 700, color: '#f59e0b', textAlign: 'right' }}>{fmt(gRemaining, 2)}</td>
+                        <td style={{ padding: '7px 14px', fontSize: 11, fontWeight: 700, color: '#0ea5e9', textAlign: 'right' }}>{fmt2(gDelivered)}</td>
+                        <td style={{ padding: '7px 14px', fontSize: 11, fontWeight: 700, color: '#f59e0b', textAlign: 'right' }}>{fmt2(gRemaining)}</td>
                         <td colSpan={5} />
                       </tr>
 
                       {items.map(row => {
                         const planned       = parseFloat(row.planned_qty) || 0;
-                        const delivered     = parseFloat(row.total_delivered_all) || 0;  // all-time for remaining calc
-                        const deliveredUpTo = parseFloat(row.total_delivered) || 0;       // up-to-date for progress bar
-                        const remaining     = Math.max(0, planned - delivered);
+                        const deliveredAll  = parseFloat(row.total_delivered_all) || 0;
+                        const deliveredUpTo = parseFloat(row.total_delivered) || 0;
+                        const remaining     = Math.max(0, planned - deliveredAll);
                         const pct           = planned > 0 ? Math.min(100, (deliveredUpTo / planned) * 100) : 0;
                         const todayQty      = parseFloat(row.qty_input) || 0;
                         const isConfirmed   = row.tx_status === 'confirmed';
-                        const isComplete    = delivered >= planned && planned > 0;
-                        const isOverDel     = !isConfirmed && todayQty > 0 && (delivered + todayQty) > planned;
+                        const isComplete    = deliveredAll >= planned && planned > 0;
+                        const isOverDel     = !isConfirmed && todayQty > 0 && (deliveredAll + todayQty) > planned;
 
                         return (
                           <tr key={row.item_id} style={{
-                            opacity: isComplete && !row.tx_id ? 0.55 : 1,
-                            background: isOverDel ? '#fff7ed' : isConfirmed ? 'var(--bg)' : 'inherit',
+                            background: isOverDel ? '#fff7ed' : isConfirmed ? 'var(--bg)' : 'var(--card)',
+                            opacity: isComplete && !row.tx_id ? 0.5 : 1,
                           }}>
-                            <td className="item-meta" style={{ fontFamily: 'monospace', fontSize: 12 }}>{row.item_code}</td>
+                            <td style={{ fontFamily: 'monospace', fontSize: 12, color: '#6b7280' }}>{row.item_code}</td>
                             <td style={{ fontWeight: 500 }}>
                               {row.item_name}
-                              {isOverDel && (
-                                <span title="Today's qty will exceed planned!" style={{ marginLeft: 6, color: '#ea580c', fontSize: 11, fontWeight: 700 }}>⚠ Over</span>
-                              )}
+                              {isOverDel && <span title="Will exceed planned qty!" style={{ marginLeft: 6, color: '#ea580c', fontSize: 11, fontWeight: 700 }}>⚠ Over</span>}
                             </td>
-                            <td className="item-meta">{row.unit_of_measure || '—'}</td>
+                            <td style={{ fontSize: 12, color: '#6b7280' }}>{row.unit_of_measure || '—'}</td>
 
-                            {/* Planned */}
-                            <td style={{ textAlign: 'right', fontWeight: 600, color: '#6366f1' }}>{fmt(planned, 2)}</td>
-
-                            {/* Total Delivered (all time) */}
-                            <td style={{ textAlign: 'right', fontWeight: 600, color: '#0ea5e9' }}>{fmt(delivered, 2)}</td>
-
-                            {/* Remaining */}
+                            <td style={{ textAlign: 'right', fontWeight: 600, color: '#6366f1' }}>{fmt2(planned)}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 600, color: '#0ea5e9' }}>{fmt2(deliveredAll)}</td>
                             <td style={{ textAlign: 'right', fontWeight: 700, color: isComplete ? '#10b981' : '#f59e0b' }}>
-                              {isComplete ? '✓ Done' : fmt(remaining, 2)}
+                              {isComplete ? '✓ Done' : fmt2(remaining)}
                             </td>
 
-                            {/* Progress bar (based on deliveries up to selected date) */}
+                            {/* Progress */}
                             <td>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <div style={{ flex: 1, height: 6, background: '#e5e7eb', borderRadius: 99, overflow: 'hidden', minWidth: 60 }}>
-                                  <div style={{
-                                    height: '100%', borderRadius: 99,
-                                    width: `${pct}%`,
-                                    background: pct >= 100 ? '#10b981' : pct >= 60 ? '#0ea5e9' : '#f59e0b',
-                                    transition: 'width 0.3s',
-                                  }} />
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                                <div style={{ flex: 1, height: 6, background: '#e5e7eb', borderRadius: 99, overflow: 'hidden', minWidth: 50 }}>
+                                  <div style={{ height: '100%', borderRadius: 99, width: `${pct}%`,
+                                    background: pct >= 100 ? '#10b981' : pct >= 60 ? '#0ea5e9' : '#f59e0b', transition: 'width 0.3s' }} />
                                 </div>
                                 <span style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{pct.toFixed(0)}%</span>
                               </div>
                             </td>
 
-                            {/* Today's qty input */}
+                            {/* Delivery Qty — white bg, 2 decimal places */}
                             <td>
-                              <input
-                                type="number" min="0" step="0.001"
-                                value={row.qty_input}
+                              <input type="number" min="0" step="0.01" value={row.qty_input}
                                 disabled={isConfirmed}
-                                style={{ borderColor: isOverDel ? '#f97316' : undefined }}
-                                onChange={e => setField(row.item_id, 'qty_input', e.target.value)}
+                                style={{ background: isConfirmed ? 'var(--bg2)' : '#fff', borderColor: isOverDel ? '#f97316' : undefined }}
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  // Allow typing, but round to 2dp on blur
+                                  setField(row.item_id, 'qty_input', val);
+                                }}
+                                onBlur={e => {
+                                  const v = parseFloat(e.target.value);
+                                  if (!isNaN(v)) setField(row.item_id, 'qty_input', v.toFixed(2));
+                                  else if (e.target.value === '') setField(row.item_id, 'qty_input', '');
+                                }}
                               />
                             </td>
 
-                            {/* Delivery ref */}
+                            {/* Ref/PO Number — white bg */}
                             <td>
                               <input type="text" value={row.ref_input} disabled={isConfirmed}
-                                placeholder="Ref / DO #"
+                                placeholder="Ref/PO Number"
+                                style={{ background: isConfirmed ? 'var(--bg2)' : '#fff' }}
                                 onChange={e => setField(row.item_id, 'ref_input', e.target.value)} />
                             </td>
 
-                            {/* Notes */}
+                            {/* Notes — white bg */}
                             <td>
                               <input type="text" value={row.notes_input} disabled={isConfirmed}
                                 placeholder="Notes..."
+                                style={{ background: isConfirmed ? 'var(--bg2)' : '#fff' }}
                                 onChange={e => setField(row.item_id, 'notes_input', e.target.value)} />
                             </td>
 
@@ -318,33 +486,43 @@ export default function Delivery() {
               <tfoot>
                 <tr style={{ background: '#f0f7ff', borderTop: '2px solid #bfdbfe' }}>
                   <td colSpan={3} style={{ padding: '10px 14px', fontSize: 12, fontWeight: 700, color: '#1e40af' }}>
-                    TOTAL ({rows.length} items)
+                    TOTAL — {totalFiltered} of {rows.length} items shown
                   </td>
-                  <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#6366f1' }}>{fmt(totalPlanned, 2)}</td>
-                  <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#0ea5e9' }}>{fmt(totalDelivered, 2)}</td>
-                  <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#f59e0b' }}>{fmt(totalRemaining, 2)}</td>
+                  <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#6366f1' }}>{fmt2(totalPlanned)}</td>
+                  <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#0ea5e9' }}>{fmt2(totalDelivered)}</td>
+                  <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#f59e0b' }}>{fmt2(totalRemaining)}</td>
                   <td style={{ padding: '10px 14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ flex: 1, height: 8, background: '#e5e7eb', borderRadius: 99, overflow: 'hidden', minWidth: 60 }}>
-                        <div style={{ height: '100%', borderRadius: 99, width: `${overallPct}%`, background: overallPct >= 100 ? '#10b981' : overallPct >= 60 ? '#0ea5e9' : '#f59e0b' }} />
+                      <div style={{ flex: 1, height: 8, background: '#e5e7eb', borderRadius: 99, overflow: 'hidden', minWidth: 50 }}>
+                        <div style={{ height: '100%', borderRadius: 99, width: `${overallPct}%`,
+                          background: overallPct >= 100 ? '#10b981' : overallPct >= 60 ? '#0ea5e9' : '#f59e0b' }} />
                       </div>
                       <span style={{ fontSize: 12, fontWeight: 700, color: '#1e40af' }}>{overallPct.toFixed(1)}%</span>
                     </div>
                   </td>
-                  <td style={{ padding: '10px 14px', fontWeight: 700, color: '#10b981' }}>{fmt(totalToday, 2)}</td>
+                  <td style={{ padding: '10px 14px', fontWeight: 700, color: '#10b981' }}>{fmt2(totalToday)}</td>
                   <td colSpan={3} />
                 </tr>
               </tfoot>
             </table>
           </div>
 
+          {/* Pagination */}
+          <Pagination
+            page={page} totalPages={totalPages} total={totalFiltered}
+            pageSize={pageSize} onPage={setPage} onPageSize={setPageSize}
+          />
+
+          {/* Bottom action bar */}
           <div style={{ padding: '12px 18px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-            <button className="btn btn-secondary" onClick={handleSave} disabled={saving}>
-              {saving ? t.saving : t.saveEntries}
+            <button onClick={handleSave} disabled={saving} style={btnStyle('var(--card)', 'var(--text)', 'var(--border)')}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              {saving ? t.saving : 'Save'}
             </button>
             {canConfirm && (
-              <button className="btn btn-success" onClick={handleConfirm} disabled={confirming}>
-                {confirming ? t.saving : `✓ ${t.confirm}`}
+              <button onClick={handleConfirm} disabled={confirming} style={btnStyle('#16a34a')}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                {confirming ? t.saving : 'Confirm'}
               </button>
             )}
           </div>

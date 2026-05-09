@@ -12,7 +12,8 @@ router.get('/', async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT pp.item_id, pp.planned_qty,
-              i.item_code, i.item_name, i.unit_of_measure,
+              i.item_code, i.item_name,
+              COALESCE(m.unit_code, i.unit_of_measure) AS unit_of_measure,
               c.classification_name,
               pc.classification_name AS parent_classification_name,
               t.id AS tx_id, t.qty_delivered, t.delivery_ref, t.notes, t.tx_status,
@@ -20,6 +21,7 @@ router.get('/', async (req, res) => {
               COALESCE(SUM(t2.qty_delivered) FILTER (WHERE t2.tx_status='confirmed'), 0) AS total_delivered_all
        FROM cp_project_planning pp
        JOIN cp_items i ON i.id = pp.item_id
+       LEFT JOIN cp_measurements m          ON m.id  = i.measurement_id
        LEFT JOIN cp_item_classifications c  ON c.id  = i.classification_id
        LEFT JOIN cp_item_classifications pc ON pc.id = c.parent_id
        LEFT JOIN cp_delivery_transactions t
@@ -28,7 +30,7 @@ router.get('/', async (req, res) => {
          ON t2.project_id=pp.project_id AND t2.item_id=pp.item_id
        WHERE pp.project_id=$1 AND pp.status IN ('approved','saved')
        GROUP BY pp.item_id, pp.planned_qty, i.item_code, i.item_name, i.unit_of_measure,
-                c.classification_name, pc.classification_name,
+                m.unit_code, c.classification_name, pc.classification_name,
                 t.id, t.qty_delivered, t.delivery_ref, t.notes, t.tx_status
        ORDER BY pc.classification_name NULLS LAST, c.classification_name, i.item_name`,
       [projectId, date]
@@ -64,7 +66,6 @@ router.post('/', async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// Confirm all draft entries for a project+date
 router.patch('/confirm', async (req, res) => {
   const { project_id, transaction_date } = req.body;
   if (!project_id || !transaction_date) return res.status(400).json({ message: 'project_id and transaction_date required' });
