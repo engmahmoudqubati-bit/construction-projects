@@ -470,8 +470,12 @@ Be specific with numbers. Keep it concise but insightful. Use bullet points.`;
 
     try {
       const data = await api.getAIInsight(prompt);
-      setInsight(data.content?.map(c=>c.text||'').join('\n') || 'No insight generated.');
-    } catch { setInsight('Failed to generate AI insight. Please try again.'); }
+      if (data.message) {
+        setInsight('⚠️ ' + data.message);
+      } else {
+        setInsight(data.content?.map(c=>c.text||'').join('\n') || 'No insight generated.');
+      }
+    } catch (err) { setInsight('⚠️ ' + (err.message || 'Failed to generate AI insight. Please try again.')); }
     finally { setLoading(false); }
   }
 
@@ -610,14 +614,7 @@ export default function DailyProductivity() {
 
   const fSel = { background:'var(--card)', border:'2px solid #7c3aed', borderRadius:10, padding:'8px 14px', fontSize:13, fontWeight:600, color:'var(--text)', cursor:'pointer', fontFamily:'inherit', outline:'none', height:40 };
 
-  const SearchBar = ({ placeholder = 'Search by item name or classification...' }) => (
-    <div style={{ display:'flex', alignItems:'center', background:'var(--card)', border:'2px solid #7c3aed', borderRadius:10, height:40, paddingLeft:12, marginBottom:16, maxWidth:420 }}>
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input style={{ border:'none', outline:'none', fontSize:13, color:'var(--text)', background:'none', width:'100%', padding:'0 10px', fontFamily:'inherit' }}
-        placeholder={placeholder} value={search} onChange={e => setSearch(e.target.value)} />
-      {search && <button onClick={() => setSearch('')} style={{ background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:'0 12px', fontSize:14 }}>✕</button>}
-    </div>
-  );
+  // SearchBar rendered inline (not as sub-component) to avoid focus loss on re-render
 
   return (
     <div>
@@ -688,7 +685,12 @@ export default function DailyProductivity() {
                   </div>
                 ))}
               </div>
-              <SearchBar />
+              <div style={{ display:'flex', alignItems:'center', background:'var(--card)', border:'2px solid #7c3aed', borderRadius:10, height:40, paddingLeft:12, marginBottom:16, maxWidth:420 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input style={{ border:'none', outline:'none', fontSize:13, color:'var(--text)', background:'none', width:'100%', padding:'0 10px', fontFamily:'inherit' }}
+                  placeholder="Search by item name or classification..." value={search} onChange={e => setSearch(e.target.value)} />
+                {search && <button onClick={() => setSearch('')} style={{ background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:'0 12px', fontSize:14 }}>✕</button>}
+              </div>
               <div style={{ background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:14, overflow:'hidden' }}>
                 <ProductivityTable items={reportData.items} daily={reportData.daily} selectedWeek={selectedWeek} search={search} />
               </div>
@@ -741,7 +743,12 @@ export default function DailyProductivity() {
 
           {cmpDataA && cmpDataB && cmpWeekA && cmpWeekB && (
             <>
-              <SearchBar placeholder="Filter items by name or classification..." />
+              <div style={{ display:'flex', alignItems:'center', background:'var(--card)', border:'2px solid #7c3aed', borderRadius:10, height:40, paddingLeft:12, marginBottom:16, maxWidth:420 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input style={{ border:'none', outline:'none', fontSize:13, color:'var(--text)', background:'none', width:'100%', padding:'0 10px', fontFamily:'inherit' }}
+                  placeholder="Filter items by name or classification..." value={search} onChange={e => setSearch(e.target.value)} />
+                {search && <button onClick={() => setSearch('')} style={{ background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:'0 12px', fontSize:14 }}>✕</button>}
+              </div>
               <div style={{ background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:14, overflow:'hidden', marginBottom:8 }}>
                 <CompareTable dataA={cmpDataA} dataB={cmpDataB} weekA={cmpWeekA} weekB={cmpWeekB} search={search} />
               </div>

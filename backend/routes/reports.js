@@ -245,12 +245,16 @@ router.get('/daily-productivity', async (req, res) => {
 router.post('/ai-insight', async (req, res) => {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ message: 'prompt required' });
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return res.status(500).json({ message: 'ANTHROPIC_API_KEY not set on server. Please add it to Railway environment variables.' });
+
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY || '',
+        'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
@@ -260,6 +264,8 @@ router.post('/ai-insight', async (req, res) => {
       }),
     });
     const data = await response.json();
+    if (data.error) return res.status(400).json({ message: data.error.message || 'Anthropic API error' });
+    if (!data.content) return res.status(500).json({ message: 'Empty response from Anthropic API' });
     res.json(data);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });

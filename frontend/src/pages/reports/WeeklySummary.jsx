@@ -74,6 +74,7 @@ export default function WeeklySummary() {
   const [reportData,  setReportData]  = useState(null);
   const [loading,     setLoading]     = useState(false);
   const [firstDate,   setFirstDate]   = useState(null);
+  const [search,      setSearch]      = useState('');
 
   useEffect(() => { api.getProjects().then(setProjects).catch(() => {}); }, []);
 
@@ -160,10 +161,20 @@ export default function WeeklySummary() {
   const projectLabel = p => [p.project_name_en, p.project_name_ar].filter(Boolean).join(' / ');
   const monthName = m => new Date(`2000-${m}-01`).toLocaleDateString('en-GB', { month: 'long' });
 
-  // Group rows by classification
+  // Group rows by classification (with search filter)
   const grouped = useMemo(() => {
     if (!reportData?.rows) return {};
-    return reportData.rows.reduce((acc, row) => {
+    let rows = reportData.rows;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      rows = rows.filter(r =>
+        (r.item_name||'').toLowerCase().includes(q) ||
+        (r.item_code||'').toLowerCase().includes(q) ||
+        (r.classification_name||'').toLowerCase().includes(q) ||
+        (r.parent_classification_name||'').toLowerCase().includes(q)
+      );
+    }
+    return rows.reduce((acc, row) => {
       const key = row.parent_classification_name
         ? `${row.parent_classification_name} › ${row.classification_name || ''}`
         : row.classification_name || 'Uncategorized';
@@ -171,12 +182,13 @@ export default function WeeklySummary() {
       acc[key].push(row);
       return acc;
     }, {});
-  }, [reportData]);
+  }, [reportData, search]);
 
-  // Summary totals
+  // Summary totals (from filtered rows)
+  const filteredRows = useMemo(() => Object.values(grouped).flat(), [grouped]);
   const totals = useMemo(() => {
     if (!reportData?.rows) return null;
-    return reportData.rows.reduce((acc, r) => ({
+    return filteredRows.reduce((acc, r) => ({
       planned:    acc.planned    + (parseFloat(r.planned_qty) || 0),
       delToDate:  acc.delToDate  + (parseFloat(r.delivered_to_date) || 0),
       instThisW:  acc.instThisW  + (parseFloat(r.installed_this_week) || 0),
@@ -295,6 +307,17 @@ export default function WeeklySummary() {
           </div>
         )}
       </div>
+
+      {/* Search bar */}
+      {projectId && reportData?.rows?.length > 0 && (
+        <div style={{ display:'flex', alignItems:'center', background:'var(--card)', border:'2px solid #7c3aed', borderRadius:10, height:40, paddingLeft:12, marginBottom:16, maxWidth:400 }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input style={{ border:'none', outline:'none', fontSize:13, color:'var(--text)', background:'none', width:'100%', padding:'0 10px', fontFamily:'inherit' }}
+            placeholder="Search by item name or classification..." value={search}
+            onChange={e => setSearch(e.target.value)} />
+          {search && <button onClick={() => setSearch('')} style={{ background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:'0 12px', fontSize:14 }}>✕</button>}
+        </div>
+      )}
 
       {/* No project selected */}
       {!projectId && (
