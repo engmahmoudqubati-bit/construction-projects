@@ -96,9 +96,8 @@ export default function Delivery() {
   }
 
   // Save current qty inputs to backend as draft
-  async function saveEntries() {
-    if (!projectId || !date) return;
-    const entries = rows
+  function buildEntries() {
+    return rows
       .filter(r => r.qty_input !== '' && parseFloat(r.qty_input) > 0)
       .map(r => ({
         item_id: r.item_id,
@@ -106,15 +105,15 @@ export default function Delivery() {
         delivery_ref: r.ref_input || null,
         notes: r.notes_input || null,
       }));
-    await api.saveDelivery({ project_id: projectId, transaction_date: date, entries });
   }
 
   async function handleDraft() {
     if (!projectId || !date) return toast('Select project and date', 'error');
     setSaving(true);
     try {
-      const res = await saveEntries();
-      toast(`Saved as Draft (${(res && res.saved) || ''} entries)`);
+      const entries = buildEntries();
+      const res = await api.saveDelivery({ project_id: projectId, transaction_date: date, entries, tx_status: 'incomplete' });
+      toast(`Status: Incomplete (${res.saved} entries saved)`);
       load();
     } catch (err) { toast(err.message, 'error'); }
     finally { setSaving(false); }
@@ -124,8 +123,9 @@ export default function Delivery() {
     if (!projectId || !date) return toast('Select project and date', 'error');
     setSaving(true);
     try {
-      await saveEntries();
-      toast('Status: Saved');
+      const entries = buildEntries();
+      const res = await api.saveDelivery({ project_id: projectId, transaction_date: date, entries, tx_status: 'saved' });
+      toast(`Status: Saved (${res.saved} entries)`);
       load();
     } catch (err) { toast(err.message, 'error'); }
     finally { setSaving(false); }
@@ -136,7 +136,7 @@ export default function Delivery() {
     setConfirming(true);
     try {
       const res = await api.confirmDelivery(projectId, date);
-      toast(`Status: Confirmed (${res.confirmed} entries)`);
+      toast(`Status: Approved (${res.confirmed} entries)`);
       load();
     } catch (err) { toast(err.message, 'error'); }
     finally { setConfirming(false); }
@@ -147,7 +147,7 @@ export default function Delivery() {
     setUnposting(true);
     try {
       const res = await api.unpostDelivery(projectId, date);
-      toast(`Unposted — ${res.unposted} entries reverted to Draft`);
+      toast(`Unposted — ${res.unposted} entries reverted to Incomplete`);
       load();
     } catch (err) { toast(err.message, 'error'); }
     finally { setUnposting(false); }
@@ -204,7 +204,8 @@ export default function Delivery() {
         return key === filterClass;
       });
     }
-    if (filterStatus === 'draft')     result = result.filter(r => r.tx_status === 'draft');
+    if (filterStatus === 'incomplete') result = result.filter(r => r.tx_status === 'incomplete');
+    if (filterStatus === 'saved')       result = result.filter(r => r.tx_status === 'saved');
     if (filterStatus === 'confirmed') result = result.filter(r => r.tx_status === 'confirmed');
     if (filterStatus === 'no_entry')  result = result.filter(r => !r.tx_id);
     return result;
@@ -225,22 +226,26 @@ export default function Delivery() {
     return acc;
   }, {});
 
-  const draftCount     = rows.filter(r => r.tx_id && r.tx_status === 'draft').length;
-  const confirmedCount = rows.filter(r => r.tx_id && r.tx_status === 'confirmed').length;
-  const hasEditable    = draftCount > 0;
-  const hasConfirmed   = confirmedCount > 0;
-  const canConfirm     = hasEditable;
-  const canUnpost      = hasConfirmed && canAction('can_confirm');
+  const incompleteCount = rows.filter(r => r.tx_id && r.tx_status === 'incomplete').length;
+  const savedCount      = rows.filter(r => r.tx_id && r.tx_status === 'saved').length;
+  const confirmedCount  = rows.filter(r => r.tx_id && r.tx_status === 'confirmed').length;
+  const draftCount      = incompleteCount + savedCount;   // non-confirmed entries (for badge)
+  const txRows          = rows.filter(r => r.tx_id);
+  const allApproved     = txRows.length > 0 && txRows.every(r => r.tx_status === 'confirmed');
+  const hasEditable     = rows.length > 0;
+  const hasConfirmed    = confirmedCount > 0;
+  const showWorkflow    = hasEditable && !allApproved;
+  const canUnpost       = hasConfirmed && canAction('can_confirm');
 
-  // KPI totals (always from all rows, not filtered)
-  const totalPlanned   = rows.reduce((s, r) => s + (parseFloat(r.planned_qty) || 0), 0);
-  const totalDelivered = rows.reduce((s, r) => s + (parseFloat(r.total_delivered_all) || 0), 0);
+  // KPI totals — react to active filters
+  const totalPlanned   = filteredRows.reduce((s, r) => s + (parseFloat(r.planned_qty) || 0), 0);
+  const totalDelivered = filteredRows.reduce((s, r) => s + (parseFloat(r.total_delivered_all) || 0), 0);
   const totalRemaining = Math.max(0, totalPlanned - totalDelivered);
-  const totalToday     = rows.reduce((s, r) => s + (parseFloat(r.qty_input) || 0), 0);
+  const totalToday     = filteredRows.reduce((s, r) => s + (parseFloat(r.qty_input) || 0), 0);
   const overallPct     = totalPlanned > 0 ? Math.min(100, (totalDelivered / totalPlanned) * 100) : 0;
 
   const filterSelectStyle = {
-    background: 'var(--card)', border: '2px solid #0ea5e9', borderRadius: 10,
+    background: 'var(--card)', border: '2px solid #7c3aed', borderRadius: 10,
     padding: '8px 14px', fontSize: 14, fontWeight: 600, color: 'var(--text)',
     cursor: 'pointer', fontFamily: 'inherit', minWidth: 280, outline: 'none',
     height: 40, transition: 'border-color 0.15s',
@@ -325,8 +330,9 @@ export default function Delivery() {
             <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
               style={{ ...filterDateStyle, minWidth: 140, border: '1.5px solid var(--border)', fontWeight: 400, fontSize: 13 }}>
               <option value="">All Status</option>
-              <option value="draft">Draft</option>
-              <option value="confirmed">Confirmed</option>
+              <option value="incomplete">Incomplete</option>
+              <option value="saved">Saved</option>
+              <option value="confirmed">Approved</option>
               <option value="no_entry">No Entry</option>
             </select>
           </div>
@@ -344,8 +350,9 @@ export default function Delivery() {
 
         {rows.length > 0 && (
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-            {draftCount > 0     && <span className="badge badge-draft">{draftCount} draft</span>}
-            {confirmedCount > 0 && <span className="badge badge-confirmed">{confirmedCount} confirmed</span>}
+            {incompleteCount > 0 && <span style={{background:'#fff7ed',color:'#ea580c',border:'1px solid #fed7aa',borderRadius:6,padding:'3px 8px',fontSize:11,fontWeight:700}}>{incompleteCount} incomplete</span>}
+            {savedCount > 0      && <span style={{background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',borderRadius:6,padding:'3px 8px',fontSize:11,fontWeight:700}}>{savedCount} saved</span>}
+            {confirmedCount > 0 && <span style={{background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',borderRadius:6,padding:'3px 8px',fontSize:11,fontWeight:700}}>{confirmedCount} approved</span>}
           </div>
         )}
       </div>
@@ -418,7 +425,7 @@ export default function Delivery() {
                         const remaining     = Math.max(0, planned - deliveredAll);
                         const pct           = planned > 0 ? Math.min(100, (deliveredUpTo / planned) * 100) : 0;
                         const todayQty      = parseFloat(row.qty_input) || 0;
-                        const isConfirmed   = row.tx_status === 'confirmed';
+                        const isConfirmed   = row.tx_status === 'confirmed'; // only confirmed rows are locked
                         const isComplete    = deliveredAll >= planned && planned > 0;
                         const isOverDel     = !isConfirmed && todayQty > 0 && (deliveredAll + todayQty) > planned;
 
@@ -487,8 +494,20 @@ export default function Delivery() {
 
                             {/* Status */}
                             <td>
-                              {row.tx_id
-                                ? <span className={`badge badge-${row.tx_status || 'draft'}`}>{t.txStatuses[row.tx_status] || row.tx_status}</span>
+                              {row.tx_id ? (() => {
+                                const s = row.tx_status;
+                                const cfg = {
+                                  incomplete: { bg:'#fff7ed', color:'#ea580c', border:'#fed7aa', label:'Incomplete' },
+                                  saved:      { bg:'#eff6ff', color:'#2563eb', border:'#bfdbfe', label:'Saved' },
+                                  confirmed:  { bg:'#f0fdf4', color:'#16a34a', border:'#bbf7d0', label:'Approved' },
+                                }[s] || { bg:'#f3f4f6', color:'#6b7280', border:'#e5e7eb', label: s };
+                                return (
+                                  <span style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+                                    borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                    {cfg.label}
+                                  </span>
+                                );
+                              })()
                                 : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>
                               }
                             </td>
@@ -504,7 +523,7 @@ export default function Delivery() {
               <tfoot>
                 <tr style={{ background: '#f0f7ff', borderTop: '2px solid #bfdbfe' }}>
                   <td colSpan={3} style={{ padding: '10px 14px', fontSize: 12, fontWeight: 700, color: '#1e40af' }}>
-                    TOTAL — {totalFiltered} of {rows.length} items shown
+                    TOTAL — {totalFiltered} item{totalFiltered !== 1 ? 's' : ''} shown
                   </td>
                   <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#6366f1' }}>{fmt2(totalPlanned)}</td>
                   <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#0ea5e9' }}>{fmt2(totalDelivered)}</td>
@@ -533,9 +552,10 @@ export default function Delivery() {
 
           {/* Bottom action bar — matches BOQ: Draft / Save / Confirm / Unpost */}
           <div style={{ padding: '14px 18px', borderTop: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', background: 'var(--card2)' }}>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)', marginRight: 8 }}>{rows.length} items</span>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', marginRight: 8 }}>{filteredRows.length} of {rows.length} items</span>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {hasEditable && (
+              {/* Draft / Save / Approve — hidden when all entries are approved */}
+              {showWorkflow && (
                 <>
                   <button onClick={handleDraft} disabled={saving} style={btnStyle('var(--card)', 'var(--text)', 'var(--border)')}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
@@ -547,10 +567,11 @@ export default function Delivery() {
                   </button>
                   <button onClick={handleConfirm} disabled={confirming} style={btnStyle('#16a34a')}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
-                    {confirming ? t.saving : `Confirm (${draftCount})`}
+                    {confirming ? t.saving : 'Approve'}
                   </button>
                 </>
               )}
+              {/* Unpost — shown when approved entries exist + permission */}
               {canUnpost && (
                 <button onClick={handleUnpost} disabled={unposting} style={btnStyle('#dc2626')}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>

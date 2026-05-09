@@ -39,11 +39,13 @@ router.get('/', async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+// POST — save entries with given tx_status ('incomplete' or 'saved')
 router.post('/', async (req, res) => {
-  const { project_id, transaction_date, entries } = req.body;
+  const { project_id, transaction_date, entries, tx_status = 'incomplete' } = req.body;
   if (!project_id || !transaction_date || !Array.isArray(entries))
     return res.status(400).json({ message: 'project_id, transaction_date, entries[] required' });
   if (!canAccessProject(req, project_id)) return res.status(403).json({ message: 'No access' });
+  const status = ['incomplete','saved'].includes(tx_status) ? tx_status : 'incomplete';
   try {
     const results = [];
     for (const e of entries) {
@@ -51,14 +53,18 @@ router.post('/', async (req, res) => {
       const { rows } = await pool.query(
         `INSERT INTO cp_delivery_transactions
            (project_id,item_id,transaction_date,qty_delivered,delivery_ref,engineer_id,notes,tx_status)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,'draft')
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
          ON CONFLICT (project_id,item_id,transaction_date)
          DO UPDATE SET qty_delivered=EXCLUDED.qty_delivered,
                        delivery_ref=EXCLUDED.delivery_ref,
                        notes=EXCLUDED.notes,
-                       engineer_id=EXCLUDED.engineer_id
+                       engineer_id=EXCLUDED.engineer_id,
+                       tx_status=CASE
+                         WHEN cp_delivery_transactions.tx_status='confirmed' THEN 'confirmed'
+                         ELSE EXCLUDED.tx_status
+                       END
          RETURNING *`,
-        [project_id, e.item_id, transaction_date, e.qty_delivered, e.delivery_ref||null, req.user.id, e.notes||null]
+        [project_id, e.item_id, transaction_date, e.qty_delivered, e.delivery_ref||null, req.user.id, e.notes||null, status]
       );
       results.push(rows[0]);
     }
@@ -66,6 +72,7 @@ router.post('/', async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+// PATCH /confirm — set incomplete/saved → confirmed
 router.patch('/confirm', async (req, res) => {
   const { project_id, transaction_date } = req.body;
   if (!project_id || !transaction_date) return res.status(400).json({ message: 'project_id and transaction_date required' });
@@ -73,15 +80,14 @@ router.patch('/confirm', async (req, res) => {
   try {
     const { rowCount } = await pool.query(
       `UPDATE cp_delivery_transactions SET tx_status='confirmed'
-       WHERE project_id=$1 AND transaction_date=$2 AND tx_status='draft'`,
+       WHERE project_id=$1 AND transaction_date=$2 AND tx_status IN ('incomplete','saved')`,
       [project_id, transaction_date]
     );
     res.json({ confirmed: rowCount });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-
-// Unpost — revert confirmed entries back to draft (requires can_confirm permission)
+// PATCH /unpost — revert confirmed → incomplete (requires can_confirm permission)
 router.patch('/unpost', async (req, res) => {
   const { project_id, transaction_date } = req.body;
   if (!project_id || !transaction_date) return res.status(400).json({ message: 'project_id and transaction_date required' });
@@ -96,7 +102,7 @@ router.patch('/unpost', async (req, res) => {
     if (req.user.role !== 'admin' && userPerms.rows.length === 0)
       return res.status(403).json({ message: 'No permission to unpost' });
     const { rowCount } = await pool.query(
-      `UPDATE cp_delivery_transactions SET tx_status='draft'
+      `UPDATE cp_delivery_transactions SET tx_status='incomplete'
        WHERE project_id=$1 AND transaction_date=$2 AND tx_status='confirmed'`,
       [project_id, transaction_date]
     );
@@ -107,7 +113,8 @@ router.patch('/unpost', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { rowCount } = await pool.query(
-      `DELETE FROM cp_delivery_transactions WHERE id=$1 AND tx_status='draft'`, [req.params.id]
+      `DELETE FROM cp_delivery_transactions WHERE id=$1 AND tx_status IN ('incomplete','saved')`,
+      [req.params.id]
     );
     if (!rowCount) return res.status(404).json({ message: 'Record not found or already confirmed' });
     res.json({ message: 'Deleted' });

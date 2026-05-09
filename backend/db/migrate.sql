@@ -88,3 +88,19 @@ ALTER TABLE cp_items ADD COLUMN IF NOT EXISTS measurement_id INTEGER REFERENCES 
 ALTER TABLE cp_project_planning DROP CONSTRAINT IF EXISTS cp_project_planning_status_check;
 ALTER TABLE cp_project_planning ADD CONSTRAINT cp_project_planning_status_check
   CHECK (status IN ('draft','prepared','confirmed','incomplete','saved','approved'));
+-- Expand delivery/installation/inspection tx_status to support incomplete, saved, confirmed
+ALTER TABLE cp_delivery_transactions DROP CONSTRAINT IF EXISTS cp_delivery_transactions_tx_status_check;
+ALTER TABLE cp_delivery_transactions ADD CONSTRAINT cp_delivery_transactions_tx_status_check
+  CHECK (tx_status IN ('incomplete','saved','confirmed'));
+-- Migrate existing 'draft' rows to 'incomplete'
+UPDATE cp_delivery_transactions SET tx_status='incomplete' WHERE tx_status='draft';
+
+ALTER TABLE cp_installation_transactions DROP CONSTRAINT IF EXISTS cp_installation_transactions_tx_status_check;
+ALTER TABLE cp_installation_transactions ADD CONSTRAINT cp_installation_transactions_tx_status_check
+  CHECK (tx_status IN ('incomplete','saved','confirmed'));
+UPDATE cp_installation_transactions SET tx_status='incomplete' WHERE tx_status='draft';
+
+ALTER TABLE cp_inspection_transactions DROP CONSTRAINT IF EXISTS cp_inspection_transactions_tx_status_check;
+ALTER TABLE cp_inspection_transactions ADD CONSTRAINT cp_inspection_transactions_tx_status_check
+  CHECK (tx_status IN ('incomplete','saved','confirmed'));
+UPDATE cp_inspection_transactions SET tx_status='incomplete' WHERE tx_status='draft';
