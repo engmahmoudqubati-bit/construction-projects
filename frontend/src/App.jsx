@@ -18,6 +18,7 @@ import Delivery           from './pages/transactions/Delivery';
 import Installation       from './pages/transactions/Installation';
 import Inspection         from './pages/transactions/Inspection';
 import Reports            from './pages/reports/Reports';
+import WeeklySummary      from './pages/reports/WeeklySummary';
 
 function RequireAuth({ children }) {
   const { user } = useAuth();
@@ -72,6 +73,7 @@ function AppShell() {
             <Route path="/transactions/installation"  element={<RequirePage pageKey="installation"><Installation /></RequirePage>} />
             <Route path="/transactions/inspection"    element={<RequirePage pageKey="inspection"><Inspection /></RequirePage>} />
             <Route path="/reports"                    element={<RequirePage pageKey="reports"><Reports /></RequirePage>} />
+            <Route path="/reports/weekly"               element={<RequirePage pageKey="reports"><WeeklySummary /></RequirePage>} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>

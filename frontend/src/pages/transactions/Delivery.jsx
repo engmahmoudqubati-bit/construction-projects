@@ -60,6 +60,24 @@ function Pagination({ page, totalPages, total, pageSize, onPage, onPageSize }) {
 }
 
 
+
+// Status badge helper — avoids IIFE in JSX which causes Vite minifier TDZ errors
+const TX_STATUS_CFG = {
+  incomplete: { bg:'#fff7ed', color:'#ea580c', border:'#fed7aa', label:'Incomplete' },
+  saved:      { bg:'#f5f3ff', color:'#7c3aed', border:'#ddd6fe', label:'Saved' },
+  confirmed:  { bg:'#f0fdf4', color:'#16a34a', border:'#bbf7d0', label:'Approved' },
+};
+function StatusBadge({ status }) {
+  if (!status) return <span style={{ color:'var(--text-muted)', fontSize:12 }}>—</span>;
+  const cfg = TX_STATUS_CFG[status] || { bg:'#f3f4f6', color:'#6b7280', border:'#e5e7eb', label: status };
+  return (
+    <span style={{ background:cfg.bg, color:cfg.color, border:`1px solid ${cfg.border}`,
+      borderRadius:6, padding:'3px 8px', fontSize:11, fontWeight:700, whiteSpace:'nowrap' }}>
+      {cfg.label}
+    </span>
+  );
+}
+
 export default function Delivery() {
   const toast = useToast();
   const { canAction } = useAuth();
@@ -517,15 +535,14 @@ export default function Delivery() {
                       </tr>
 
                       {items.map((row, rowIndex) => {
+                        const isConfirmed   = row.tx_status === 'confirmed';
                         const planned       = parseFloat(row.planned_qty) || 0;
                         const deliveredAll  = parseFloat(row.total_delivered_all) || 0;
                         const deliveredUpTo = parseFloat(row.total_delivered) || 0;
                         const remaining     = Math.max(0, planned - deliveredAll);
                         const todayQty      = parseFloat(row.qty_input) || 0;
-                        // Live progress: confirmed up-to-date + current input (if not yet confirmed)
                         const liveDelivered = isConfirmed ? deliveredUpTo : deliveredUpTo + todayQty;
                         const pct           = planned > 0 ? Math.min(100, (liveDelivered / planned) * 100) : 0;
-                        const isConfirmed   = row.tx_status === 'confirmed'; // only confirmed rows are locked
                         const isComplete    = deliveredAll >= planned && planned > 0;
                         const isOverDel     = !isConfirmed && todayQty > 0 && (deliveredAll + todayQty) > planned;
 
@@ -595,22 +612,7 @@ export default function Delivery() {
 
                             {/* Status */}
                             <td>
-                              {row.tx_id ? (() => {
-                                const s = row.tx_status;
-                                const cfg = {
-                                  incomplete: { bg:'#fff7ed', color:'#ea580c', border:'#fed7aa', label:'Incomplete' },
-                                  saved:      { bg:'#f5f3ff', color:'#7c3aed', border:'#ddd6fe', label:'Saved' },
-                                  confirmed:  { bg:'#f0fdf4', color:'#16a34a', border:'#bbf7d0', label:'Approved' },
-                                }[s] || { bg:'#f3f4f6', color:'#6b7280', border:'#e5e7eb', label: s };
-                                return (
-                                  <span style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
-                                    borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                    {cfg.label}
-                                  </span>
-                                );
-                              })()
-                                : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>
-                              }
+                              <StatusBadge status={row.tx_id ? row.tx_status : null} />
                             </td>
                           </tr>
                         );
@@ -750,13 +752,11 @@ function DeliveryMatrix({ projectId, data, loading, onRefresh }) {
 
   const fmt2 = v => (parseFloat(v) || 0).toFixed(2);
 
-  const statusColor = (s) => ({
-    confirmed: '#16a34a', saved: '#7c3aed', incomplete: '#ea580c'
-  }[s] || '#9ca3af');
+  const statusColorMap = { confirmed: '#16a34a', saved: '#7c3aed', incomplete: '#ea580c' };
+  const statusColor = (s) => statusColorMap[s] || '#9ca3af';
 
-  const statusLabel = (s) => ({
-    confirmed: 'A', saved: 'S', incomplete: 'D'
-  }[s] || '');
+  const statusLabelMap = { confirmed: 'A', saved: 'S', incomplete: 'D' };
+  const statusLabel = (s) => statusLabelMap[s] || '';
 
   const formatDate = (d) => {
     const dt = new Date(d);

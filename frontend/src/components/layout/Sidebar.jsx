@@ -24,6 +24,7 @@ const NAV = [
 
   { section: t.reports },
   { label: t.reports, icon: '📊', path: '/reports', pageKey: 'reports' },
+  { label: 'Weekly Summary', icon: '📅', path: '/reports/weekly', pageKey: 'reports' },
 ];
 
 export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }) {

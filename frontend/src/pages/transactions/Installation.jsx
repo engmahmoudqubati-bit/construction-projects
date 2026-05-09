@@ -9,6 +9,24 @@ const today = () => { const d = new Date(); if (d.getDay()===5) d.setDate(d.getD
 const isFriday = (s) => s && new Date(s).getDay() === 5;
 const fmt2 = (v) => (parseFloat(v)||0).toFixed(2);
 
+
+// Status badge helper — avoids IIFE in JSX (Vite minifier TDZ fix)
+const TX_STATUS_CFG = {
+  incomplete: { bg:'#fff7ed', color:'#ea580c', border:'#fed7aa', label:'Incomplete' },
+  saved:      { bg:'#f5f3ff', color:'#7c3aed', border:'#ddd6fe', label:'Saved' },
+  confirmed:  { bg:'#f0fdf4', color:'#16a34a', border:'#bbf7d0', label:'Approved' },
+};
+function StatusBadge({ status }) {
+  if (!status) return <span style={{ color:'var(--text-muted)', fontSize:12 }}>—</span>;
+  const cfg = TX_STATUS_CFG[status] || { bg:'#f3f4f6', color:'#6b7280', border:'#e5e7eb', label: status };
+  return (
+    <span style={{ background:cfg.bg, color:cfg.color, border:`1px solid ${cfg.border}`,
+      borderRadius:6, padding:'3px 8px', fontSize:11, fontWeight:700, whiteSpace:'nowrap' }}>
+      {cfg.label}
+    </span>
+  );
+}
+
 // ── Level Setup Modal ─────────────────────────────────────────────────────────
 function LevelSetupModal({ projectId, onClose, onSaved }) {
   const toast = useToast();
@@ -713,7 +731,8 @@ export default function Installation() {
                                   <span style={{ background:'#ede9fe', color:'#7c3aed', borderRadius:5, padding:'2px 7px', fontSize:11, fontWeight:700 }}>{row.level_code}</span>
                                 </td>
                                 <td style={{ padding:'8px 14px', fontSize:12, color:'#6b7280' }}>{row.level_name}</td>
-                                <td style={{ padding:'8px 14px', fontSize:11, color:'#9ca3af' }}>—</td>
+                                {/* FIX 2: show item unit on level rows */}
+                                <td style={{ padding:'8px 14px', fontSize:11, color:'#9ca3af' }}>{meta.unit_of_measure||'—'}</td>
                                 <td style={{ padding:'8px 14px', textAlign:'right', fontWeight:600, color:'#111827' }}>{fmt2(suggested)}</td>
                                 <td style={{ padding:'8px 14px', textAlign:'right', fontWeight:600, color:'#111827' }}>{fmt2(installed)}</td>
                                 <td style={{ padding:'8px 14px', textAlign:'right', fontWeight:600, color: installed>=suggested&&suggested>0?'#16a34a':'#111827' }}>
@@ -728,10 +747,29 @@ export default function Installation() {
                                   </div>
                                 </td>
                                 <td style={{ padding:'6px 8px' }}>
+                                  {/* FIX 1: cap input at remaining qty */}
                                   <input type="number" min="0" step="0.01" value={row.qty_input} disabled={isConfirmed}
-                                    style={{ background:isConfirmed?'var(--bg2)':'#fff' }}
-                                    onChange={e => setField(row.item_id, row.level_id, 'qty_input', e.target.value)}
-                                    onBlur={e => { const v=parseFloat(e.target.value); if(!isNaN(v)) setField(row.item_id,row.level_id,'qty_input',v.toFixed(2)); else if(e.target.value==='') setField(row.item_id,row.level_id,'qty_input',''); }} />
+                                    style={{
+                                      background: isConfirmed ? 'var(--bg2)' : '#fff',
+                                      borderColor: !isConfirmed && parseFloat(row.qty_input) > remaining + (parseFloat(row.qty_input)||0) ? '#f97316' : undefined,
+                                    }}
+                                    onChange={e => {
+                                      const typed = parseFloat(e.target.value) || 0;
+                                      // Cap at remaining (suggested − confirmed installed)
+                                      if (typed > remaining) {
+                                        setField(row.item_id, row.level_id, 'qty_input', remaining.toFixed(2));
+                                      } else {
+                                        setField(row.item_id, row.level_id, 'qty_input', e.target.value);
+                                      }
+                                    }}
+                                    onBlur={e => {
+                                      const v = parseFloat(e.target.value);
+                                      if (!isNaN(v)) {
+                                        setField(row.item_id, row.level_id, 'qty_input', Math.min(v, remaining).toFixed(2));
+                                      } else if (e.target.value === '') {
+                                        setField(row.item_id, row.level_id, 'qty_input', '');
+                                      }
+                                    }} />
                                 </td>
                                 <td style={{ padding:'6px 8px' }}>
                                   <input type="text" value={row.notes_input} disabled={isConfirmed}
@@ -739,14 +777,7 @@ export default function Installation() {
                                     onChange={e => setField(row.item_id, row.level_id, 'notes_input', e.target.value)} />
                                 </td>
                                 <td style={{ padding:'8px 14px' }}>
-                                  {row.tx_id ? (() => {
-                                    const cfg = {
-                                      incomplete:{ bg:'#fff7ed',color:'#ea580c',border:'#fed7aa',label:'Incomplete' },
-                                      saved:     { bg:'#f5f3ff',color:'#7c3aed',border:'#ddd6fe',label:'Saved' },
-                                      confirmed: { bg:'#f0fdf4',color:'#16a34a',border:'#bbf7d0',label:'Approved' },
-                                    }[row.tx_status] || { bg:'#f3f4f6',color:'#6b7280',border:'#e5e7eb',label:row.tx_status };
-                                    return <span style={{ background:cfg.bg,color:cfg.color,border:`1px solid ${cfg.border}`,borderRadius:6,padding:'3px 8px',fontSize:11,fontWeight:700,whiteSpace:'nowrap' }}>{cfg.label}</span>;
-                                  })() : <span style={{ color:'var(--text-muted)',fontSize:12 }}>—</span>}
+                                  <StatusBadge status={row.tx_id ? row.tx_status : null} />
                                 </td>
                               </tr>
                             );
@@ -898,11 +929,12 @@ function InstallationMap({ projectId, data, loading, onRefresh }) {
   });
 
   // Status colour helper
-  const statusDot = (status) => ({
+  const statusDotMap = {
     confirmed:  { bg:'#dcfce7', color:'#16a34a', dot:'#16a34a', label:'A' },
     saved:      { bg:'#f5f3ff', color:'#7c3aed', dot:'#7c3aed', label:'S' },
     incomplete: { bg:'#fff7ed', color:'#ea580c', dot:'#ea580c', label:'D' },
-  }[status] || { bg:'#f3f4f6', color:'#9ca3af', dot:'#9ca3af', label:'?' });
+  };
+  const statusDot = (status) => statusDotMap[status] || { bg:'#f3f4f6', color:'#9ca3af', dot:'#9ca3af', label:'?' };
 
   const formatDate = d => {
     const dt = new Date(d + 'T00:00:00');
