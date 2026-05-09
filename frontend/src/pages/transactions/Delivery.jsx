@@ -521,8 +521,10 @@ export default function Delivery() {
                         const deliveredAll  = parseFloat(row.total_delivered_all) || 0;
                         const deliveredUpTo = parseFloat(row.total_delivered) || 0;
                         const remaining     = Math.max(0, planned - deliveredAll);
-                        const pct           = planned > 0 ? Math.min(100, (deliveredUpTo / planned) * 100) : 0;
                         const todayQty      = parseFloat(row.qty_input) || 0;
+                        // Live progress: confirmed up-to-date + current input (if not yet confirmed)
+                        const liveDelivered = isConfirmed ? deliveredUpTo : deliveredUpTo + todayQty;
+                        const pct           = planned > 0 ? Math.min(100, (liveDelivered / planned) * 100) : 0;
                         const isConfirmed   = row.tx_status === 'confirmed'; // only confirmed rows are locked
                         const isComplete    = deliveredAll >= planned && planned > 0;
                         const isOverDel     = !isConfirmed && todayQty > 0 && (deliveredAll + todayQty) > planned;

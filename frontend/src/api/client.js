@@ -94,6 +94,7 @@ export const api = {
   deleteInstallationLevel:  (id) => request('DELETE', `/api/installation/levels/${id}`),
   getInstallationAllocation:(projectId) => request('GET', `/api/installation/allocation?projectId=${projectId}`),
   saveInstallationAllocation:(body) => request('POST', '/api/installation/allocation', body),
+  getInstallationMap: (projectId) => request('GET', `/api/installation/map?projectId=${projectId}`),
   getDeliveryMatrix: (projectId) => request('GET', `/api/delivery/matrix?projectId=${projectId}`),
 
 

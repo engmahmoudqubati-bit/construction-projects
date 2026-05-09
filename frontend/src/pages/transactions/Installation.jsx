@@ -301,6 +301,9 @@ export default function Installation() {
   const [unposting,    setUnposting]    = useState(false);
   const [showLevelModal,  setShowLevelModal]  = useState(false);
   const [showAllocModal,  setShowAllocModal]  = useState(false);
+  const [activeTab,       setActiveTab]       = useState('entry');
+  const [mapData,         setMapData]         = useState(null);
+  const [mapLoading,      setMapLoading]      = useState(false);
   const [filterLevel,  setFilterLevel]  = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [search,       setSearch]       = useState('');
@@ -351,6 +354,20 @@ export default function Installation() {
       }));
     } catch (err) { /* silent */ }
   }, [projectId, date]);
+
+  const loadMap = useCallback(async () => {
+    if (!projectId) return;
+    setMapLoading(true);
+    try {
+      const data = await api.getInstallationMap(projectId);
+      setMapData(data);
+    } catch (err) { toast(err.message, 'error'); }
+    finally { setMapLoading(false); }
+  }, [projectId, toast]);
+
+  useEffect(() => {
+    if (activeTab === 'map' && projectId) loadMap();
+  }, [activeTab, projectId, loadMap]);
 
   function setField(itemId, levelId, field, val) {
     setRows(rs => {
@@ -503,8 +520,26 @@ export default function Installation() {
         )}
       </div>
 
+      {/* Tab bar */}
+      {projectId && (
+        <div style={{ display:'flex', gap:0, marginBottom:18, borderBottom:'2px solid #ede9fe' }}>
+          {[
+            { id:'entry', label:'🔧 Daily Entry' },
+            { id:'map',   label:'🗺️ Installation Map' },
+          ].map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+              padding:'10px 24px', fontSize:13, fontWeight:600, cursor:'pointer',
+              background:'none', border:'none', fontFamily:'inherit',
+              color: activeTab===tab.id ? '#7c3aed' : '#6b7280',
+              borderBottom: activeTab===tab.id ? '2px solid #7c3aed' : '2px solid transparent',
+              marginBottom:-2, transition:'all 0.15s',
+            }}>{tab.label}</button>
+          ))}
+        </div>
+      )}
+
       {/* Filter bar */}
-      <div className="filter-bar">
+      <div className="filter-bar" style={{ display: activeTab==='entry' ? undefined : 'none' }}>
         <div className="filter-group">
           <label>🏗️ {t.selectProject}:</label>
           <select value={projectId} onChange={e => { setProjectId(e.target.value); setFilterLevel(''); setFilterStatus(''); setSearch(''); }} style={fSel}>
@@ -560,6 +595,7 @@ export default function Installation() {
         )}
       </div>
 
+      {activeTab === 'entry' && <>
       {/* Setup prompts */}
       {!projectId && <div className="empty-state"><div className="empty-icon">🔧</div><p>{t.selectProject}</p></div>}
       {loading    && <div className="spinner-wrap"><div className="spinner" /></div>}
@@ -632,7 +668,13 @@ export default function Installation() {
                     {Object.entries(itemsMap).map(([itemId, { meta, levels: itemLevels }]) => {
                       const totalSug = itemLevels.reduce((s,r) => s+(r.suggested_qty||0), 0);
                       const totalInst= itemLevels.reduce((s,r) => s+(parseFloat(r.total_installed)||0), 0);
-                      const itemPct  = totalSug > 0 ? Math.min(100,(totalInst/totalSug)*100) : 0;
+                      // Live: add today's typed qty for non-confirmed rows
+                      const liveInst = itemLevels.reduce((s,r) => {
+                        const base = parseFloat(r.total_installed)||0;
+                        const live = r.tx_status==='confirmed' ? base : base + (parseFloat(r.qty_input)||0);
+                        return s + live;
+                      }, 0);
+                      const itemPct  = totalSug > 0 ? Math.min(100,(liveInst/totalSug)*100) : 0;
                       return (
                         <>
                           {/* Item summary row */}
@@ -660,8 +702,11 @@ export default function Installation() {
                             const suggested   = row.suggested_qty || 0;
                             const installed   = parseFloat(row.total_installed) || 0;
                             const remaining   = Math.max(0, suggested - installed);
-                            const pct         = suggested > 0 ? Math.min(100,(installed/suggested)*100) : 0;
                             const isConfirmed = row.tx_status === 'confirmed';
+                            const todayInst   = parseFloat(row.qty_input) || 0;
+                            // Live progress: confirmed installed + current input (if not yet confirmed)
+                            const liveInstalled = isConfirmed ? installed : installed + todayInst;
+                            const pct         = suggested > 0 ? Math.min(100,(liveInstalled/suggested)*100) : 0;
                             return (
                               <tr key={`${itemId}-${row.level_id}`} style={{ borderBottom:'1px solid #f3f4f6', background: ri%2===0?'#fff':'#fafbff' }}>
                                 <td style={{ padding:'8px 14px 8px 28px', fontSize:11, color:'#9ca3af' }}>
@@ -780,6 +825,18 @@ export default function Installation() {
         </div>
       )}
 
+      </> /* end entry tab */}
+
+      {/* Map tab */}
+      {activeTab === 'map' && projectId && (
+        <InstallationMap
+          projectId={projectId}
+          data={mapData}
+          loading={mapLoading}
+          onRefresh={loadMap}
+        />
+      )}
+
       {/* Modals */}
       {showLevelModal && (
         <LevelSetupModal projectId={projectId} onClose={() => setShowLevelModal(false)} onSaved={savedLevels => { setLevels(savedLevels); load(); }} />
@@ -787,6 +844,332 @@ export default function Installation() {
       {showAllocModal && (
         <AllocationModal projectId={projectId} levels={levels} items={planItems} onClose={() => setShowAllocModal(false)} onSaved={() => load()} />
       )}
+    </div>
+  );
+}
+
+// ── Installation Map Component ────────────────────────────────────────────────
+function InstallationMap({ projectId, data, loading, onRefresh }) {
+  const [search,      setSearch]      = useState('');
+  const [filterLevel, setFilterLevel] = useState('');
+  const [viewMode,    setViewMode]    = useState('by-item'); // 'by-item' | 'by-level'
+
+  if (!projectId) return <div className="empty-state"><div className="empty-icon">🗺️</div><p>Select a project to view the installation map</p></div>;
+  if (loading)    return <div className="spinner-wrap"><div className="spinner" /></div>;
+  if (!data)      return <div className="empty-state"><div className="empty-icon">🗺️</div><p>Loading map...</p></div>;
+
+  const { items = [], levels = [], allocs = [], txs = [] } = data;
+
+  if (levels.length === 0) return (
+    <div className="empty-state"><div className="empty-icon">🏢</div><p>No levels defined. Set up levels in Daily Entry first.</p></div>
+  );
+  if (txs.length === 0) return (
+    <div className="empty-state"><div className="empty-icon">📅</div><p>No installation entries recorded yet for this project.</p></div>
+  );
+
+  const fmt2 = v => (parseFloat(v)||0).toFixed(2);
+
+  // All unique dates sorted
+  const allDates = [...new Set(txs.map(t => t.transaction_date))].sort();
+
+  // Alloc map: item_id → level_id → suggested_qty
+  const allocMap = {};
+  allocs.forEach(a => {
+    if (!allocMap[a.item_id]) allocMap[a.item_id] = {};
+    allocMap[a.item_id][a.level_id] = parseFloat(a.suggested_qty) || 0;
+  });
+
+  // Tx map: item_id → level_id → date → { qty, status }
+  const txMap = {};
+  txs.forEach(t => {
+    if (!txMap[t.item_id]) txMap[t.item_id] = {};
+    if (!txMap[t.item_id][t.level_id]) txMap[t.item_id][t.level_id] = {};
+    txMap[t.item_id][t.level_id][t.transaction_date] = {
+      qty: parseFloat(t.qty_installed) || 0,
+      status: t.tx_status,
+    };
+  });
+
+  // Total installed per item+level
+  const totalMap = {};
+  txs.filter(t => t.tx_status === 'confirmed').forEach(t => {
+    const k = `${t.item_id}_${t.level_id}`;
+    totalMap[k] = (totalMap[k] || 0) + (parseFloat(t.qty_installed) || 0);
+  });
+
+  // Status colour helper
+  const statusDot = (status) => ({
+    confirmed:  { bg:'#dcfce7', color:'#16a34a', dot:'#16a34a', label:'A' },
+    saved:      { bg:'#f5f3ff', color:'#7c3aed', dot:'#7c3aed', label:'S' },
+    incomplete: { bg:'#fff7ed', color:'#ea580c', dot:'#ea580c', label:'D' },
+  }[status] || { bg:'#f3f4f6', color:'#9ca3af', dot:'#9ca3af', label:'?' });
+
+  const formatDate = d => {
+    const dt = new Date(d + 'T00:00:00');
+    return dt.toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
+  };
+  const formatDateFull = d => {
+    const dt = new Date(d + 'T00:00:00');
+    return dt.toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+  };
+
+  // Filter dates by selected level
+  const activeLevelId = filterLevel ? parseInt(filterLevel) : null;
+  const visibleDates = activeLevelId
+    ? allDates.filter(d => txs.some(t => t.level_id === activeLevelId && t.transaction_date === d))
+    : allDates;
+
+  // Filter items by search
+  let visibleItems = items.filter(item => Object.values(allocMap[item.item_id]||{}).some(q => q > 0));
+  if (search.trim()) {
+    const q = search.toLowerCase();
+    visibleItems = visibleItems.filter(i => (i.item_code||'').toLowerCase().includes(q) || (i.item_name||'').toLowerCase().includes(q));
+  }
+
+  // Summary stats
+  const totalAllocated = allocs.reduce((s,a) => s + (parseFloat(a.suggested_qty)||0), 0);
+  const totalInstalled = Object.values(totalMap).reduce((s,v) => s + v, 0);
+  const activeDays     = allDates.length;
+  const overallPct     = totalAllocated > 0 ? Math.min(100, (totalInstalled/totalAllocated)*100) : 0;
+
+  const thBase = { background:'#f0f7ff', color:'#111827', fontWeight:700, fontSize:11, padding:'9px 10px', textAlign:'left', borderBottom:'1px solid #e0ecff', whiteSpace:'nowrap', letterSpacing:'0.02em' };
+
+  // ── BY-ITEM view: rows = item+level pairs, columns = dates ─────────────────
+  const renderByItem = () => (
+    <div style={{ overflowX:'auto' }}>
+      <table style={{ borderCollapse:'collapse', fontSize:12, minWidth:'100%' }}>
+        <thead>
+          <tr>
+            <th style={{ ...thBase, minWidth:70, position:'sticky', left:0, zIndex:3, background:'#f0f7ff' }}>Code</th>
+            <th style={{ ...thBase, minWidth:170, position:'sticky', left:70, zIndex:3, background:'#f0f7ff' }}>Item / Level</th>
+            <th style={{ ...thBase, textAlign:'center', minWidth:55 }}>Unit</th>
+            <th style={{ ...thBase, textAlign:'right', minWidth:75 }}>Suggested</th>
+            <th style={{ ...thBase, textAlign:'right', minWidth:75 }}>Installed</th>
+            <th style={{ ...thBase, textAlign:'center', minWidth:80 }}>Progress</th>
+            {visibleDates.map(d => (
+              <th key={d} style={{ ...thBase, textAlign:'center', minWidth:68, color:'#7c3aed', borderLeft:'1px solid #e0ecff' }}>
+                <div>{formatDate(d)}</div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {visibleItems.map((item, iIdx) => {
+            const itemLevels = levels.filter(lv => (allocMap[item.item_id]?.[lv.id] || 0) > 0);
+            if (activeLevelId) {
+              // filter to selected level only
+              const lv = itemLevels.find(l => l.id === activeLevelId);
+              if (!lv) return null;
+            }
+            const shownLevels = activeLevelId ? itemLevels.filter(l => l.id === activeLevelId) : itemLevels;
+
+            // Item summary
+            const itemSugg  = shownLevels.reduce((s,lv) => s + (allocMap[item.item_id]?.[lv.id]||0), 0);
+            const itemInst  = shownLevels.reduce((s,lv) => s + (totalMap[`${item.item_id}_${lv.id}`]||0), 0);
+            const itemPct   = itemSugg > 0 ? Math.min(100,(itemInst/itemSugg)*100) : 0;
+            const bg        = iIdx%2===0 ? '#fafbff' : '#fff';
+
+            return (
+              <>
+                {/* Item header row */}
+                <tr key={`item-${item.item_id}`} style={{ background:'#f5f3ff' }}>
+                  <td style={{ padding:'9px 10px', fontFamily:'monospace', fontSize:11, color:'#7c3aed', fontWeight:700, position:'sticky', left:0, background:'#f5f3ff', zIndex:1 }}>{item.item_code}</td>
+                  <td style={{ padding:'9px 10px', fontWeight:700, color:'#4c1d95', fontSize:13, position:'sticky', left:70, background:'#f5f3ff', zIndex:1 }}>{item.item_name}</td>
+                  <td style={{ padding:'9px 10px', textAlign:'center', color:'#7c3aed', fontSize:11 }}>{item.unit_of_measure||'—'}</td>
+                  <td style={{ padding:'9px 10px', textAlign:'right', fontWeight:700, color:'#111827' }}>{fmt2(itemSugg)}</td>
+                  <td style={{ padding:'9px 10px', textAlign:'right', fontWeight:700, color: itemInst>=itemSugg&&itemSugg>0?'#16a34a':'#111827' }}>{fmt2(itemInst)}</td>
+                  <td style={{ padding:'9px 10px' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+                      <div style={{ flex:1, height:7, background:'#ddd6fe', borderRadius:99, overflow:'hidden', minWidth:50 }}>
+                        <div style={{ height:'100%', borderRadius:99, width:`${itemPct}%`, background: itemPct>=100?'#16a34a':'#7c3aed', transition:'width 0.3s' }} />
+                      </div>
+                      <span style={{ fontSize:11, fontWeight:700, color:'#7c3aed', minWidth:32 }}>{itemPct.toFixed(0)}%</span>
+                    </div>
+                  </td>
+                  {visibleDates.map(d => {
+                    const dayTotal = shownLevels.reduce((s,lv) => s + (txMap[item.item_id]?.[lv.id]?.[d]?.qty||0), 0);
+                    const dayStatus = shownLevels.map(lv => txMap[item.item_id]?.[lv.id]?.[d]?.status).filter(Boolean);
+                    const bestStatus = dayStatus.includes('confirmed') ? 'confirmed' : dayStatus.includes('saved') ? 'saved' : dayStatus[0];
+                    const cfg = statusDot(bestStatus);
+                    return (
+                      <td key={d} style={{ padding:'7px 8px', textAlign:'center', borderLeft:'1px solid #ede9fe', background: dayTotal>0?cfg.bg:'transparent' }}>
+                        {dayTotal > 0 ? (
+                          <div title={`${formatDateFull(d)}: ${fmt2(dayTotal)}`}>
+                            <div style={{ fontWeight:700, color:'#111827', fontSize:12 }}>{fmt2(dayTotal)}</div>
+                            <div style={{ fontSize:9, color:cfg.color, fontWeight:700 }}>{cfg.label}</div>
+                          </div>
+                        ) : <span style={{ color:'#e5e7eb', fontSize:14 }}>·</span>}
+                      </td>
+                    );
+                  })}
+                </tr>
+
+                {/* Level rows */}
+                {shownLevels.map((lv, lvIdx) => {
+                  const sugg  = allocMap[item.item_id]?.[lv.id] || 0;
+                  const inst  = totalMap[`${item.item_id}_${lv.id}`] || 0;
+                  const pct   = sugg > 0 ? Math.min(100,(inst/sugg)*100) : 0;
+                  return (
+                    <tr key={`${item.item_id}-${lv.id}`} style={{ borderBottom:'1px solid #f3f4f6', background: lvIdx%2===0?bg:'#fff' }}>
+                      <td style={{ padding:'8px 10px 8px 20px', position:'sticky', left:0, background: lvIdx%2===0?bg:'#fff', zIndex:1 }}>
+                        <span style={{ background:'#ede9fe', color:'#7c3aed', borderRadius:5, padding:'2px 8px', fontSize:10, fontWeight:700 }}>{lv.level_code}</span>
+                      </td>
+                      <td style={{ padding:'8px 10px', fontSize:12, color:'#6b7280', position:'sticky', left:70, background: lvIdx%2===0?bg:'#fff', zIndex:1 }}>{lv.level_name}</td>
+                      <td style={{ padding:'8px 10px', textAlign:'center', fontSize:11, color:'#9ca3af' }}>—</td>
+                      <td style={{ padding:'8px 10px', textAlign:'right', fontSize:12, color:'#374151' }}>{fmt2(sugg)}</td>
+                      <td style={{ padding:'8px 10px', textAlign:'right', fontSize:12, fontWeight:600, color: inst>=sugg&&sugg>0?'#16a34a':'#374151' }}>
+                        {inst>=sugg&&sugg>0?'✓ ':''}{fmt2(inst)}
+                      </td>
+                      <td style={{ padding:'8px 10px' }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                          <div style={{ flex:1, height:4, background:'#e5e7eb', borderRadius:99, overflow:'hidden', minWidth:40 }}>
+                            <div style={{ height:'100%', borderRadius:99, width:`${pct}%`, background:pct>=100?'#16a34a':'#7c3aed' }} />
+                          </div>
+                          <span style={{ fontSize:10, color:'#6b7280', minWidth:28 }}>{pct.toFixed(0)}%</span>
+                        </div>
+                      </td>
+                      {visibleDates.map(d => {
+                        const entry = txMap[item.item_id]?.[lv.id]?.[d];
+                        const cfg   = statusDot(entry?.status);
+                        return (
+                          <td key={d} style={{ padding:'6px 8px', textAlign:'center', borderLeft:'1px solid #f3f4f6', background: entry?cfg.bg:'transparent' }}>
+                            {entry ? (
+                              <div title={`${lv.level_code} · ${formatDateFull(d)}\n${fmt2(entry.qty)} ${item.unit_of_measure||''}\nStatus: ${entry.status}`}>
+                                <div style={{ fontWeight:600, color:'#111827', fontSize:12 }}>{fmt2(entry.qty)}</div>
+                                <div style={{ fontSize:9, color:cfg.color, fontWeight:700 }}>{cfg.label}</div>
+                              </div>
+                            ) : <span style={{ color:'#f0f0f0', fontSize:14 }}>·</span>}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </>
+            );
+          })}
+        </tbody>
+        {/* Date totals footer */}
+        <tfoot>
+          <tr style={{ background:'#f0f7ff', borderTop:'2px solid #e0ecff' }}>
+            <td colSpan={5} style={{ padding:'10px 10px', fontWeight:700, fontSize:12, color:'#111827', position:'sticky', left:0, background:'#f0f7ff' }}>DAILY TOTAL</td>
+            <td style={{ padding:'10px 10px' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                <div style={{ flex:1, height:6, background:'#e5e7eb', borderRadius:99, overflow:'hidden', minWidth:40 }}>
+                  <div style={{ height:'100%', borderRadius:99, width:`${overallPct}%`, background:overallPct>=100?'#16a34a':'#7c3aed' }} />
+                </div>
+                <span style={{ fontSize:11, fontWeight:700, color:'#7c3aed' }}>{overallPct.toFixed(1)}%</span>
+              </div>
+            </td>
+            {visibleDates.map(d => {
+              const dayTotal = txs.filter(t => t.transaction_date===d && (!activeLevelId || t.level_id===activeLevelId)).reduce((s,t) => s+(parseFloat(t.qty_installed)||0), 0);
+              return (
+                <td key={d} style={{ padding:'10px 8px', textAlign:'center', fontWeight:700, color:'#7c3aed', borderLeft:'1px solid #e0ecff', fontSize:12 }}>
+                  {dayTotal > 0 ? fmt2(dayTotal) : <span style={{ color:'#e5e7eb' }}>—</span>}
+                </td>
+              );
+            })}
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Summary KPI bar */}
+      <div style={{ display:'flex', gap:12, marginBottom:18, flexWrap:'wrap' }}>
+        {[
+          { label:'Total Suggested',   value:fmt2(totalAllocated), icon:'📋' },
+          { label:'Total Installed',   value:fmt2(totalInstalled), icon:'✅' },
+          { label:'Remaining',         value:fmt2(Math.max(0,totalAllocated-totalInstalled)), icon:'⏳' },
+          { label:'Overall Progress',  value:`${overallPct.toFixed(1)}%`, icon:'📈' },
+          { label:'Active Work Days',  value:activeDays, icon:'📅' },
+          { label:'Active Levels',     value:levels.length, icon:'🏢' },
+        ].map(k => (
+          <div key={k.label} style={{ flex:'1 1 120px', background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:12, padding:'12px 14px', boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', color:'#7c3aed', marginBottom:4 }}>{k.icon} {k.label}</div>
+            <div style={{ fontSize:18, fontWeight:700, color:'#111827' }}>{k.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Toolbar */}
+      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14, flexWrap:'wrap' }}>
+        {/* Search */}
+        <div style={{ display:'flex', alignItems:'center', background:'var(--card)', border:'2px solid #7c3aed', borderRadius:10, height:38, paddingLeft:10, minWidth:200 }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input style={{ border:'none', outline:'none', fontSize:13, color:'var(--text)', background:'none', width:'100%', padding:'0 8px', fontFamily:'inherit' }}
+            placeholder="Search items..." value={search} onChange={e => setSearch(e.target.value)} />
+          {search && <button onClick={() => setSearch('')} style={{ background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:'0 8px' }}>✕</button>}
+        </div>
+
+        {/* Level filter */}
+        <select value={filterLevel} onChange={e => setFilterLevel(e.target.value)}
+          style={{ background:'var(--card)', border:'2px solid #7c3aed', borderRadius:10, padding:'8px 12px', fontSize:13, fontWeight:500, color:'var(--text)', cursor:'pointer', fontFamily:'inherit', height:38, outline:'none' }}>
+          <option value="">All Levels</option>
+          {levels.map(lv => <option key={lv.id} value={lv.id}>{lv.level_code} — {lv.level_name}</option>)}
+        </select>
+
+        {/* Refresh */}
+        <button onClick={onRefresh} style={{ display:'flex', alignItems:'center', gap:6, background:'var(--card)', border:'1px solid var(--border)', borderRadius:10, padding:'8px 14px', fontSize:12, cursor:'pointer', fontFamily:'inherit', color:'var(--text)', height:38 }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+          Refresh
+        </button>
+
+        {/* Legend */}
+        <div style={{ marginLeft:'auto', display:'flex', gap:14, alignItems:'center', fontSize:11, color:'#6b7280', flexWrap:'wrap' }}>
+          {[
+            { label:'Approved', color:'#16a34a', bg:'#dcfce7', dot:'A' },
+            { label:'Saved',    color:'#7c3aed', bg:'#f5f3ff', dot:'S' },
+            { label:'Draft',    color:'#ea580c', bg:'#fff7ed', dot:'D' },
+          ].map(l => (
+            <span key={l.label} style={{ display:'flex', alignItems:'center', gap:4 }}>
+              <span style={{ background:l.bg, color:l.color, borderRadius:4, padding:'1px 6px', fontSize:10, fontWeight:700 }}>{l.dot}</span>
+              {l.label}
+            </span>
+          ))}
+          <span style={{ color:'#d1d5db' }}>· = No entry</span>
+        </div>
+      </div>
+
+      {/* Date header strip — visual calendar */}
+      {visibleDates.length > 0 && (
+        <div style={{ display:'flex', gap:4, marginBottom:14, overflowX:'auto', paddingBottom:4 }}>
+          <div style={{ fontSize:11, color:'#9ca3af', fontWeight:600, minWidth:80, alignSelf:'center', flexShrink:0 }}>Work days:</div>
+          {visibleDates.map(d => {
+            const dt = new Date(d + 'T00:00:00');
+            const dayName = dt.toLocaleDateString('en-GB', { weekday:'short' });
+            const dayNum  = dt.toLocaleDateString('en-GB', { day:'2-digit' });
+            const month   = dt.toLocaleDateString('en-GB', { month:'short' });
+            const dayTxs  = txs.filter(t => t.transaction_date===d && (!activeLevelId||t.level_id===activeLevelId));
+            const hasEntry = dayTxs.length > 0;
+            const allConfirmed = hasEntry && dayTxs.every(t => t.tx_status==='confirmed');
+            const hasSaved = hasEntry && dayTxs.some(t => t.tx_status==='saved');
+            return (
+              <div key={d} title={formatDateFull(d)} style={{
+                flexShrink:0, background: allConfirmed?'#dcfce7':hasSaved?'#f5f3ff':hasEntry?'#fff7ed':'var(--card)',
+                border: `1.5px solid ${allConfirmed?'#bbf7d0':hasSaved?'#ddd6fe':hasEntry?'#fed7aa':'#e5e7eb'}`,
+                borderRadius:8, padding:'6px 10px', textAlign:'center', minWidth:50, cursor:'default',
+              }}>
+                <div style={{ fontSize:9, color:'#9ca3af', fontWeight:500, textTransform:'uppercase' }}>{dayName}</div>
+                <div style={{ fontSize:15, fontWeight:700, color: allConfirmed?'#16a34a':hasSaved?'#7c3aed':hasEntry?'#ea580c':'#d1d5db', lineHeight:1.2 }}>{dayNum}</div>
+                <div style={{ fontSize:9, color:'#9ca3af' }}>{month}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Main matrix table */}
+      <div style={{ background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:14, overflow:'hidden' }}>
+        {renderByItem()}
+      </div>
+
+      {/* Bottom note */}
+      <div style={{ marginTop:12, fontSize:11, color:'#9ca3af', textAlign:'center' }}>
+        Showing {visibleItems.length} item{visibleItems.length!==1?'s':''} × {levels.length} level{levels.length!==1?'s':''} × {visibleDates.length} work day{visibleDates.length!==1?'s':''}
+      </div>
     </div>
   );
 }

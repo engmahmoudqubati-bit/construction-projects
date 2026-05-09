@@ -239,3 +239,48 @@ router.delete('/:id', async (req, res) => {
 });
 
 module.exports = router;
+
+// GET /map — all installation entries for a project: item × level × date
+router.get('/map', async (req, res) => {
+  const { projectId } = req.query;
+  if (!projectId) return res.status(400).json({ message: 'projectId required' });
+  if (!canAccessProject(req, projectId)) return res.status(403).json({ message: 'No access' });
+  try {
+    // Items
+    const { rows: items } = await pool.query(
+      `SELECT pp.item_id, pp.planned_qty,
+              i.item_code, i.item_name,
+              COALESCE(m.desc_en, m.unit_code, i.unit_of_measure) AS unit_of_measure,
+              c.classification_name,
+              pc.classification_name AS parent_classification_name
+       FROM cp_project_planning pp
+       JOIN cp_items i ON i.id = pp.item_id
+       LEFT JOIN cp_measurements m ON m.id = i.measurement_id
+       LEFT JOIN cp_item_classifications c  ON c.id = i.classification_id
+       LEFT JOIN cp_item_classifications pc ON pc.id = c.parent_id
+       WHERE pp.project_id=$1 AND pp.status IN ('approved','saved')
+       ORDER BY pc.classification_name NULLS LAST, c.classification_name, i.item_name`,
+      [projectId]
+    );
+    // Levels
+    const { rows: levels } = await pool.query(
+      `SELECT * FROM cp_project_levels WHERE project_id=$1 ORDER BY sort_order, level_code`,
+      [projectId]
+    );
+    // Allocations
+    const { rows: allocs } = await pool.query(
+      `SELECT item_id, level_id, suggested_qty FROM cp_installation_level_allocation WHERE project_id=$1`,
+      [projectId]
+    );
+    // All transactions
+    const { rows: txs } = await pool.query(
+      `SELECT t.item_id, t.level_id, t.transaction_date::text AS transaction_date,
+              t.qty_installed, t.tx_status, t.notes
+       FROM cp_installation_transactions t
+       WHERE t.project_id=$1
+       ORDER BY t.transaction_date`,
+      [projectId]
+    );
+    res.json({ items, levels, allocs, txs });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
