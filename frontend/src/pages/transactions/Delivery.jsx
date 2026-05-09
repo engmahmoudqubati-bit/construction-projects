@@ -217,11 +217,8 @@ export default function Delivery() {
     setUnposting(true);
     try {
       const res = await api.unpostDelivery(projectId, date);
-      toast(`Unposted — ${res.unposted} entries reverted to Incomplete. Edit quantities then Save.`);
-      // Update tx_status locally without resetting user inputs
-      setRows(rs => rs.map(r =>
-        r.tx_status === 'confirmed' ? { ...r, tx_status: 'incomplete' } : r
-      ));
+      toast(`Unposted — ${res.unposted} entries reverted to Incomplete`);
+      await softRefresh();
     } catch (err) { toast(err.message, 'error'); }
     finally { setUnposting(false); }
   }
