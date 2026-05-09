@@ -9,12 +9,13 @@ const fmt0 = v => (parseFloat(v) || 0).toFixed(0);
 // A week runs Sat (day 6) → Thu (day 4)
 // Given any date string, find the Saturday that starts its week
 function getWeekSaturday(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
-  const day = d.getDay(); // 0=Sun,1=Mon,...,6=Sat
-  // days since last Saturday: Sat=0, Sun=1, Mon=2, Tue=3, Wed=4, Thu=5, Fri=6
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d); // local date — no UTC shift
+  const day = date.getDay(); // 0=Sun,1=Mon,...,6=Sat
+  // days back to Saturday: Sun→1, Mon→2, Tue→3, Wed→4, Thu→5, Fri→6, Sat→0
   const offset = day === 6 ? 0 : day + 1;
-  d.setDate(d.getDate() - offset);
-  return d;
+  date.setDate(date.getDate() - offset);
+  return date;
 }
 
 function addDays(date, n) {
@@ -24,13 +25,19 @@ function addDays(date, n) {
 }
 
 function toISO(date) {
-  return date.toISOString().slice(0, 10);
+  // Use local date parts to avoid UTC timezone shift (e.g. Gulf UTC+3)
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 function formatDisplay(dateStr) {
   if (!dateStr) return '';
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  // Parse as local date to avoid UTC shift
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 // Generate all SAT→THU weeks from firstDate up to today
