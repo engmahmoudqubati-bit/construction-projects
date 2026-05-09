@@ -23,6 +23,7 @@ export default function Planning() {
   const [available,    setAvailable]    = useState([]);
   const [selected,     setSelected]     = useState([]);
   const [insertSearch, setInsertSearch] = useState('');
+  const [boqSearch,    setBoqSearch]    = useState('');
 
   useEffect(() => {
     api.getProjects().then(ps => {
@@ -36,7 +37,7 @@ export default function Planning() {
     setLoading(true);
     try {
       const data = await api.getPlanning(pid);
-      setRows(data.map(r => ({ ...r, qty_input: r.planned_qty ?? '' })));
+      setRows(data.map(r => ({ ...r, qty_input: r.planned_qty != null ? Number(r.planned_qty).toFixed(2) : '' })));
     } catch (err) { toast(err.message, 'error'); }
     finally { setLoading(false); }
   }, [toast]);
@@ -94,6 +95,21 @@ export default function Planning() {
     catch (err) { toast(err.message, 'error'); }
   }
 
+  function exportCSV() {
+    const csvRows = rows.map(r => [
+      r.item_code, r.item_name,
+      r.grandparent_classification_name || r.parent_classification_name || r.classification_name || '',
+      r.unit_desc_en || r.unit_code || '',
+      Number(r.planned_qty||0).toFixed(2),
+      r.status
+    ].join(','));
+    const csv = ['Item Code,Item Name,Classification,Unit,Planned Qty,Status', ...csvRows].join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = 'BOQ.csv';
+    a.click();
+  }
+
   async function handleRemove(itemId) {
     try { await api.deletePlanningItem(projectId, itemId); setRows(rs => rs.filter(r => r.item_id !== itemId)); }
     catch (err) { toast(err.message, 'error'); }
@@ -109,7 +125,15 @@ export default function Planning() {
   const canUnpost     = hasApproved && canAction('can_confirm');
 
   // Group by: main classification → leaf classification → items
-  const grouped = rows.reduce((acc, row) => {
+  const filteredRows = boqSearch
+    ? rows.filter(r =>
+        (r.item_name||'').toLowerCase().includes(boqSearch.toLowerCase()) ||
+        (r.item_code||'').toLowerCase().includes(boqSearch.toLowerCase()) ||
+        (r.classification_name||'').toLowerCase().includes(boqSearch.toLowerCase())
+      )
+    : rows;
+
+  const grouped = filteredRows.reduce((acc, row) => {
     const main = row.grandparent_classification_name || row.parent_classification_name || row.classification_name || 'Uncategorized';
     const leaf = row.grandparent_classification_name
       ? (row.parent_classification_name || row.classification_name || '')
@@ -142,21 +166,37 @@ export default function Planning() {
         <div style={{width:48,height:48,borderRadius:14,background:'#ede9fe',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         </div>
-        <h1 style={{fontSize:20,fontWeight:700,color:'var(--text)',letterSpacing:'-0.3px'}}>Bill of Quantity (BOQ)</h1>
+        <div style={{display:'flex',flexDirection:'column',gap:6}}>
+          <h1 style={{fontSize:20,fontWeight:700,color:'var(--text)',letterSpacing:'-0.3px'}}>Bill of Quantity BOQ</h1>
+          <p style={{fontSize:12,color:'#9ca3af',margin:0}}>Preparing and reviewing Bill of Quantities BOQ for construction projects with accurate quantity verification.</p>
+          {/* Project selector + Insert button on same row */}
+          <div style={{display:'flex',alignItems:'center',gap:8,marginTop:4}}>
+            <select style={{background:'var(--card)',border:'2px solid #7c3aed',borderRadius:10,padding:'8px 14px',fontSize:14,fontWeight:600,color:'var(--text)',cursor:'pointer',fontFamily:'inherit',minWidth:320,outline:'none'}}
+              value={projectId} onChange={e=>setProjectId(e.target.value)}>
+              <option value="">— Select a Project —</option>
+              {projects.map(p=><option key={p.id} value={p.id}>{p.project_name_en}</option>)}
+            </select>
+            {projectId && (
+              <>
+                <button onClick={openInsert} style={{display:'flex',alignItems:'center',gap:7,background:'#7c3aed',border:'none',borderRadius:10,padding:'9px 18px',fontSize:13,fontWeight:600,color:'#fff',cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Insert
+                </button>
+                <div style={{display:'flex',alignItems:'center',gap:8,background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,padding:'8px 14px',minWidth:200}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <input style={{border:'none',outline:'none',fontSize:13,color:'var(--text)',background:'none',width:'100%',fontFamily:'inherit'}} placeholder="Search BOQ..."
+                    value={boqSearch} onChange={e=>setBoqSearch(e.target.value)} />
+                  {boqSearch && <button onClick={()=>setBoqSearch('')} style={{background:'none',border:'none',cursor:'pointer',color:'var(--text-muted)',fontSize:13,padding:0}}>✕</button>}
+                </div>
+                <button onClick={exportCSV} style={{display:'flex',alignItems:'center',gap:6,background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,padding:'8px 16px',fontSize:13,fontWeight:500,color:'var(--text)',cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Export
+                </button>
+              </>
+            )}
+          </div>
+        </div>
         <div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-          {/* Project selector */}
-          <select style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:10,padding:'8px 14px',fontSize:13,color:'var(--text)',cursor:'pointer',fontFamily:'inherit',minWidth:260}}
-            value={projectId} onChange={e=>setProjectId(e.target.value)}>
-            <option value="">— Select Project —</option>
-            {projects.map(p=><option key={p.id} value={p.id}>{p.project_name_en}</option>)}
-          </select>
-          {/* Insert button */}
-          {projectId && (
-            <button onClick={openInsert} style={btnStyle('#7c3aed')}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Insert Items
-            </button>
-          )}
         </div>
       </div>
 
@@ -184,7 +224,7 @@ export default function Planning() {
             <table style={{width:'100%',borderCollapse:'collapse'}}>
               <thead>
                 <tr>
-                  {['#','Item Code','Item Name','Unit','Total Qty','Status',''].map((h,i) => (
+                  {['#','Item Code','Item Name','Unit','Planned Qty','Status',''].map((h,i) => (
                     <th key={i} style={{background:'#f0f7ff',color:'#111827',fontWeight:700,fontSize:12,
                       padding:'11px 14px',textAlign:i>=4?'center':'left',
                       borderBottom:'1px solid #e0ecff',whiteSpace:'nowrap',textTransform:'uppercase',letterSpacing:'0.03em'}}>
@@ -210,14 +250,20 @@ export default function Planning() {
                           <td style={{padding:'12px 14px',fontSize:12,color:'#9ca3af',textAlign:'center',width:44}}>{ri+1}</td>
                           <td style={{padding:'12px 14px',fontSize:12,fontWeight:500,color:'#6b7280'}}>{row.item_code}</td>
                           <td style={{padding:'12px 14px',fontSize:13,fontWeight:600,color:'#111827'}}>{row.item_name}</td>
-                          <td style={{padding:'12px 14px',fontSize:12,color:'#6b7280',textAlign:'center'}}>{row.unit_desc_en||row.unit_code||'—'}</td>
+                          <td style={{padding:'12px 14px',fontSize:12,color:'#6b7280',textAlign:'left',width:80}}>{row.unit_desc_en||row.unit_code||'—'}</td>
                           <td style={{padding:'12px 14px',textAlign:'center',width:140}}>
                             {editable ? (
                               <input type="number" min="0" step="0.01" value={row.qty_input}
                                 onChange={e=>setRows(rs=>rs.map(r=>r.item_id===row.item_id?{...r,qty_input:e.target.value}:r))}
+                                onBlur={e=>{
+                                  const val = parseFloat(e.target.value);
+                                  const rounded = isNaN(val) ? '' : val.toFixed(2);
+                                  setRows(rs=>rs.map(r=>r.item_id===row.item_id?{...r,qty_input:rounded}:r));
+                                  e.target.style.borderColor='#e5e7eb';
+                                }}
+                                onClick={e=>e.target.select()}
+                                onFocus={e=>{e.target.select();e.target.style.borderColor='#7c3aed';}}
                                 style={{width:110,textAlign:'center',border:'1.5px solid #e5e7eb',borderRadius:8,padding:'6px 8px',fontSize:13,fontFamily:'inherit',outline:'none'}}
-                                onFocus={e=>{e.target.style.borderColor='#7c3aed';}}
-                                onBlur={e=>{e.target.style.borderColor='#e5e7eb';}}
                               />
                             ) : (
                               <span style={{fontWeight:600,fontSize:13}}>{Number(row.planned_qty||0).toFixed(2)}</span>
@@ -358,7 +404,7 @@ export default function Planning() {
               </button>
               <button onClick={handleInsert} disabled={inserting||selected.length===0}
                 style={{background:selected.length===0?'#9ca3af':'#7c3aed',border:'none',borderRadius:8,padding:'8px 20px',fontSize:13,fontWeight:600,color:'#fff',cursor:selected.length===0?'not-allowed':'pointer',fontFamily:'inherit'}}>
-                {inserting ? 'Inserting...' : `Insert ${selected.length} Item(s)`}
+                {inserting ? 'Inserting...' : `Insert (${selected.length})`}
               </button>
             </div>
           </div>

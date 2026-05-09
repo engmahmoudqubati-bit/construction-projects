@@ -16,7 +16,8 @@ router.get('/', async (req, res) => {
               c.classification_name,
               pc.classification_name AS parent_classification_name,
               t.id AS tx_id, t.qty_delivered, t.delivery_ref, t.notes, t.tx_status,
-              COALESCE(SUM(t2.qty_delivered) FILTER (WHERE t2.tx_status='confirmed'), 0) AS total_delivered
+              COALESCE(SUM(t2.qty_delivered) FILTER (WHERE t2.tx_status='confirmed' AND t2.transaction_date <= $2), 0) AS total_delivered,
+              COALESCE(SUM(t2.qty_delivered) FILTER (WHERE t2.tx_status='confirmed'), 0) AS total_delivered_all
        FROM cp_project_planning pp
        JOIN cp_items i ON i.id = pp.item_id
        LEFT JOIN cp_item_classifications c  ON c.id  = i.classification_id

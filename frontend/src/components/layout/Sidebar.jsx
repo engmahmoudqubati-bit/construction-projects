@@ -15,7 +15,7 @@ const NAV = [
   { label: t.items,              icon: '📦', path: '/definitions/items',            pageKey: 'definitions_items' },
 
   { section: 'BOQ' },
-  { label: 'Bill of Quantity (BOQ)', icon: '📋', path: '/planning', pageKey: 'planning' },
+  { label: 'Bill of Quantity BOQ', icon: '📋', path: '/planning', pageKey: 'planning' },
 
   { section: t.transactions },
   { label: t.delivery,     icon: '🚚', path: '/transactions/delivery',     pageKey: 'delivery' },

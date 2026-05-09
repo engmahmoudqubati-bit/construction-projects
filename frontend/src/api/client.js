@@ -73,6 +73,10 @@ export const api = {
   preparePlanning:      (pid)    => request('PATCH', `/api/planning/prepare/${pid}`),
   confirmPlanning:      (pid)    => request('PATCH', `/api/planning/confirm/${pid}`),
   deletePlanningItem:   (pid, iid) => request('DELETE', `/api/planning/${pid}/${iid}`),
+  draftPlanning:        (pid)    => request('PATCH',  `/api/planning/draft/${pid}`),
+  savePlanningStatus:   (pid)    => request('PATCH',  `/api/planning/save/${pid}`),
+  approvePlanning:      (pid)    => request('PATCH',  `/api/planning/approve/${pid}`),
+  unpostPlanning:       (pid)    => request('PATCH',  `/api/planning/unpost/${pid}`),
 
   getDelivery:     (pid, date) => request('GET',  `/api/delivery${qs({ projectId: pid, date })}`),
   saveDelivery:    (b)         => request('POST', '/api/delivery', b),
