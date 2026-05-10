@@ -18,8 +18,8 @@ router.get('/progress', async (req, res) => {
               pp.planned_qty,
               COALESCE(SUM(DISTINCT d.qty_delivered),0)   AS total_delivered,
               COALESCE(SUM(DISTINCT ins.qty_installed),0) AS total_installed,
-              ROUND(COALESCE(SUM(DISTINCT ins.qty_installed),0)/pp.planned_qty*100,1) AS install_pct,
-              ROUND(COALESCE(SUM(DISTINCT d.qty_delivered),0)/pp.planned_qty*100,1)   AS delivery_pct
+              ROUND(COALESCE(SUM(DISTINCT ins.qty_installed),0)/NULLIF(pp.planned_qty,0)*100,1) AS install_pct,
+              ROUND(COALESCE(SUM(DISTINCT d.qty_delivered),0)/NULLIF(pp.planned_qty,0)*100,1)   AS delivery_pct
        FROM cp_project_planning pp
        JOIN cp_items i ON i.id=pp.item_id
        LEFT JOIN cp_item_classifications c  ON c.id  = i.classification_id
@@ -86,7 +86,7 @@ router.get('/item-tracking', async (req, res) => {
               COALESCE(SUM(d.qty_delivered),0)   AS total_delivered,
               COALESCE(SUM(ins.qty_installed),0) AS total_installed,
               COALESCE(SUM(insp.qty_inspected),0) AS total_inspected,
-              ROUND(COALESCE(SUM(ins.qty_installed),0)/pp.planned_qty*100,1) AS install_pct
+              ROUND(COALESCE(SUM(ins.qty_installed),0)/NULLIF(pp.planned_qty,0)*100,1) AS install_pct
        FROM cp_project_planning pp
        JOIN cp_projects p ON p.id=pp.project_id
        JOIN cp_items i ON i.id=pp.item_id
