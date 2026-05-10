@@ -502,11 +502,250 @@ function ItemTrackingReport({ projects, items }) {
   );
 }
 
+
+// ── Tab 4: Item Logs ───────────────────────────────────────────────────────
+function ItemLogsReport({ projects }) {
+  const toast = useToast();
+  const [projectId,  setProjectId]  = useState('');
+  const [process,    setProcess]    = useState('');
+  const [status,     setStatus]     = useState('');
+  const [dateFrom,   setDateFrom]   = useState('');
+  const [dateTo,     setDateTo]     = useState('');
+  const [data,       setData]       = useState([]);
+  const [loading,    setLoading]    = useState(false);
+  const [search,     setSearch]     = useState('');
+
+  const projectLabel = p => [p.project_name_en, p.project_name_ar].filter(Boolean).join(' / ');
+
+  async function load() {
+    if (!projectId) return;
+    setLoading(true);
+    try {
+      const params = { projectId };
+      if (process)  params.process  = process;
+      if (status)   params.status   = status;
+      if (dateFrom) params.dateFrom = dateFrom;
+      if (dateTo)   params.dateTo   = dateTo;
+      setData(await api.getItemLogs(params));
+    } catch (err) { toast(err.message, 'error'); }
+    finally { setLoading(false); }
+  }
+
+  useEffect(() => { load(); }, [projectId, process, status, dateFrom, dateTo]);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return data;
+    const q = search.toLowerCase();
+    return data.filter(r =>
+      (r.item_name||'').toLowerCase().includes(q) ||
+      (r.item_code||'').toLowerCase().includes(q)
+    );
+  }, [data, search]);
+
+  // Status config
+  const STATUS_CFG = {
+    incomplete: { bg:'#fff7ed', color:'#ea580c', border:'#fed7aa', label:'Incomplete' },
+    saved:      { bg:'#f5f3ff', color:'#7c3aed', border:'#ddd6fe', label:'Saved'      },
+    no_entry:   { bg:'#f3f4f6', color:'#6b7280', border:'#e5e7eb', label:'No Entry'   },
+    incomplete_plan: { bg:'#fff7ed', color:'#ea580c', border:'#fed7aa', label:'Incomplete' },
+    saved_plan:      { bg:'#eff6ff', color:'#2563eb', border:'#bfdbfe', label:'Saved'      },
+  };
+  const PROCESS_CFG = {
+    planning:     { icon:'📋', color:'#2563eb', bg:'#eff6ff', label:'Planning'     },
+    delivery:     { icon:'🚚', color:'#0369a1', bg:'#e0f2fe', label:'Delivery'     },
+    installation: { icon:'🔧', color:'#7c3aed', bg:'#f5f3ff', label:'Installation' },
+    no_entry:     { icon:'⭕', color:'#6b7280', bg:'#f3f4f6', label:'No Entry'     },
+  };
+
+  const StatusBadge = ({ s }) => {
+    const cfg = STATUS_CFG[s] || { bg:'#f3f4f6', color:'#6b7280', border:'#e5e7eb', label: s };
+    return (
+      <span style={{ background:cfg.bg, color:cfg.color, border:`1px solid ${cfg.border}`,
+        borderRadius:6, padding:'2px 8px', fontSize:11, fontWeight:700, whiteSpace:'nowrap' }}>
+        {cfg.label}
+      </span>
+    );
+  };
+
+  const ProcessBadge = ({ p }) => {
+    const cfg = PROCESS_CFG[p] || { icon:'❓', color:'#6b7280', bg:'#f3f4f6', label: p };
+    return (
+      <span style={{ background:cfg.bg, color:cfg.color, borderRadius:6,
+        padding:'2px 8px', fontSize:11, fontWeight:700, whiteSpace:'nowrap' }}>
+        {cfg.icon} {cfg.label}
+      </span>
+    );
+  };
+
+  // Summary counts
+  const counts = useMemo(() => {
+    const c = { incomplete:0, saved:0, no_entry:0, planning:0, delivery:0, installation:0 };
+    filtered.forEach(r => {
+      if (r.status==='incomplete') c.incomplete++;
+      if (r.status==='saved')      c.saved++;
+      if (r.status==='no_entry')   c.no_entry++;
+      if (r.process==='planning')     c.planning++;
+      if (r.process==='delivery')     c.delivery++;
+      if (r.process==='installation') c.installation++;
+    });
+    return c;
+  }, [filtered]);
+
+  return (
+    <div>
+      {/* Filters */}
+      <div style={{ display:'flex', gap:12, marginBottom:16, flexWrap:'wrap', alignItems:'flex-end' }}>
+        <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>🏗️ Project</label>
+          <select value={projectId} onChange={e => setProjectId(e.target.value)} style={fSel}>
+            <option value="">— Select Project —</option>
+            {projects.map(p => <option key={p.id} value={p.id}>{projectLabel(p)}</option>)}
+          </select>
+        </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>⚙️ Process</label>
+          <select value={process} onChange={e => setProcess(e.target.value)}
+            style={{ ...fSel, minWidth:160, border:'2px solid #7c3aed' }}>
+            <option value="">All Processes</option>
+            <option value="planning">📋 Planning</option>
+            <option value="delivery">🚚 Delivery</option>
+            <option value="installation">🔧 Installation</option>
+            <option value="no_entry">⭕ No Entry</option>
+          </select>
+        </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>📋 Status</label>
+          <select value={status} onChange={e => setStatus(e.target.value)}
+            style={{ ...fSel, minWidth:160, border:'2px solid #7c3aed' }}>
+            <option value="">All Statuses</option>
+            <option value="incomplete">Incomplete</option>
+            <option value="saved">Saved</option>
+            <option value="no_entry">No Entry</option>
+          </select>
+        </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>📅 From</label>
+          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+            style={{ ...fSel, minWidth:150, cursor:'default', fontWeight:400 }} />
+        </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>📅 To</label>
+          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+            style={{ ...fSel, minWidth:150, cursor:'default', fontWeight:400 }} />
+        </div>
+        {data.length > 0 && (
+          <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+            <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>🔍 Search</label>
+            <div style={searchStyle}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input style={{ border:'none', outline:'none', fontSize:13, color:'var(--text)', background:'none', width:'100%', padding:'0 10px', fontFamily:'inherit' }}
+                placeholder="Item name or code..." value={search} onChange={e => setSearch(e.target.value)} />
+              {search && <button onClick={() => setSearch('')} style={{ background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:'0 12px' }}>✕</button>}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {loading && <div className="spinner-wrap"><div className="spinner" /></div>}
+      {!projectId && !loading && (
+        <div className="empty-state"><div className="empty-icon">🔍</div><p>Select a project to view item logs</p></div>
+      )}
+
+      {!loading && filtered.length > 0 && (
+        <>
+          {/* Summary KPIs */}
+          <div style={{ display:'flex', gap:12, marginBottom:16, flexWrap:'wrap' }}>
+            <KPICard label="Total Logs" value={filtered.length} icon="📋" color="#7c3aed" bg="#f5f3ff" />
+            {counts.incomplete > 0 && <KPICard label="Incomplete" value={counts.incomplete} icon="⏳" color="#ea580c" bg="#fff7ed" />}
+            {counts.saved > 0      && <KPICard label="Saved" value={counts.saved} icon="💾" color="#7c3aed" bg="#f5f3ff" />}
+            {counts.no_entry > 0   && <KPICard label="No Entry" value={counts.no_entry} icon="⭕" color="#6b7280" bg="#f3f4f6" />}
+            {counts.delivery > 0       && <KPICard label="Delivery" value={counts.delivery} icon="🚚" color="#0369a1" bg="#e0f2fe" />}
+            {counts.installation > 0   && <KPICard label="Installation" value={counts.installation} icon="🔧" color="#7c3aed" bg="#f5f3ff" />}
+          </div>
+
+          <div style={{ background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:14, overflow:'hidden' }}>
+            <div style={{ overflowX:'auto' }}>
+              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+                <thead>
+                  <tr>
+                    <th style={thS}>Date</th>
+                    <th style={thS}>Process</th>
+                    <th style={thS}>Code</th>
+                    <th style={{ ...thS, minWidth:180 }}>Item Name</th>
+                    <th style={thS}>Unit</th>
+                    <th style={{ ...thS, textAlign:'right' }}>Qty</th>
+                    <th style={thS}>Status</th>
+                    <th style={{ ...thS, minWidth:160 }}>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((r, i) => (
+                    <tr key={i} style={{ borderBottom:'1px solid #f3f4f6', background:i%2===0?'#fafbff':'#fff' }}>
+                      <td style={{ ...tdS, whiteSpace:'nowrap', color:'#374151', fontWeight:500 }}>
+                        {r.event_date ? r.event_date.slice(0,10) : <span style={{ color:'#d1d5db' }}>—</span>}
+                      </td>
+                      <td style={tdS}><ProcessBadge p={r.process} /></td>
+                      <td style={{ ...tdS, fontFamily:'monospace', fontSize:11, color:'#6b7280' }}>{r.item_code}</td>
+                      <td style={{ ...tdS, fontWeight:600, color:'#111827' }}>{r.item_name}</td>
+                      <td style={{ ...tdS, color:'#9ca3af', fontSize:11 }}>{r.unit_of_measure||'—'}</td>
+                      <td style={{ ...tdS, textAlign:'right', fontWeight:600, color:'#374151' }}>
+                        {parseFloat(r.qty||0).toFixed(2)}
+                      </td>
+                      <td style={tdS}><StatusBadge s={r.status} /></td>
+                      <td style={{ ...tdS, color:'#6b7280', fontSize:11 }}>{r.notes||<span style={{ color:'#e5e7eb' }}>—</span>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ padding:'10px 16px', borderTop:'1px solid #f3f4f6', fontSize:12, color:'#9ca3af' }}>
+              Showing {filtered.length} log{filtered.length!==1?'s':''}
+              {(dateFrom||dateTo) && <span> · Date range: {dateFrom||'—'} to {dateTo||'—'}</span>}
+            </div>
+          </div>
+
+          {/* Inline insight */}
+          <div style={{ marginTop:14, background:'#f5f3ff', border:'1px solid #ddd6fe', borderRadius:10, padding:'12px 16px' }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'#7c3aed', marginBottom:8, textTransform:'uppercase', letterSpacing:'0.07em' }}>🎯 Action Required</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              {counts.incomplete > 0 && (
+                <div style={{ fontSize:12, color:'#374151', display:'flex', gap:8, alignItems:'flex-start' }}>
+                  <span>⚠️</span>
+                  <span><strong>{counts.incomplete}</strong> incomplete entr{counts.incomplete===1?'y':'ies'} — these have been started but not saved. Follow up with the field team to complete or save them.</span>
+                </div>
+              )}
+              {counts.saved > 0 && (
+                <div style={{ fontSize:12, color:'#374151', display:'flex', gap:8, alignItems:'flex-start' }}>
+                  <span>💾</span>
+                  <span><strong>{counts.saved}</strong> saved entr{counts.saved===1?'y':'ies'} pending approval — review and approve to include in official reports.</span>
+                </div>
+              )}
+              {counts.no_entry > 0 && (
+                <div style={{ fontSize:12, color:'#374151', display:'flex', gap:8, alignItems:'flex-start' }}>
+                  <span>⭕</span>
+                  <span><strong>{counts.no_entry}</strong> planned item{counts.no_entry===1?'':'s'} with zero delivery or installation activity — mobilise or investigate delays.</span>
+                </div>
+              )}
+              {filtered.length === 0 && (
+                <div style={{ fontSize:12, color:'#16a34a' }}>✅ No pending items found for the selected filters.</div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+      {!loading && projectId && data.length === 0 && (
+        <div className="empty-state"><p>No pending logs found for this project</p></div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Reports Page ──────────────────────────────────────────────────────
 const TABS = [
   { key:'progress', label:'📈 Progress',        icon:'📈' },
   { key:'projects', label:'🏗️ Projects Summary', icon:'🏗️' },
   { key:'items',    label:'📦 Item Tracking',    icon:'📦' },
+  { key:'logs',     label:'🔍 Item Logs',          icon:'🔍' },
 ];
 
 export default function Reports() {
@@ -552,6 +791,7 @@ export default function Reports() {
       {tab==='progress' && <ProgressReport   projects={projects} />}
       {tab==='projects' && <ProjectsSummaryReport />}
       {tab==='items'    && <ItemTrackingReport projects={projects} items={items} />}
+      {tab==='logs'     && <ItemLogsReport     projects={projects} />}
     </div>
   );
 }

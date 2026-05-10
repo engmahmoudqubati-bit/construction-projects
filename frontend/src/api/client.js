@@ -109,6 +109,7 @@ export const api = {
 
   getAIInsight: (prompt) => request('POST', '/api/reports/ai-insight', { prompt }),
   getDailyProductivity: (projectId, weekStart, weekEnd) => request('GET', `/api/reports/daily-productivity?projectId=${projectId}&weekStart=${weekStart}&weekEnd=${weekEnd}`),
+  getItemLogs: (params) => request('GET', `/api/reports/item-logs?${new URLSearchParams(params).toString()}`),
   getWeeklyReport: (projectId, weekStart, weekEnd) => request('GET', `/api/reports/weekly?projectId=${projectId}&weekStart=${weekStart}&weekEnd=${weekEnd}`),
   getReportProgress:        (pid)    => request('GET', `/api/reports/progress${qs({ projectId: pid })}`),
   getReportProjectsSummary: ()       => request('GET', '/api/reports/projects-summary'),

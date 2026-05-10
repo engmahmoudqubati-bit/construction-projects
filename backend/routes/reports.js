@@ -25,9 +25,9 @@ router.get('/progress', async (req, res) => {
        LEFT JOIN cp_item_classifications c  ON c.id  = i.classification_id
        LEFT JOIN cp_item_classifications pc ON pc.id = c.parent_id
        LEFT JOIN cp_delivery_transactions d
-         ON d.project_id=pp.project_id AND d.item_id=pp.item_id
+         ON d.project_id=pp.project_id AND d.item_id=pp.item_id AND d.tx_status='confirmed'
        LEFT JOIN cp_installation_transactions ins
-         ON ins.project_id=pp.project_id AND ins.item_id=pp.item_id
+         ON ins.project_id=pp.project_id AND ins.item_id=pp.item_id AND ins.tx_status='confirmed'
        WHERE pp.project_id=$1
        GROUP BY i.item_code,i.item_name,i.unit_of_measure,c.classification_name,
                 pc.classification_name,pp.planned_qty
@@ -56,8 +56,8 @@ router.get('/projects-summary', async (req, res) => {
               ROUND(COALESCE(SUM(ins.qty_installed),0)/NULLIF(SUM(pp.planned_qty),0)*100,1) AS install_pct
        FROM cp_projects p
        LEFT JOIN cp_project_planning pp ON pp.project_id=p.id
-       LEFT JOIN cp_installation_transactions ins ON ins.project_id=p.id
-       LEFT JOIN cp_delivery_transactions d ON d.project_id=p.id
+       LEFT JOIN cp_installation_transactions ins ON ins.project_id=p.id AND ins.tx_status='confirmed'
+       LEFT JOIN cp_delivery_transactions d ON d.project_id=p.id AND d.tx_status='confirmed'
        ${clause}
        GROUP BY p.id,p.project_code,p.project_name_en,p.project_name_ar,p.status
        ORDER BY p.id`, params
@@ -90,8 +90,8 @@ router.get('/item-tracking', async (req, res) => {
        FROM cp_project_planning pp
        JOIN cp_projects p ON p.id=pp.project_id
        JOIN cp_items i ON i.id=pp.item_id
-       LEFT JOIN cp_delivery_transactions d ON d.project_id=pp.project_id AND d.item_id=pp.item_id
-       LEFT JOIN cp_installation_transactions ins ON ins.project_id=pp.project_id AND ins.item_id=pp.item_id
+       LEFT JOIN cp_delivery_transactions d ON d.project_id=pp.project_id AND d.item_id=pp.item_id AND d.tx_status='confirmed'
+       LEFT JOIN cp_installation_transactions ins ON ins.project_id=pp.project_id AND ins.item_id=pp.item_id AND ins.tx_status='confirmed'
        LEFT JOIN cp_inspection_transactions insp ON insp.project_id=pp.project_id AND insp.item_id=pp.item_id
        ${clause}
        GROUP BY p.project_code,p.project_name_en,p.project_name_ar,
@@ -267,5 +267,125 @@ router.post('/ai-insight', async (req, res) => {
     if (data.error) return res.status(400).json({ message: data.error.message || 'Anthropic API error' });
     if (!data.content) return res.status(500).json({ message: 'Empty response from Anthropic API' });
     res.json(data);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// ── Item Logs — incomplete/saved/no-entry across all processes ────────────────
+router.get('/item-logs', async (req, res) => {
+  const { projectId, process, status, dateFrom, dateTo } = req.query;
+  if (!projectId) return res.status(400).json({ message: 'projectId required' });
+  if (!canAccessProject(req, projectId)) return res.status(403).json({ message: 'No access' });
+  try {
+    const rows = [];
+
+    // Planning logs
+    if (!process || process === 'planning') {
+      const { rows: planRows } = await pool.query(
+        `SELECT 'planning' AS process,
+                pp.item_id, i.item_code, i.item_name,
+                COALESCE(m.desc_en, m.unit_code, i.unit_of_measure) AS unit_of_measure,
+                pp.planned_qty AS qty,
+                pp.status,
+                pp.updated_at::text AS event_date,
+                NULL AS notes
+         FROM cp_project_planning pp
+         JOIN cp_items i ON i.id = pp.item_id
+         LEFT JOIN cp_measurements m ON m.id = i.measurement_id
+         WHERE pp.project_id = $1
+           AND pp.status NOT IN ('approved')
+           ${status ? `AND pp.status = $2` : ''}
+           ${dateFrom ? `AND pp.updated_at::date >= '${dateFrom}'::date` : ''}
+           ${dateTo   ? `AND pp.updated_at::date <= '${dateTo}'::date`   : ''}
+         ORDER BY pp.updated_at DESC`,
+        status ? [projectId, status] : [projectId]
+      );
+      rows.push(...planRows);
+    }
+
+    // Delivery logs
+    if (!process || process === 'delivery') {
+      const { rows: delRows } = await pool.query(
+        `SELECT 'delivery' AS process,
+                d.item_id, i.item_code, i.item_name,
+                COALESCE(m.desc_en, m.unit_code, i.unit_of_measure) AS unit_of_measure,
+                d.qty_delivered AS qty,
+                d.tx_status AS status,
+                d.transaction_date::text AS event_date,
+                d.notes
+         FROM cp_delivery_transactions d
+         JOIN cp_items i ON i.id = d.item_id
+         LEFT JOIN cp_measurements m ON m.id = i.measurement_id
+         WHERE d.project_id = $1
+           AND d.tx_status != 'confirmed'
+           ${status ? `AND d.tx_status = $2` : ''}
+           ${dateFrom ? `AND d.transaction_date >= '${dateFrom}'::date` : ''}
+           ${dateTo   ? `AND d.transaction_date <= '${dateTo}'::date`   : ''}
+         ORDER BY d.transaction_date DESC`,
+        status ? [projectId, status] : [projectId]
+      );
+      rows.push(...delRows);
+    }
+
+    // Installation logs
+    if (!process || process === 'installation') {
+      const { rows: insRows } = await pool.query(
+        `SELECT 'installation' AS process,
+                it.item_id, i.item_code, i.item_name,
+                COALESCE(m.desc_en, m.unit_code, i.unit_of_measure) AS unit_of_measure,
+                it.qty_installed AS qty,
+                it.tx_status AS status,
+                it.transaction_date::text AS event_date,
+                it.notes
+         FROM cp_installation_transactions it
+         JOIN cp_items i ON i.id = it.item_id
+         LEFT JOIN cp_measurements m ON m.id = i.measurement_id
+         WHERE it.project_id = $1
+           AND it.tx_status != 'confirmed'
+           ${status ? `AND it.tx_status = $2` : ''}
+           ${dateFrom ? `AND it.transaction_date >= '${dateFrom}'::date` : ''}
+           ${dateTo   ? `AND it.transaction_date <= '${dateTo}'::date`   : ''}
+         ORDER BY it.transaction_date DESC`,
+        status ? [projectId, status] : [projectId]
+      );
+      rows.push(...insRows);
+    }
+
+    // No-entry items (planned but no transactions in any process)
+    if (!process || process === 'no_entry') {
+      if (!status || status === 'no_entry') {
+        const { rows: noEntryRows } = await pool.query(
+          `SELECT 'no_entry' AS process,
+                  pp.item_id, i.item_code, i.item_name,
+                  COALESCE(m.desc_en, m.unit_code, i.unit_of_measure) AS unit_of_measure,
+                  pp.planned_qty AS qty,
+                  'no_entry' AS status,
+                  NULL AS event_date,
+                  NULL AS notes
+           FROM cp_project_planning pp
+           JOIN cp_items i ON i.id = pp.item_id
+           LEFT JOIN cp_measurements m ON m.id = i.measurement_id
+           WHERE pp.project_id = $1
+             AND pp.status = 'approved'
+             AND NOT EXISTS (
+               SELECT 1 FROM cp_delivery_transactions d WHERE d.project_id=pp.project_id AND d.item_id=pp.item_id
+             )
+             AND NOT EXISTS (
+               SELECT 1 FROM cp_installation_transactions it WHERE it.project_id=pp.project_id AND it.item_id=pp.item_id
+             )`,
+          [projectId]
+        );
+        rows.push(...noEntryRows);
+      }
+    }
+
+    // Sort all by event_date descending (nulls last)
+    rows.sort((a,b) => {
+      if (!a.event_date && !b.event_date) return 0;
+      if (!a.event_date) return 1;
+      if (!b.event_date) return -1;
+      return b.event_date.localeCompare(a.event_date);
+    });
+
+    res.json(rows);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
