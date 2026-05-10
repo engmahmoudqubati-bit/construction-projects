@@ -24,7 +24,8 @@ const NAV = [
 
   { section: t.reports },
   { label: 'Weekly Summary', icon: '📅', path: '/reports/weekly', pageKey: 'reports' },
-  { label: 'Daily Productivity', icon: '📊', path: '/reports/daily-productivity', pageKey: 'reports' },
+  { label: 'Daily Productivity',  icon: '📊', path: '/reports/daily-productivity', pageKey: 'reports' },
+  { label: 'Floor Productivity',   icon: '🏢', path: '/reports/floor-weekly',        pageKey: 'reports' },
   { label: t.reports, icon: '📈', path: '/reports', pageKey: 'reports' },
 ];
 

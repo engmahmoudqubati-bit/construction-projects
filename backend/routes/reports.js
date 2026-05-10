@@ -278,28 +278,33 @@ router.get('/item-logs', async (req, res) => {
   try {
     const rows = [];
 
-    // Planning logs
+    // Planning logs (no date column on cp_project_planning — show status only)
     if (!process || process === 'planning') {
-      const { rows: planRows } = await pool.query(
-        `SELECT 'planning' AS process,
-                pp.item_id, i.item_code, i.item_name,
-                COALESCE(m.desc_en, m.unit_code, i.unit_of_measure) AS unit_of_measure,
-                pp.planned_qty AS qty,
-                pp.status,
-                pp.updated_at::text AS event_date,
-                NULL AS notes
-         FROM cp_project_planning pp
-         JOIN cp_items i ON i.id = pp.item_id
-         LEFT JOIN cp_measurements m ON m.id = i.measurement_id
-         WHERE pp.project_id = $1
-           AND pp.status NOT IN ('approved')
-           ${status ? `AND pp.status = $2` : ''}
-           ${dateFrom ? `AND pp.updated_at::date >= '${dateFrom}'::date` : ''}
-           ${dateTo   ? `AND pp.updated_at::date <= '${dateTo}'::date`   : ''}
-         ORDER BY pp.updated_at DESC`,
-        status ? [projectId, status] : [projectId]
-      );
-      rows.push(...planRows);
+      // Only show planning rows if status filter is not a transaction status
+      if (!status || status === 'incomplete' || status === 'saved') {
+        // Map planning statuses: 'incomplete'→'incomplete', 'saved'→'saved'
+        const planStatus = status === 'incomplete' ? 'incomplete'
+                         : status === 'saved'      ? 'saved'
+                         : null; // show all non-approved
+        const { rows: planRows } = await pool.query(
+          `SELECT 'planning' AS process,
+                  pp.item_id, i.item_code, i.item_name,
+                  COALESCE(m.desc_en, m.unit_code, i.unit_of_measure) AS unit_of_measure,
+                  pp.planned_qty AS qty,
+                  pp.status,
+                  NULL AS event_date,
+                  NULL AS notes
+           FROM cp_project_planning pp
+           JOIN cp_items i ON i.id = pp.item_id
+           LEFT JOIN cp_measurements m ON m.id = i.measurement_id
+           WHERE pp.project_id = $1
+             AND pp.status NOT IN ('approved')
+             ${planStatus ? `AND pp.status = '${planStatus}'` : ''}
+           ORDER BY i.item_name`,
+          [projectId]
+        );
+        rows.push(...planRows);
+      }
     }
 
     // Delivery logs
@@ -387,5 +392,75 @@ router.get('/item-logs', async (req, res) => {
     });
 
     res.json(rows);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// ── Floor Weekly Productivity ─────────────────────────────────────────────────
+// Returns confirmed installation qty per item per level for a week (Sat–Thu)
+router.get('/floor-weekly', async (req, res) => {
+  const { projectId, weekStart, weekEnd } = req.query;
+  if (!projectId || !weekStart || !weekEnd)
+    return res.status(400).json({ message: 'projectId, weekStart, weekEnd required' });
+  try {
+    // Items from BOQ
+    const { rows: items } = await pool.query(
+      `SELECT pp.item_id, pp.planned_qty,
+              i.item_code, i.item_name,
+              COALESCE(m.desc_en, m.unit_code, i.unit_of_measure) AS unit_of_measure,
+              c.classification_name,
+              pc.classification_name AS parent_classification_name
+       FROM cp_project_planning pp
+       JOIN cp_items i ON i.id = pp.item_id
+       LEFT JOIN cp_measurements m ON m.id = i.measurement_id
+       LEFT JOIN cp_item_classifications c  ON c.id = i.classification_id
+       LEFT JOIN cp_item_classifications pc ON pc.id = c.parent_id
+       WHERE pp.project_id=$1 AND pp.status IN ('approved','saved')
+       ORDER BY pc.classification_name NULLS LAST, c.classification_name, i.item_name`,
+      [projectId]
+    );
+
+    // Levels
+    const { rows: levels } = await pool.query(
+      `SELECT * FROM cp_project_levels WHERE project_id=$1 ORDER BY sort_order, level_code`,
+      [projectId]
+    );
+
+    // Allocations
+    const { rows: allocs } = await pool.query(
+      `SELECT item_id, level_id, suggested_qty FROM cp_installation_level_allocation WHERE project_id=$1`,
+      [projectId]
+    );
+
+    // Confirmed installation qty per item per level for this week
+    const { rows: weekTx } = await pool.query(
+      `SELECT item_id, level_id,
+              SUM(qty_installed) AS qty_this_week
+       FROM cp_installation_transactions
+       WHERE project_id=$1
+         AND tx_status='confirmed'
+         AND transaction_date BETWEEN $2 AND $3
+       GROUP BY item_id, level_id`,
+      [projectId, weekStart, weekEnd]
+    );
+
+    // Total confirmed installed per item per level (all time)
+    const { rows: totalTx } = await pool.query(
+      `SELECT item_id, level_id,
+              SUM(qty_installed) AS qty_total
+       FROM cp_installation_transactions
+       WHERE project_id=$1 AND tx_status='confirmed'
+       GROUP BY item_id, level_id`,
+      [projectId]
+    );
+
+    // First delivery date for week numbering
+    const { rows: firstRows } = await pool.query(
+      `SELECT MIN(transaction_date)::text AS first_date
+       FROM cp_delivery_transactions
+       WHERE project_id=$1 AND tx_status='confirmed'`,
+      [projectId]
+    );
+
+    res.json({ items, levels, allocs, weekTx, totalTx, firstDeliveryDate: firstRows[0]?.first_date || null });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
