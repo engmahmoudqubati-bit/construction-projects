@@ -6,6 +6,7 @@ const NAV = [
   { label: t.dashboard, icon: '◈', path: '/dashboard', pageKey: null },
 
   { section: t.definitions },
+  { label: 'System Setup', icon: '🛠️', path: '/definitions/system-setup', role: 'admin' },
   { label: t.companies,          icon: '🏢', path: '/definitions/companies',      role: 'admin' },
   { label: t.positionRoles,      icon: '🎖️', path: '/definitions/position-roles', role: 'admin' },
   { label: t.users,              icon: '👥', path: '/definitions/users',           role: 'admin' },

@@ -542,13 +542,10 @@ function ItemLogsReport({ projects }) {
     );
   }, [data, search]);
 
-  // Status config
   const STATUS_CFG = {
     incomplete: { bg:'#fff7ed', color:'#ea580c', border:'#fed7aa', label:'Incomplete' },
     saved:      { bg:'#f5f3ff', color:'#7c3aed', border:'#ddd6fe', label:'Saved'      },
     no_entry:   { bg:'#f3f4f6', color:'#6b7280', border:'#e5e7eb', label:'No Entry'   },
-    incomplete_plan: { bg:'#fff7ed', color:'#ea580c', border:'#fed7aa', label:'Incomplete' },
-    saved_plan:      { bg:'#eff6ff', color:'#2563eb', border:'#bfdbfe', label:'Saved'      },
   };
   const PROCESS_CFG = {
     planning:     { icon:'📋', color:'#2563eb', bg:'#eff6ff', label:'Planning'     },
@@ -577,7 +574,6 @@ function ItemLogsReport({ projects }) {
     );
   };
 
-  // Summary counts
   const counts = useMemo(() => {
     const c = { incomplete:0, saved:0, no_entry:0, planning:0, delivery:0, installation:0 };
     filtered.forEach(r => {
@@ -605,7 +601,7 @@ function ItemLogsReport({ projects }) {
         <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
           <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>⚙️ Process</label>
           <select value={process} onChange={e => setProcess(e.target.value)}
-            style={{ ...fSel, minWidth:160, border:'2px solid #7c3aed' }}>
+            style={{ ...fSel, minWidth:160 }}>
             <option value="">All Processes</option>
             <option value="planning">📋 Planning</option>
             <option value="delivery">🚚 Delivery</option>
@@ -616,7 +612,7 @@ function ItemLogsReport({ projects }) {
         <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
           <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>📋 Status</label>
           <select value={status} onChange={e => setStatus(e.target.value)}
-            style={{ ...fSel, minWidth:160, border:'2px solid #7c3aed' }}>
+            style={{ ...fSel, minWidth:160 }}>
             <option value="">All Statuses</option>
             <option value="incomplete">Incomplete</option>
             <option value="saved">Saved</option>
@@ -704,7 +700,7 @@ function ItemLogsReport({ projects }) {
             </div>
           </div>
 
-          {/* Inline insight */}
+          {/* Action Required */}
           <div style={{ marginTop:14, background:'#f5f3ff', border:'1px solid #ddd6fe', borderRadius:10, padding:'12px 16px' }}>
             <div style={{ fontSize:11, fontWeight:700, color:'#7c3aed', marginBottom:8, textTransform:'uppercase', letterSpacing:'0.07em' }}>🎯 Action Required</div>
             <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
@@ -726,7 +722,7 @@ function ItemLogsReport({ projects }) {
                   <span><strong>{counts.no_entry}</strong> planned item{counts.no_entry===1?'':'s'} with zero delivery or installation activity — mobilise or investigate delays.</span>
                 </div>
               )}
-              {filtered.length === 0 && (
+              {counts.incomplete===0 && counts.saved===0 && counts.no_entry===0 && (
                 <div style={{ fontSize:12, color:'#16a34a' }}>✅ No pending items found for the selected filters.</div>
               )}
             </div>
