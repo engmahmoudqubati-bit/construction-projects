@@ -131,3 +131,79 @@ router.get('/delivery-progress', async (req, res) => {
 });
 
 module.exports = router;
+
+// Chart data: per-classification progress (delivery + installation)
+router.get('/by-classification', async (req, res) => {
+  const { projectId } = req.query;
+  const f = projectFilter(projectId, req);
+  try {
+    const { rows } = await pool.query(
+      `SELECT
+         COALESCE(pc.classification_name, c.classification_name, 'Uncategorized') AS classification,
+         SUM(pp.planned_qty) AS planned_qty,
+         COALESCE(SUM(dt.qty_delivered) FILTER (WHERE dt.tx_status='confirmed'), 0) AS delivered_qty,
+         COALESCE(SUM(it.qty_installed) FILTER (WHERE it.tx_status='confirmed'), 0) AS installed_qty,
+         ROUND(COALESCE(SUM(dt.qty_delivered) FILTER (WHERE dt.tx_status='confirmed'),0) / NULLIF(SUM(pp.planned_qty),0) * 100, 1) AS delivery_pct,
+         ROUND(COALESCE(SUM(it.qty_installed) FILTER (WHERE it.tx_status='confirmed'),0) / NULLIF(SUM(pp.planned_qty),0) * 100, 1) AS install_pct
+       FROM cp_project_planning pp
+       JOIN cp_items i ON i.id = pp.item_id
+       LEFT JOIN cp_item_classifications c  ON c.id = i.classification_id
+       LEFT JOIN cp_item_classifications pc ON pc.id = c.parent_id
+       LEFT JOIN cp_delivery_transactions dt ON dt.project_id=pp.project_id AND dt.item_id=pp.item_id
+       LEFT JOIN cp_installation_transactions it ON it.project_id=pp.project_id AND it.item_id=pp.item_id
+       WHERE 1=1 ${f.clause}
+       GROUP BY COALESCE(pc.classification_name, c.classification_name, 'Uncategorized')
+       ORDER BY install_pct DESC NULLS LAST`,
+      f.params
+    );
+    res.json(rows);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// Chart data: per-floor/level progress
+router.get('/by-floor', async (req, res) => {
+  const { projectId } = req.query;
+  const f = projectFilter(projectId, req, 'it');
+  try {
+    const { rows } = await pool.query(
+      `SELECT
+         lv.level_code,
+         lv.level_name,
+         lv.sort_order,
+         COALESCE(SUM(alloc.suggested_qty), 0) AS suggested_qty,
+         COALESCE(SUM(it.qty_installed) FILTER (WHERE it.tx_status='confirmed'), 0) AS installed_qty,
+         ROUND(COALESCE(SUM(it.qty_installed) FILTER (WHERE it.tx_status='confirmed'),0) / NULLIF(SUM(alloc.suggested_qty),0) * 100, 1) AS install_pct
+       FROM cp_project_levels lv
+       LEFT JOIN cp_installation_level_allocation alloc ON alloc.level_id = lv.id
+       LEFT JOIN cp_installation_transactions it ON it.level_id = lv.id ${f.clause.replace('AND it.project_id', 'AND lv.project_id')}
+       WHERE lv.project_id IS NOT NULL
+         ${projectId && projectId !== 'all' ? 'AND lv.project_id = $1' : ''}
+       GROUP BY lv.level_code, lv.level_name, lv.sort_order, lv.id
+       ORDER BY lv.sort_order, lv.level_code`,
+      projectId && projectId !== 'all' ? [projectId] : []
+    );
+    res.json(rows);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// Per-project summary for comparison chart
+router.get('/by-project', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT p.id, p.project_code,
+         COALESCE(p.project_name_en, p.project_name_ar, p.project_code) AS project_name,
+         COALESCE(SUM(pp.planned_qty), 0) AS planned_qty,
+         COALESCE(SUM(dt.qty_delivered) FILTER (WHERE dt.tx_status='confirmed'), 0) AS delivered_qty,
+         COALESCE(SUM(it.qty_installed) FILTER (WHERE it.tx_status='confirmed'), 0) AS installed_qty,
+         ROUND(COALESCE(SUM(dt.qty_delivered) FILTER (WHERE dt.tx_status='confirmed'),0) / NULLIF(SUM(pp.planned_qty),0) * 100, 1) AS delivery_pct,
+         ROUND(COALESCE(SUM(it.qty_installed) FILTER (WHERE it.tx_status='confirmed'),0) / NULLIF(SUM(pp.planned_qty),0) * 100, 1) AS install_pct
+       FROM cp_projects p
+       LEFT JOIN cp_project_planning pp ON pp.project_id = p.id
+       LEFT JOIN cp_delivery_transactions dt ON dt.project_id = p.id
+       LEFT JOIN cp_installation_transactions it ON it.project_id = p.id
+       GROUP BY p.id, p.project_code, p.project_name_en, p.project_name_ar
+       ORDER BY install_pct DESC NULLS LAST`
+    );
+    res.json(rows);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});

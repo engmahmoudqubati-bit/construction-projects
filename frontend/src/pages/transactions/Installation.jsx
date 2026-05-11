@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Button, Select, Input, Space, Tag, Badge } from 'antd';
 import { api } from '../../api/client';
 import { useToast } from '../../components/shared/Toast';
 import RefreshButton from '../../components/shared/RefreshButton';
@@ -13,7 +14,7 @@ const fmt2 = (v) => (parseFloat(v)||0).toFixed(2);
 // Status badge helper — avoids IIFE in JSX (Vite minifier TDZ fix)
 const TX_STATUS_CFG = {
   incomplete: { bg:'#fff7ed', color:'#ea580c', border:'#fed7aa', label:'Incomplete' },
-  saved:      { bg:'#f5f3ff', color:'#7c3aed', border:'#ddd6fe', label:'Saved' },
+  saved:      { bg:'#f5f3ff', color:'#2563eb', border:'#ddd6fe', label:'Saved' },
   confirmed:  { bg:'#f0fdf4', color:'#16a34a', border:'#bbf7d0', label:'Approved' },
 };
 function StatusBadge({ status }) {
@@ -73,7 +74,7 @@ function LevelSetupModal({ projectId, onClose, onSaved }) {
     finally { setSaving(false); }
   }
 
-  const thS = { background:'#f0f7ff', color:'#111827', fontWeight:700, fontSize:11, padding:'8px 14px', textAlign:'left', borderBottom:'1px solid #e0ecff' };
+  const thS = { background:'#e8f1ff', color:'#111827', fontWeight:700, fontSize:11, padding:'8px 14px', textAlign:'left', borderBottom:'1px solid #e0ecff' };
 
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.45)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
@@ -126,7 +127,7 @@ function LevelSetupModal({ projectId, onClose, onSaved }) {
               ))}
             </tbody>
           </table>
-          <button onClick={addLevel} style={{ display:'flex', alignItems:'center', gap:6, background:'#f5f3ff', border:'1px solid #ddd6fe', color:'#7c3aed', borderRadius:8, padding:'7px 14px', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+          <button onClick={addLevel} style={{ display:'flex', alignItems:'center', gap:6, background:'#f5f3ff', border:'1px solid #ddd6fe', color:'#2563eb', borderRadius:8, padding:'7px 14px', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add Level
           </button>
@@ -135,7 +136,7 @@ function LevelSetupModal({ projectId, onClose, onSaved }) {
         {/* Footer */}
         <div style={{ padding:'14px 20px', borderTop:'1px solid var(--border-light)', display:'flex', justifyContent:'flex-end', gap:8, background:'var(--card2)' }}>
           <button onClick={onClose} style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:8, padding:'8px 18px', fontSize:13, cursor:'pointer', fontFamily:'inherit', color:'var(--text)' }}>Cancel</button>
-          <button onClick={handleSave} disabled={saving} style={{ background:'#7c3aed', border:'none', borderRadius:8, padding:'8px 20px', fontSize:13, fontWeight:600, color:'#fff', cursor:'pointer', fontFamily:'inherit' }}>
+          <button onClick={handleSave} disabled={saving} style={{ background:'#2563eb', border:'none', borderRadius:8, padding:'8px 20px', fontSize:13, fontWeight:600, color:'#fff', cursor:'pointer', fontFamily:'inherit' }}>
             {saving ? 'Saving...' : 'Save Levels'}
           </button>
         </div>
@@ -214,7 +215,7 @@ function AllocationModal({ projectId, levels, items, onClose, onSaved }) {
     finally { setSaving(false); }
   }
 
-  const thS = { background:'#f0f7ff', color:'#111827', fontWeight:700, fontSize:11, padding:'8px 12px', textAlign:'left', borderBottom:'1px solid #e0ecff', whiteSpace:'nowrap' };
+  const thS = { background:'#e8f1ff', color:'#111827', fontWeight:700, fontSize:11, padding:'8px 12px', textAlign:'left', borderBottom:'1px solid #e0ecff', whiteSpace:'nowrap' };
 
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.45)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'20px 16px' }}>
@@ -239,7 +240,7 @@ function AllocationModal({ projectId, levels, items, onClose, onSaved }) {
                 <th style={{ ...thS, textAlign:'right' }}>BOQ Qty</th>
                 <th style={{ ...thS, textAlign:'right' }}>Delivered</th>
                 {levels.map(lv => (
-                  <th key={lv.id} style={{ ...thS, textAlign:'center', minWidth:90, color:'#7c3aed' }}>{lv.level_code}<br/><span style={{ fontSize:9, fontWeight:400, color:'#9ca3af' }}>{lv.level_name}</span></th>
+                  <th key={lv.id} style={{ ...thS, textAlign:'center', minWidth:90, color:'#2563eb' }}>{lv.level_code}<br/><span style={{ fontSize:9, fontWeight:400, color:'#9ca3af' }}>{lv.level_name}</span></th>
                 ))}
                 <th style={{ ...thS, textAlign:'right', color:'#16a34a' }}>Allocated</th>
                 <th style={{ ...thS, textAlign:'right', color: '#dc2626' }}>Remaining</th>
@@ -292,7 +293,7 @@ function AllocationModal({ projectId, levels, items, onClose, onSaved }) {
 
         <div style={{ padding:'14px 20px', borderTop:'1px solid var(--border-light)', display:'flex', justifyContent:'flex-end', gap:8, background:'var(--card2)', flexShrink:0 }}>
           <button onClick={onClose} style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:8, padding:'8px 18px', fontSize:13, cursor:'pointer', fontFamily:'inherit', color:'var(--text)' }}>Cancel</button>
-          <button onClick={handleSave} disabled={saving} style={{ background:'#7c3aed', border:'none', borderRadius:8, padding:'8px 20px', fontSize:13, fontWeight:600, color:'#fff', cursor:'pointer', fontFamily:'inherit' }}>
+          <button onClick={handleSave} disabled={saving} style={{ background:'#2563eb', border:'none', borderRadius:8, padding:'8px 20px', fontSize:13, fontWeight:600, color:'#fff', cursor:'pointer', fontFamily:'inherit' }}>
             {saving ? 'Saving...' : 'Save Allocation'}
           </button>
         </div>
@@ -500,119 +501,170 @@ export default function Installation() {
   const totalToday      = filteredRows.reduce((s,r) => s+(parseFloat(r.qty_input)||0), 0);
   const overallPct      = totalSuggested > 0 ? Math.min(100,(totalInstalled/totalSuggested)*100) : 0;
 
-  const fSel = { background:'var(--card)', border:'2px solid #7c3aed', borderRadius:10, padding:'8px 14px', fontSize:14, fontWeight:600, color:'var(--text)', cursor:'pointer', fontFamily:'inherit', minWidth:280, outline:'none', height:40 };
-  const fDate = { ...fSel, minWidth:160, cursor:'default' };
-  const btnStyle = (bg, color='#fff', border=bg) => ({ display:'flex', alignItems:'center', gap:6, background:bg, border:`1px solid ${border}`, borderRadius:10, padding:'8px 18px', fontSize:13, fontWeight:600, color, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' });
-  const thStyle = { background:'#f0f7ff', color:'#111827', fontWeight:700, fontSize:12, padding:'10px 14px', textAlign:'left', whiteSpace:'nowrap', borderBottom:'1px solid #e0ecff' };
+  const btnStyle = (bg, color='#fff', border=bg) => ({ display:'flex', alignItems:'center', gap:6, background:bg, border:`1px solid ${border}`, borderRadius:8, padding:'7px 14px', fontSize:12, fontWeight:700, color, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' });
+  const pageShell = { background:'#f4f7fb', margin:'-8px', padding:'12px', minHeight:'calc(100vh - 90px)' };
+  const panelStyle = { background:'#fff', border:'1px solid #d9e2ef', borderRadius:14, boxShadow:'0 10px 28px rgba(15,23,42,0.06)' };
+  const labelStyle = { display:'block', fontSize:11, fontWeight:800, color:'#475569', textTransform:'uppercase', letterSpacing:'0.04em', marginBottom:6 };
+  const thStyle = { background:'#eaf2ff', color:'#1e3a5f', fontWeight:800, fontSize:12, padding:'10px 14px', textAlign:'left', whiteSpace:'nowrap', borderBottom:'1px solid #cfe0ff', position:'sticky', top:0, zIndex:2 };
 
   const noLevels     = projectId && !loading && levels.length === 0;
   const noAllocation = projectId && !loading && levels.length > 0 && allocatedRows.length === 0 && rows.length > 0;
 
   return (
-    <div>
-      {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:24, flexWrap:'wrap' }}>
-        <div style={{ width:48, height:48, borderRadius:14, background:'#ede9fe', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-          <span style={{ fontSize:24 }}>🔧</span>
+    <div style={pageShell}>
+      <style>{`
+        .tx-table { border-collapse: separate !important; border-spacing: 0; }
+        .tx-table td { border-bottom: 1px solid #edf2f7; }
+        .tx-table tbody tr:hover td { background: #f8fbff !important; }
+        .tx-table input[type="number"], .tx-table input[type="text"] {
+          width: 100%; height: 30px; border: 1px solid #d9e2ef; border-radius: 7px;
+          padding: 4px 8px; font-size: 12px; outline: none; background: #fff;
+        }
+        .tx-table input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.10); }
+        @media (max-width: 1100px) {
+          .installation-filter-grid { grid-template-columns: 1fr 1fr !important; }
+          .table-wrapper { max-height: none !important; }
+        }
+        @media (max-width: 720px) {
+          .installation-filter-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+
+      {/* Compact professional transaction header */}
+      <div style={{ ...panelStyle, padding:'10px 12px', marginBottom:10 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+          <div style={{ width:34, height:34, borderRadius:10, background:'linear-gradient(135deg,#1f3a5f,#2563eb)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17, flexShrink:0 }}>🔧</div>
+          <div style={{ minWidth:190, flex:'1 1 240px' }}>
+            <h1 style={{ fontSize:16, fontWeight:800, color:'#0f172a', margin:0, letterSpacing:'-0.2px' }}>{t.installation}</h1>
+            <div style={{ fontSize:11, color:'#64748b', marginTop:2 }}>Daily installation entry by project, date, level and item allocation.</div>
+          </div>
+
+          {projectId && (
+            <Space size={8} wrap>
+              <Button size="middle" onClick={() => setShowLevelModal(true)}>
+                {levels.length > 0 ? `Levels (${levels.length})` : 'Setup Levels'}
+              </Button>
+              {levels.length > 0 && (
+                <Button size="middle" type="primary" ghost onClick={() => setShowAllocModal(true)}>
+                  Suggested QTY
+                </Button>
+              )}
+            </Space>
+          )}
         </div>
-        <div style={{ flex:1, minWidth:0 }}>
-          <h1 style={{ fontSize:20, fontWeight:700, color:'var(--text)', letterSpacing:'-0.3px', margin:0 }}>{t.installation}</h1>
-          <p style={{ fontSize:12, color:'#9ca3af', margin:'4px 0 0 0' }}>
-            Recording installation quantities per level/floor, tracking progress against suggested allocation per item.
-          </p>
+      </div>
+
+      {/* Advanced filter workspace */}
+      <div style={{ ...panelStyle, padding:12, marginBottom:10 }}>
+        <div className="installation-filter-grid" style={{ display:'grid', gridTemplateColumns:'minmax(280px, 2fr) 155px minmax(160px, 1fr) minmax(150px, 1fr) minmax(220px, 1.5fr) auto', gap:10, alignItems:'end' }}>
+          <div>
+            <label style={labelStyle}>{t.selectProject}</label>
+            <Select
+              showSearch
+              value={projectId || undefined}
+              placeholder={`— ${t.selectProject} —`}
+              optionFilterProp="label"
+              style={{ width:'100%' }}
+              onChange={(value) => { setProjectId(value || ''); setFilterLevel(''); setFilterStatus(''); setSearch(''); setPage(1); }}
+              allowClear
+              options={projects.map(p => ({ value:String(p.id), label:projectLabel(p) }))}
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>{t.selectDate}</label>
+            <input
+              type="date"
+              value={date}
+              onChange={e => { if (isFriday(e.target.value)) { toast('Friday is a holiday','error'); return; } setDate(e.target.value); }}
+              style={{ width:'100%', height:32, border:'1px solid #d9d9d9', borderRadius:6, padding:'4px 10px', fontSize:14, color:'#0f172a', background:'#fff' }}
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Level</label>
+            <Select
+              value={filterLevel || undefined}
+              placeholder="All Levels"
+              style={{ width:'100%' }}
+              disabled={!projectId || levels.length === 0}
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              onChange={(value) => { setFilterLevel(value || ''); setPage(1); }}
+              options={levels.map(lv => ({ value:String(lv.id), label:`${lv.level_code} — ${lv.level_name}` }))}
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Status</label>
+            <Select
+              value={filterStatus || undefined}
+              placeholder="All Status"
+              style={{ width:'100%' }}
+              disabled={!projectId}
+              allowClear
+              onChange={(value) => { setFilterStatus(value || ''); setPage(1); }}
+              options={[
+                { value:'incomplete', label:'Incomplete' },
+                { value:'saved', label:'Saved' },
+                { value:'confirmed', label:'Approved' },
+                { value:'no_entry', label:'No Entry' },
+              ]}
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Smart Search</label>
+            <Input.Search
+              allowClear
+              value={search}
+              disabled={!projectId}
+              placeholder="Search item code or item name..."
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
+            />
+          </div>
+
+          <div style={{ display:'flex', justifyContent:'flex-end' }}>
+            {projectId && date && <RefreshButton onRefresh={load} />}
+          </div>
         </div>
-        {/* Setup buttons */}
+
         {projectId && (
-          <div style={{ display:'flex', gap:8, flexShrink:0 }}>
-            <button onClick={() => setShowLevelModal(true)} style={btnStyle('#f5f3ff','#7c3aed','#ddd6fe')}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-              {levels.length > 0 ? `Levels (${levels.length})` : 'Setup Levels'}
-            </button>
-            {levels.length > 0 && (
-              <button onClick={() => setShowAllocModal(true)} style={btnStyle('#f0fdf4','#16a34a','#bbf7d0')}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                Suggested QTY
-              </button>
-            )}
+          <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', borderTop:'1px solid #eef2f7', marginTop:12, paddingTop:10 }}>
+            <Tag color="blue">Visible: {totalFiltered}</Tag>
+            <Tag color={overallPct >= 100 ? "green" : "processing"}>Overall Progress: {overallPct.toFixed(1)}%</Tag>
+            <Tag>Total: {allocatedRows.length}</Tag>
+            {filterLevel && <Tag closable onClose={() => setFilterLevel('')}>Level filter</Tag>}
+            {filterStatus && <Tag closable onClose={() => setFilterStatus('')}>Status: {filterStatus}</Tag>}
+            {search && <Tag closable onClose={() => setSearch('')}>Search: {search}</Tag>}
+            <div style={{ flex:1 }} />
+            {incompleteCount > 0 && <Badge count={incompleteCount} style={{ backgroundColor:'#f97316' }}><Tag color="orange">Incomplete</Tag></Badge>}
+            {savedCount > 0 && <Badge count={savedCount} style={{ backgroundColor:'#7c3aed' }}><Tag color="purple">Saved</Tag></Badge>}
+            {confirmedCount > 0 && <Badge count={confirmedCount} style={{ backgroundColor:'#16a34a' }}><Tag color="green">Approved</Tag></Badge>}
           </div>
         )}
       </div>
 
-      {/* Tab bar */}
+      {/* Compact tab switch — placed below filters so project/date/advanced selection stays first */}
       {projectId && (
-        <div style={{ display:'flex', gap:0, marginBottom:18, borderBottom:'2px solid #ede9fe' }}>
+        <div style={{ display:'flex', gap:6, marginBottom:10, alignItems:'center', borderBottom:'1px solid #dbe7f7', paddingBottom:8 }}>
           {[
-            { id:'entry', label:'🔧 Daily Entry' },
-            { id:'map',   label:'🗺️ Installation Map' },
+            { id:'entry', label:'Daily Entry' },
+            { id:'map',   label:'Installation Map' },
           ].map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
-              padding:'10px 24px', fontSize:13, fontWeight:600, cursor:'pointer',
-              background:'none', border:'none', fontFamily:'inherit',
-              color: activeTab===tab.id ? '#7c3aed' : '#6b7280',
-              borderBottom: activeTab===tab.id ? '2px solid #7c3aed' : '2px solid transparent',
-              marginBottom:-2, transition:'all 0.15s',
-            }}>{tab.label}</button>
+            <Button
+              key={tab.id}
+              size="middle"
+              type={activeTab===tab.id ? 'primary' : 'default'}
+              onClick={() => setActiveTab(tab.id)}
+              style={{ borderRadius:9, fontWeight:700 }}
+            >
+              {tab.label}
+            </Button>
           ))}
         </div>
       )}
-
-      {/* Filter bar */}
-      <div className="filter-bar" style={{ display: activeTab==='entry' ? undefined : 'none' }}>
-        <div className="filter-group">
-          <label>🏗️ {t.selectProject}:</label>
-          <select value={projectId} onChange={e => { setProjectId(e.target.value); setFilterLevel(''); setFilterStatus(''); setSearch(''); }} style={fSel}>
-            <option value="">— {t.selectProject} —</option>
-            {projects.map(p => <option key={p.id} value={p.id}>{projectLabel(p)}</option>)}
-          </select>
-        </div>
-        <div className="filter-group">
-          <label>📅 {t.selectDate}:</label>
-          <input type="date" value={date} onChange={e => { if (isFriday(e.target.value)) { toast('Friday is a holiday','error'); return; } setDate(e.target.value); }}
-            style={{ ...fDate, borderColor: isFriday(date)?'#dc2626':'#7c3aed' }} />
-          {isFriday(date) && <span style={{ fontSize:11, color:'#dc2626', fontWeight:600 }}>⛔ Friday is a holiday</span>}
-        </div>
-        {projectId && levels.length > 0 && (
-          <div className="filter-group">
-            <label>🏢 Level:</label>
-            <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setPage(1); }} style={{ ...fDate, minWidth:140, border:'2px solid #7c3aed', fontWeight:400, fontSize:13 }}>
-              <option value="">All Levels</option>
-              {levels.map(lv => <option key={lv.id} value={lv.id}>{lv.level_code} — {lv.level_name}</option>)}
-            </select>
-          </div>
-        )}
-        {projectId && (
-          <div className="filter-group">
-            <label>📋 Status:</label>
-            <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }} style={{ ...fDate, minWidth:140, border:'2px solid #7c3aed', fontWeight:400, fontSize:13 }}>
-              <option value="">All Status</option>
-              <option value="incomplete">Incomplete</option>
-              <option value="saved">Saved</option>
-              <option value="confirmed">Approved</option>
-              <option value="no_entry">No Entry</option>
-            </select>
-          </div>
-        )}
-        {projectId && (
-          <div className="filter-group">
-            <label>🔍 Search:</label>
-            <div style={{ display:'flex', alignItems:'center', background:'var(--card)', border:'2px solid #7c3aed', borderRadius:10, height:40, paddingLeft:10, minWidth:170 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input style={{ border:'none', outline:'none', fontSize:13, color:'var(--text)', background:'none', width:'100%', padding:'0 8px', fontFamily:'inherit' }}
-                placeholder="Item code / name..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
-              {search && <button onClick={() => setSearch('')} style={{ background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:'0 8px' }}>✕</button>}
-            </div>
-          </div>
-        )}
-        {projectId && date && <RefreshButton onRefresh={load} />}
-        {allocatedRows.length > 0 && (
-          <div style={{ marginLeft:'auto', display:'flex', gap:8, alignItems:'flex-end' }}>
-            {incompleteCount > 0 && <span style={{ background:'#fff7ed',color:'#ea580c',border:'1px solid #fed7aa',borderRadius:6,padding:'3px 8px',fontSize:11,fontWeight:700 }}>{incompleteCount} incomplete</span>}
-            {savedCount > 0      && <span style={{ background:'#f5f3ff',color:'#7c3aed',border:'1px solid #ddd6fe',borderRadius:6,padding:'3px 8px',fontSize:11,fontWeight:700 }}>{savedCount} saved</span>}
-            {confirmedCount > 0  && <span style={{ background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',borderRadius:6,padding:'3px 8px',fontSize:11,fontWeight:700 }}>{confirmedCount} approved</span>}
-          </div>
-        )}
-      </div>
-
       {activeTab === 'entry' && <>
       {/* Setup prompts */}
       {!projectId && <div className="empty-state"><div className="empty-icon">🔧</div><p>{t.selectProject}</p></div>}
@@ -622,7 +674,7 @@ export default function Installation() {
         <div className="empty-state">
           <div className="empty-icon">🏢</div>
           <p style={{ marginBottom:12 }}>No levels defined yet for this project.</p>
-          <button onClick={() => setShowLevelModal(true)} style={{ background:'#7c3aed', border:'none', borderRadius:10, padding:'10px 24px', fontSize:14, fontWeight:600, color:'#fff', cursor:'pointer', fontFamily:'inherit' }}>
+          <button onClick={() => setShowLevelModal(true)} style={{ background:'#2563eb', border:'none', borderRadius:10, padding:'10px 24px', fontSize:14, fontWeight:600, color:'#fff', cursor:'pointer', fontFamily:'inherit' }}>
             Setup Levels / Floors
           </button>
         </div>
@@ -632,34 +684,34 @@ export default function Installation() {
         <div className="empty-state">
           <div className="empty-icon">📋</div>
           <p style={{ marginBottom:12 }}>Levels are set up. Now allocate Suggested QTY per item per level.</p>
-          <button onClick={() => setShowAllocModal(true)} style={{ background:'#7c3aed', border:'none', borderRadius:10, padding:'10px 24px', fontSize:14, fontWeight:600, color:'#fff', cursor:'pointer', fontFamily:'inherit' }}>
+          <button onClick={() => setShowAllocModal(true)} style={{ background:'#2563eb', border:'none', borderRadius:10, padding:'10px 24px', fontSize:14, fontWeight:600, color:'#fff', cursor:'pointer', fontFamily:'inherit' }}>
             Set Suggested QTY Allocation
           </button>
         </div>
       )}
 
-      {/* KPI cards */}
+      {/* Daily entry context strip */}
       {!loading && allocatedRows.length > 0 && (
-        <div style={{ display:'flex', gap:12, marginBottom:18, flexWrap:'wrap' }}>
-          {[
-            { label:'Suggested (Total)',     value:fmt2(totalSuggested) },
-            { label:'Installed (All Time)',  value:fmt2(totalInstalled) },
-            { label:'Remaining',             value:fmt2(totalRemaining) },
-            { label:"Today's Entries",       value:fmt2(totalToday) },
-            { label:'Overall Progress',      value:`${overallPct.toFixed(1)}%` },
-          ].map(k => (
-            <div key={k.label} style={{ flex:'1 1 140px', background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:12, padding:'12px 16px', boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
-              <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', color:'#7c3aed', marginBottom:4 }}>{k.label}</div>
-              <div style={{ fontSize:20, fontWeight:700, color:'#111827' }}>{k.value}</div>
-            </div>
-          ))}
+        <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', marginBottom:10, padding:'8px 12px', background:'#eaf2ff', border:'1px solid #cfe0ff', borderRadius:12, color:'#1e3a5f', fontSize:12 }}>
+          <strong>Daily Entry Mode</strong>
+          <span>Suggested: {fmt2(totalSuggested)}</span>
+          <span>Installed: {fmt2(totalInstalled)}</span>
+          <span>Remaining: {fmt2(totalRemaining)}</span>
+          <span>Today: {fmt2(totalToday)}</span>
+          <span style={{ display:'flex', alignItems:'center', gap:6, minWidth:190 }}>
+            <strong>Overall: {overallPct.toFixed(1)}%</strong>
+            <span style={{ flex:1, height:7, background:'#dbeafe', borderRadius:99, overflow:'hidden' }}>
+              <span style={{ display:'block', height:'100%', width:`${overallPct}%`, background:overallPct>=100?'#16a34a':'#2563eb', borderRadius:99 }} />
+            </span>
+          </span>
+          <span style={{ marginLeft:'auto', color:'#475569', fontWeight:400 }}>Filters narrow the tree without changing your original item/level structure.</span>
         </div>
       )}
 
       {/* Main table */}
       {!loading && allocatedRows.length > 0 && (
-        <div style={{ background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:14, overflow:'hidden' }}>
-          <div className="table-wrapper">
+        <div style={{ ...panelStyle, overflow:'hidden' }}>
+          <div className="table-wrapper" style={{ overflowX:'auto', overflowY:'visible' }}>
             <table className="tx-table" style={{ width:'100%' }}>
               <thead>
                 <tr>
@@ -680,7 +732,7 @@ export default function Installation() {
                   <>
                     {/* Classification group header */}
                     <tr key={`g-${group}`}>
-                      <td colSpan={10} style={{ background:'#ede9fe', padding:'7px 14px', fontSize:12, fontWeight:700, color:'#7c3aed', letterSpacing:'0.04em' }}>{group}</td>
+                      <td colSpan={10} style={{ background:'#f1f6ff', padding:'7px 14px', fontSize:12, fontWeight:700, color:'#2563eb', letterSpacing:'0.04em' }}>{group}</td>
                     </tr>
 
                     {Object.entries(itemsMap).map(([itemId, { meta, levels: itemLevels }]) => {
@@ -696,7 +748,7 @@ export default function Installation() {
                       return (
                         <>
                           {/* Item summary row */}
-                          <tr key={`item-${itemId}`} style={{ background:'#fafbff', borderBottom:'1px solid #f0f0f0' }}>
+                          <tr key={`item-${itemId}`} style={{ background:'#f8fbff', borderBottom:'1px solid #e7eefb' }}>
                             <td style={{ padding:'10px 14px', fontSize:12, fontWeight:600, color:'#6b7280', fontFamily:'monospace' }}>{meta.item_code}</td>
                             <td style={{ padding:'10px 14px', fontSize:13, fontWeight:700, color:'#111827' }}>{meta.item_name}</td>
                             <td style={{ padding:'10px 14px', fontSize:12, color:'#6b7280' }}>{meta.unit_of_measure||'—'}</td>
@@ -708,7 +760,7 @@ export default function Installation() {
                             <td colSpan={4} style={{ padding:'10px 14px' }}>
                               <div style={{ display:'flex', alignItems:'center', gap:5 }}>
                                 <div style={{ flex:1, height:6, background:'#e5e7eb', borderRadius:99, overflow:'hidden', minWidth:80 }}>
-                                  <div style={{ height:'100%', borderRadius:99, width:`${itemPct}%`, background:itemPct>=100?'#16a34a':'#7c3aed', transition:'width 0.3s' }} />
+                                  <div style={{ height:'100%', borderRadius:99, width:`${itemPct}%`, background:itemPct>=100?'#16a34a':'#2563eb', transition:'width 0.3s' }} />
                                 </div>
                                 <span style={{ fontSize:11, color:'var(--text-muted)', whiteSpace:'nowrap', fontWeight:600 }}>{itemPct.toFixed(0)}%</span>
                               </div>
@@ -728,7 +780,7 @@ export default function Installation() {
                             return (
                               <tr key={`${itemId}-${row.level_id}`} style={{ borderBottom:'1px solid #f3f4f6', background: ri%2===0?'#fff':'#fafbff' }}>
                                 <td style={{ padding:'8px 14px 8px 28px', fontSize:11, color:'#9ca3af' }}>
-                                  <span style={{ background:'#ede9fe', color:'#7c3aed', borderRadius:5, padding:'2px 7px', fontSize:11, fontWeight:700 }}>{row.level_code}</span>
+                                  <span style={{ background:'#eaf2ff', color:'#2563eb', borderRadius:5, padding:'2px 7px', fontSize:11, fontWeight:700 }}>{row.level_code}</span>
                                 </td>
                                 <td style={{ padding:'8px 14px', fontSize:12, color:'#6b7280' }}>{row.level_name}</td>
                                 {/* FIX 2: show item unit on level rows */}
@@ -741,7 +793,7 @@ export default function Installation() {
                                 <td style={{ padding:'8px 14px' }}>
                                   <div style={{ display:'flex', alignItems:'center', gap:4 }}>
                                     <div style={{ flex:1, height:5, background:'#e5e7eb', borderRadius:99, overflow:'hidden', minWidth:50 }}>
-                                      <div style={{ height:'100%', borderRadius:99, width:`${pct}%`, background:pct>=100?'#16a34a':'#7c3aed' }} />
+                                      <div style={{ height:'100%', borderRadius:99, width:`${pct}%`, background:pct>=100?'#16a34a':'#2563eb' }} />
                                     </div>
                                     <span style={{ fontSize:10, color:'var(--text-muted)', whiteSpace:'nowrap' }}>{pct.toFixed(0)}%</span>
                                   </div>
@@ -789,7 +841,7 @@ export default function Installation() {
                 ))}
               </tbody>
               <tfoot>
-                <tr style={{ background:'#f0f7ff', borderTop:'2px solid #e0ecff' }}>
+                <tr style={{ background:'#e8f1ff', borderTop:'2px solid #b8cff7' }}>
                   <td colSpan={3} style={{ padding:'10px 14px', fontSize:12, fontWeight:700, color:'#111827' }}>TOTAL — {totalFiltered} rows</td>
                   <td style={{ padding:'10px 14px', textAlign:'right', fontWeight:700, color:'#111827' }}>{fmt2(totalSuggested)}</td>
                   <td style={{ padding:'10px 14px', textAlign:'right', fontWeight:700, color:'#111827' }}>{fmt2(totalInstalled)}</td>
@@ -797,7 +849,7 @@ export default function Installation() {
                   <td style={{ padding:'10px 14px' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:5 }}>
                       <div style={{ flex:1, height:7, background:'#e5e7eb', borderRadius:99, overflow:'hidden', minWidth:50 }}>
-                        <div style={{ height:'100%', borderRadius:99, width:`${overallPct}%`, background:overallPct>=100?'#16a34a':'#7c3aed' }} />
+                        <div style={{ height:'100%', borderRadius:99, width:`${overallPct}%`, background:overallPct>=100?'#16a34a':'#2563eb' }} />
                       </div>
                       <span style={{ fontSize:12, fontWeight:700, color:'#111827' }}>{overallPct.toFixed(1)}%</span>
                     </div>
@@ -815,7 +867,7 @@ export default function Installation() {
             <div style={{ display:'flex', gap:4, flex:1, justifyContent:'center' }}>
               <button onClick={() => setPage(p=>Math.max(1,p-1))} disabled={page===1} style={{ minWidth:32, height:32, borderRadius:8, border:'1px solid #e5e7eb', background:'#fff', cursor:page===1?'not-allowed':'pointer', opacity:page===1?0.4:1, fontFamily:'inherit' }}>‹</button>
               {Array.from({length:Math.min(5,totalPages)},(_,i)=>i+1).map(p=>(
-                <button key={p} onClick={()=>setPage(p)} style={{ minWidth:32, height:32, borderRadius:8, border:p===page?'1.5px solid #7c3aed':'1px solid #e5e7eb', background:p===page?'#7c3aed':'#fff', color:p===page?'#fff':'#374151', fontWeight:p===page?700:400, cursor:'pointer', fontFamily:'inherit', fontSize:13 }}>{p}</button>
+                <button key={p} onClick={()=>setPage(p)} style={{ minWidth:32, height:32, borderRadius:8, border:p===page?'1.5px solid #2563eb':'1px solid #e5e7eb', background:p===page?'#2563eb':'#fff', color:p===page?'#fff':'#374151', fontWeight:p===page?700:400, cursor:'pointer', fontFamily:'inherit', fontSize:13 }}>{p}</button>
               ))}
               <button onClick={() => setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages} style={{ minWidth:32, height:32, borderRadius:8, border:'1px solid #e5e7eb', background:'#fff', cursor:page===totalPages?'not-allowed':'pointer', opacity:page===totalPages?0.4:1, fontFamily:'inherit' }}>›</button>
             </div>
@@ -833,7 +885,7 @@ export default function Installation() {
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                     {saving ? t.saving : 'Draft'}
                   </button>
-                  <button onClick={handleSave} disabled={saving} style={btnStyle('#7c3aed')}>
+                  <button onClick={handleSave} disabled={saving} style={btnStyle('#2563eb')}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                     {saving ? t.saving : 'Save'}
                   </button>
@@ -931,7 +983,7 @@ function InstallationMap({ projectId, data, loading, onRefresh }) {
   // Status colour helper
   const statusDotMap = {
     confirmed:  { bg:'#dcfce7', color:'#16a34a', dot:'#16a34a', label:'A' },
-    saved:      { bg:'#f5f3ff', color:'#7c3aed', dot:'#7c3aed', label:'S' },
+    saved:      { bg:'#f5f3ff', color:'#2563eb', dot:'#7c3aed', label:'S' },
     incomplete: { bg:'#fff7ed', color:'#ea580c', dot:'#ea580c', label:'D' },
   };
   const statusDot = (status) => statusDotMap[status] || { bg:'#f3f4f6', color:'#9ca3af', dot:'#9ca3af', label:'?' };
@@ -964,7 +1016,7 @@ function InstallationMap({ projectId, data, loading, onRefresh }) {
   const activeDays     = allDates.length;
   const overallPct     = totalAllocated > 0 ? Math.min(100, (totalInstalled/totalAllocated)*100) : 0;
 
-  const thBase = { background:'#f0f7ff', color:'#111827', fontWeight:700, fontSize:11, padding:'9px 10px', textAlign:'left', borderBottom:'1px solid #e0ecff', whiteSpace:'nowrap', letterSpacing:'0.02em' };
+  const thBase = { background:'#e8f1ff', color:'#111827', fontWeight:700, fontSize:11, padding:'9px 10px', textAlign:'left', borderBottom:'1px solid #e0ecff', whiteSpace:'nowrap', letterSpacing:'0.02em' };
 
   // ── BY-ITEM view: rows = item+level pairs, columns = dates ─────────────────
   const renderByItem = () => (
@@ -972,14 +1024,14 @@ function InstallationMap({ projectId, data, loading, onRefresh }) {
       <table style={{ borderCollapse:'collapse', fontSize:12, minWidth:'100%' }}>
         <thead>
           <tr>
-            <th style={{ ...thBase, minWidth:70, position:'sticky', left:0, zIndex:3, background:'#f0f7ff' }}>Code</th>
-            <th style={{ ...thBase, minWidth:170, position:'sticky', left:70, zIndex:3, background:'#f0f7ff' }}>Item / Level</th>
+            <th style={{ ...thBase, minWidth:70, position:'sticky', left:0, zIndex:3, background:'#e8f1ff' }}>Code</th>
+            <th style={{ ...thBase, minWidth:170, position:'sticky', left:70, zIndex:3, background:'#e8f1ff' }}>Item / Level</th>
             <th style={{ ...thBase, textAlign:'center', minWidth:55 }}>Unit</th>
             <th style={{ ...thBase, textAlign:'right', minWidth:75 }}>Suggested</th>
             <th style={{ ...thBase, textAlign:'right', minWidth:75 }}>Installed</th>
             <th style={{ ...thBase, textAlign:'center', minWidth:80 }}>Progress</th>
             {visibleDates.map(d => (
-              <th key={d} style={{ ...thBase, textAlign:'center', minWidth:68, color:'#7c3aed', borderLeft:'1px solid #e0ecff' }}>
+              <th key={d} style={{ ...thBase, textAlign:'center', minWidth:68, color:'#2563eb', borderLeft:'1px solid #e0ecff' }}>
                 <div>{formatDate(d)}</div>
               </th>
             ))}
@@ -1005,9 +1057,9 @@ function InstallationMap({ projectId, data, loading, onRefresh }) {
               <>
                 {/* Item header row */}
                 <tr key={`item-${item.item_id}`} style={{ background:'#f5f3ff' }}>
-                  <td style={{ padding:'9px 10px', fontFamily:'monospace', fontSize:11, color:'#7c3aed', fontWeight:700, position:'sticky', left:0, background:'#f5f3ff', zIndex:1 }}>{item.item_code}</td>
+                  <td style={{ padding:'9px 10px', fontFamily:'monospace', fontSize:11, color:'#2563eb', fontWeight:700, position:'sticky', left:0, background:'#f5f3ff', zIndex:1 }}>{item.item_code}</td>
                   <td style={{ padding:'9px 10px', fontWeight:700, color:'#4c1d95', fontSize:13, position:'sticky', left:70, background:'#f5f3ff', zIndex:1 }}>{item.item_name}</td>
-                  <td style={{ padding:'9px 10px', textAlign:'center', color:'#7c3aed', fontSize:11 }}>{item.unit_of_measure||'—'}</td>
+                  <td style={{ padding:'9px 10px', textAlign:'center', color:'#2563eb', fontSize:11 }}>{item.unit_of_measure||'—'}</td>
                   <td style={{ padding:'9px 10px', textAlign:'right', fontWeight:700, color:'#111827' }}>{fmt2(itemSugg)}</td>
                   <td style={{ padding:'9px 10px', textAlign:'right', fontWeight:700, color: itemInst>=itemSugg&&itemSugg>0?'#16a34a':'#111827' }}>{fmt2(itemInst)}</td>
                   <td style={{ padding:'9px 10px' }}>
@@ -1015,7 +1067,7 @@ function InstallationMap({ projectId, data, loading, onRefresh }) {
                       <div style={{ flex:1, height:7, background:'#ddd6fe', borderRadius:99, overflow:'hidden', minWidth:50 }}>
                         <div style={{ height:'100%', borderRadius:99, width:`${itemPct}%`, background: itemPct>=100?'#16a34a':'#7c3aed', transition:'width 0.3s' }} />
                       </div>
-                      <span style={{ fontSize:11, fontWeight:700, color:'#7c3aed', minWidth:32 }}>{itemPct.toFixed(0)}%</span>
+                      <span style={{ fontSize:11, fontWeight:700, color:'#2563eb', minWidth:32 }}>{itemPct.toFixed(0)}%</span>
                     </div>
                   </td>
                   {visibleDates.map(d => {
@@ -1044,7 +1096,7 @@ function InstallationMap({ projectId, data, loading, onRefresh }) {
                   return (
                     <tr key={`${item.item_id}-${lv.id}`} style={{ borderBottom:'1px solid #f3f4f6', background: lvIdx%2===0?bg:'#fff' }}>
                       <td style={{ padding:'8px 10px 8px 20px', position:'sticky', left:0, background: lvIdx%2===0?bg:'#fff', zIndex:1 }}>
-                        <span style={{ background:'#ede9fe', color:'#7c3aed', borderRadius:5, padding:'2px 8px', fontSize:10, fontWeight:700 }}>{lv.level_code}</span>
+                        <span style={{ background:'#eaf2ff', color:'#2563eb', borderRadius:5, padding:'2px 8px', fontSize:10, fontWeight:700 }}>{lv.level_code}</span>
                       </td>
                       <td style={{ padding:'8px 10px', fontSize:12, color:'#6b7280', position:'sticky', left:70, background: lvIdx%2===0?bg:'#fff', zIndex:1 }}>{lv.level_name}</td>
                       <td style={{ padding:'8px 10px', textAlign:'center', fontSize:11, color:'#9ca3af' }}>—</td>
@@ -1055,7 +1107,7 @@ function InstallationMap({ projectId, data, loading, onRefresh }) {
                       <td style={{ padding:'8px 10px' }}>
                         <div style={{ display:'flex', alignItems:'center', gap:4 }}>
                           <div style={{ flex:1, height:4, background:'#e5e7eb', borderRadius:99, overflow:'hidden', minWidth:40 }}>
-                            <div style={{ height:'100%', borderRadius:99, width:`${pct}%`, background:pct>=100?'#16a34a':'#7c3aed' }} />
+                            <div style={{ height:'100%', borderRadius:99, width:`${pct}%`, background:pct>=100?'#16a34a':'#2563eb' }} />
                           </div>
                           <span style={{ fontSize:10, color:'#6b7280', minWidth:28 }}>{pct.toFixed(0)}%</span>
                         </div>
@@ -1083,20 +1135,20 @@ function InstallationMap({ projectId, data, loading, onRefresh }) {
         </tbody>
         {/* Date totals footer */}
         <tfoot>
-          <tr style={{ background:'#f0f7ff', borderTop:'2px solid #e0ecff' }}>
-            <td colSpan={5} style={{ padding:'10px 10px', fontWeight:700, fontSize:12, color:'#111827', position:'sticky', left:0, background:'#f0f7ff' }}>DAILY TOTAL</td>
+          <tr style={{ background:'#e8f1ff', borderTop:'2px solid #b8cff7' }}>
+            <td colSpan={5} style={{ padding:'10px 10px', fontWeight:700, fontSize:12, color:'#111827', position:'sticky', left:0, background:'#e8f1ff' }}>DAILY TOTAL</td>
             <td style={{ padding:'10px 10px' }}>
               <div style={{ display:'flex', alignItems:'center', gap:4 }}>
                 <div style={{ flex:1, height:6, background:'#e5e7eb', borderRadius:99, overflow:'hidden', minWidth:40 }}>
-                  <div style={{ height:'100%', borderRadius:99, width:`${overallPct}%`, background:overallPct>=100?'#16a34a':'#7c3aed' }} />
+                  <div style={{ height:'100%', borderRadius:99, width:`${overallPct}%`, background:overallPct>=100?'#16a34a':'#2563eb' }} />
                 </div>
-                <span style={{ fontSize:11, fontWeight:700, color:'#7c3aed' }}>{overallPct.toFixed(1)}%</span>
+                <span style={{ fontSize:11, fontWeight:700, color:'#2563eb' }}>{overallPct.toFixed(1)}%</span>
               </div>
             </td>
             {visibleDates.map(d => {
               const dayTotal = txs.filter(t => t.transaction_date===d && (!activeLevelId || t.level_id===activeLevelId)).reduce((s,t) => s+(parseFloat(t.qty_installed)||0), 0);
               return (
-                <td key={d} style={{ padding:'10px 8px', textAlign:'center', fontWeight:700, color:'#7c3aed', borderLeft:'1px solid #e0ecff', fontSize:12 }}>
+                <td key={d} style={{ padding:'10px 8px', textAlign:'center', fontWeight:700, color:'#2563eb', borderLeft:'1px solid #e0ecff', fontSize:12 }}>
                   {dayTotal > 0 ? fmt2(dayTotal) : <span style={{ color:'#e5e7eb' }}>—</span>}
                 </td>
               );
@@ -1109,66 +1161,53 @@ function InstallationMap({ projectId, data, loading, onRefresh }) {
 
   return (
     <div>
-      {/* Summary KPI bar */}
-      <div style={{ display:'flex', gap:12, marginBottom:18, flexWrap:'wrap' }}>
-        {[
-          { label:'Total Suggested',   value:fmt2(totalAllocated), icon:'📋' },
-          { label:'Total Installed',   value:fmt2(totalInstalled), icon:'✅' },
-          { label:'Remaining',         value:fmt2(Math.max(0,totalAllocated-totalInstalled)), icon:'⏳' },
-          { label:'Overall Progress',  value:`${overallPct.toFixed(1)}%`, icon:'📈' },
-          { label:'Active Work Days',  value:activeDays, icon:'📅' },
-          { label:'Active Levels',     value:levels.length, icon:'🏢' },
-        ].map(k => (
-          <div key={k.label} style={{ flex:'1 1 120px', background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:12, padding:'12px 14px', boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
-            <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', color:'#7c3aed', marginBottom:4 }}>{k.icon} {k.label}</div>
-            <div style={{ fontSize:18, fontWeight:700, color:'#111827' }}>{k.value}</div>
+      {/* Installation Map compact workspace */}
+      <div style={{ background:'#fff', border:'1px solid #d9e2ef', borderRadius:14, boxShadow:'0 10px 28px rgba(15,23,42,0.06)', padding:12, marginBottom:10 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+          <div style={{ width:32, height:32, borderRadius:10, background:'linear-gradient(135deg,#1f3a5f,#2563eb)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>🗺️</div>
+          <div style={{ flex:'1 1 260px', minWidth:220 }}>
+            <div style={{ fontSize:15, fontWeight:800, color:'#0f172a', lineHeight:1.2 }}>Installation Map</div>
+            <div style={{ fontSize:11, color:'#64748b', marginTop:2 }}>Track installed quantities across levels and work dates without changing your original item structure.</div>
           </div>
-        ))}
-      </div>
-
-      {/* Toolbar */}
-      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14, flexWrap:'wrap' }}>
-        {/* Search */}
-        <div style={{ display:'flex', alignItems:'center', background:'var(--card)', border:'2px solid #7c3aed', borderRadius:10, height:38, paddingLeft:10, minWidth:200 }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input style={{ border:'none', outline:'none', fontSize:13, color:'var(--text)', background:'none', width:'100%', padding:'0 8px', fontFamily:'inherit' }}
-            placeholder="Search items..." value={search} onChange={e => setSearch(e.target.value)} />
-          {search && <button onClick={() => setSearch('')} style={{ background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:'0 8px' }}>✕</button>}
+          <Tag color="blue">Suggested: {fmt2(totalAllocated)}</Tag>
+          <Tag color="green">Installed: {fmt2(totalInstalled)}</Tag>
+          <Tag color="processing">Overall: {overallPct.toFixed(1)}%</Tag>
+          <Tag>Days: {activeDays}</Tag>
+          <Tag>Levels: {levels.length}</Tag>
         </div>
-
-        {/* Level filter */}
-        <select value={filterLevel} onChange={e => setFilterLevel(e.target.value)}
-          style={{ background:'var(--card)', border:'2px solid #7c3aed', borderRadius:10, padding:'8px 12px', fontSize:13, fontWeight:500, color:'var(--text)', cursor:'pointer', fontFamily:'inherit', height:38, outline:'none' }}>
-          <option value="">All Levels</option>
-          {levels.map(lv => <option key={lv.id} value={lv.id}>{lv.level_code} — {lv.level_name}</option>)}
-        </select>
-
-        {/* Refresh */}
-        <button onClick={onRefresh} style={{ display:'flex', alignItems:'center', gap:6, background:'var(--card)', border:'1px solid var(--border)', borderRadius:10, padding:'8px 14px', fontSize:12, cursor:'pointer', fontFamily:'inherit', color:'var(--text)', height:38 }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
-          Refresh
-        </button>
-
-        {/* Legend */}
-        <div style={{ marginLeft:'auto', display:'flex', gap:14, alignItems:'center', fontSize:11, color:'#6b7280', flexWrap:'wrap' }}>
-          {[
-            { label:'Approved', color:'#16a34a', bg:'#dcfce7', dot:'A' },
-            { label:'Saved',    color:'#7c3aed', bg:'#f5f3ff', dot:'S' },
-            { label:'Draft',    color:'#ea580c', bg:'#fff7ed', dot:'D' },
-          ].map(l => (
-            <span key={l.label} style={{ display:'flex', alignItems:'center', gap:4 }}>
-              <span style={{ background:l.bg, color:l.color, borderRadius:4, padding:'1px 6px', fontSize:10, fontWeight:700 }}>{l.dot}</span>
-              {l.label}
-            </span>
-          ))}
-          <span style={{ color:'#d1d5db' }}>· = No entry</span>
+        <div style={{ marginTop:10, display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+          <div style={{ flex:'1 1 260px', minWidth:220 }}>
+            <Input.Search
+              allowClear
+              value={search}
+              placeholder="Search item code or item name..."
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <Select
+            value={filterLevel || undefined}
+            placeholder="All Levels"
+            allowClear
+            showSearch
+            optionFilterProp="label"
+            style={{ width:210 }}
+            onChange={(value) => setFilterLevel(value || '')}
+            options={levels.map(lv => ({ value:String(lv.id), label:`${lv.level_code} — ${lv.level_name}` }))}
+          />
+          <Button onClick={onRefresh}>Refresh</Button>
+          <div style={{ marginLeft:'auto', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', fontSize:11, color:'#64748b' }}>
+            <Tag color="green">A Approved</Tag>
+            <Tag color="blue">S Saved</Tag>
+            <Tag color="orange">D Draft</Tag>
+            <span style={{ color:'#94a3b8' }}>· = No entry</span>
+          </div>
         </div>
       </div>
 
       {/* Date header strip — visual calendar */}
       {visibleDates.length > 0 && (
         <div style={{ display:'flex', gap:4, marginBottom:14, overflowX:'auto', paddingBottom:4 }}>
-          <div style={{ fontSize:11, color:'#9ca3af', fontWeight:600, minWidth:80, alignSelf:'center', flexShrink:0 }}>Work days:</div>
+          <div style={{ fontSize:11, color:'#475569', fontWeight:700, minWidth:80, alignSelf:'center', flexShrink:0 }}>Work days:</div>
           {visibleDates.map(d => {
             const dt = new Date(d + 'T00:00:00');
             const dayName = dt.toLocaleDateString('en-GB', { weekday:'short' });
@@ -1180,12 +1219,12 @@ function InstallationMap({ projectId, data, loading, onRefresh }) {
             const hasSaved = hasEntry && dayTxs.some(t => t.tx_status==='saved');
             return (
               <div key={d} title={formatDateFull(d)} style={{
-                flexShrink:0, background: allConfirmed?'#dcfce7':hasSaved?'#f5f3ff':hasEntry?'#fff7ed':'var(--card)',
-                border: `1.5px solid ${allConfirmed?'#bbf7d0':hasSaved?'#ddd6fe':hasEntry?'#fed7aa':'#e5e7eb'}`,
+                flexShrink:0, background: allConfirmed?'#dcfce7':hasSaved?'#eaf2ff':hasEntry?'#fff7ed':'var(--card)',
+                border: `1.5px solid ${allConfirmed?'#bbf7d0':hasSaved?'#cfe0ff':hasEntry?'#fed7aa':'#e5e7eb'}`,
                 borderRadius:8, padding:'6px 10px', textAlign:'center', minWidth:50, cursor:'default',
               }}>
                 <div style={{ fontSize:9, color:'#9ca3af', fontWeight:500, textTransform:'uppercase' }}>{dayName}</div>
-                <div style={{ fontSize:15, fontWeight:700, color: allConfirmed?'#16a34a':hasSaved?'#7c3aed':hasEntry?'#ea580c':'#d1d5db', lineHeight:1.2 }}>{dayNum}</div>
+                <div style={{ fontSize:15, fontWeight:700, color: allConfirmed?'#16a34a':hasSaved?'#2563eb':hasEntry?'#ea580c':'#d1d5db', lineHeight:1.2 }}>{dayNum}</div>
                 <div style={{ fontSize:9, color:'#9ca3af' }}>{month}</div>
               </div>
             );
@@ -1194,7 +1233,7 @@ function InstallationMap({ projectId, data, loading, onRefresh }) {
       )}
 
       {/* Main matrix table */}
-      <div style={{ background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:14, overflow:'hidden' }}>
+      <div style={{ background:'#fff', border:'1px solid #d9e2ef', borderRadius:14, overflow:'hidden', boxShadow:'0 10px 28px rgba(15,23,42,0.05)' }}>
         {renderByItem()}
       </div>
 
