@@ -76,19 +76,22 @@ Error generating stack: `+r.message+`
  */const wU="6";try{window.__reactRouterVersion=wU}catch{}const jU="startTransition",oA=Dk[jU];function CU(e){let{basename:t,children:n,future:r,window:i}=e,a=p.useRef();a.current==null&&(a.current=MH({window:i,v5Compat:!0}));let o=a.current,[s,c]=p.useState({action:o.action,location:o.location}),{v7_startTransition:u}=r||{},d=p.useCallback(f=>{u&&oA?oA(()=>c(f)):c(f)},[c,u]);return p.useLayoutEffect(()=>o.listen(d),[o,d]),p.useEffect(()=>xU(r),[r]),p.createElement(SU,{basename:t,children:n,location:s.location,navigationType:s.action,navigator:o,future:r})}var lA;(function(e){e.UseScrollRestoration="useScrollRestoration",e.UseSubmit="useSubmit",e.UseSubmitFetcher="useSubmitFetcher",e.UseFetcher="useFetcher",e.useViewTransitionState="useViewTransitionState"})(lA||(lA={}));var sA;(function(e){e.UseFetcher="useFetcher",e.UseFetchers="useFetchers",e.UseScrollRestoration="useScrollRestoration"})(sA||(sA={}));const UI=p.createContext(null),_U=["planning","delivery","installation","inspection","reports","definitions_projects","definitions_classifications","definitions_items","definitions_companies","definitions_users","definitions_position_roles"];function cA(e,t){try{return JSON.parse(localStorage.getItem(e))??t}catch{return t}}function $U({children:e}){const[t,n]=p.useState(()=>({user:cA("cp_user",null),token:localStorage.getItem("cp_token")||null,permissions:cA("cp_permissions",{pages:[],actions:[],projects:[]})}));function r(u,d,f){const h={pages:(f==null?void 0:f.pages)||[],actions:(f==null?void 0:f.actions)||[],projects:(f==null?void 0:f.projects)||[]};localStorage.setItem("cp_token",u),localStorage.setItem("cp_user",JSON.stringify(d)),localStorage.setItem("cp_permissions",JSON.stringify(h)),n({token:u,user:d,permissions:h})}function i(){["cp_token","cp_user","cp_permissions"].forEach(u=>localStorage.removeItem(u)),n({token:null,user:null,permissions:{pages:[],actions:[],projects:[]}})}function a(){var u;return((u=t.user)==null?void 0:u.role)==="admin"}function o(u){var d;return t.user?a()?!0:(d=t.permissions.pages)==null?void 0:d.includes(u):!1}function s(u){var d;return t.user?a()?!0:(d=t.permissions.actions)==null?void 0:d.includes(u):!1}function c(u){var d;return t.user?a()?!0:(d=t.permissions.projects)==null?void 0:d.includes(Number(u)):!1}return l.jsx(UI.Provider,{value:{...t,login:r,logout:i,canAccessPage:o,canAction:s,canAccessProject:c,isAdmin:a,ALL_PAGES:_U},children:e})}function cr(){return p.useContext(UI)}const qI=p.createContext(null);let OU=0;function EU({children:e}){const[t,n]=p.useState([]),r=p.useCallback((i,a="success",o=3e3)=>{const s=++OU;n(c=>[...c,{id:s,message:i,type:a}]),setTimeout(()=>n(c=>c.filter(u=>u.id!==s)),o)},[]);return l.jsxs(qI.Provider,{value:r,children:[e,l.jsx("div",{className:"toast-container",children:t.map(i=>l.jsxs("div",{className:`toast ${i.type}`,children:[l.jsx("span",{children:i.type==="success"?"✓":"✕"}),i.message]},i.id))})]})}function Jn(){return p.useContext(qI)}const je={appName:"Construction Project Management System (CPMS)",dashboard:"Dashboard",definitions:"Definitions",planning:"Planning",transactions:"Transactions",reports:"Reports",users:"Users",projects:"Projects",itemClassifications:"Item Classifications",items:"Items",delivery:"Delivery",installation:"Installation",inspection:"Inspection",companies:"Companies",positionRoles:"Position Roles",add:"Add",edit:"Edit",delete:"Delete",save:"Save",cancel:"Cancel",close:"Close",search:"Search...",loading:"Loading...",saving:"Saving...",confirm:"Confirm",prepare:"Prepare",insert:"Insert Items",login:"Sign In",logout:"Logout",username:"Username",password:"Password",newPassword:"New Password",leaveBlankPassword:"Leave blank to keep current password",loginSubtitle:"Sign in to your account",fullNameAr:"Full Name (Arabic)",fullNameEn:"Full Name (English)",positionRole:"Position Role",email:"Email",status:"Status",active:"Active",inactive:"Inactive",addUser:"Add User",editUser:"Edit User",profilePicture:"Upload Photo",roles:{admin:"Admin",project_manager:"Project Manager",site_engineer:"Site Engineer"},pagePermissions:"Page Access",projectAccess:"Project Access",actionPermissions:"Form Actions",permissionsNote:"Permissions are inherited from the Position Role.",companyCode:"Company Code",companyNameAr:"Company Name (Arabic)",companyNameEn:"Company Name (English)",companyType:"Company Type",companyTypeOrg:"Organization",companyTypeHolding:"Holding Company",taxId:"Tax ID",parentCompany:"Parent Holding Company",noParent:"— None (Top Level) —",addCompany:"Add Company",editCompany:"Edit Company",positionRoleNameAr:"Position Name (Arabic)",positionRoleNameEn:"Position Name (English)",addPositionRole:"Add Position Role",editPositionRole:"Edit Position Role",projectCode:"Project Code",projectNameEn:"Project Name (English)",projectNameAr:"Project Name (Arabic)",location:"Location",client:"Client",startDate:"Start Date",endDate:"End Date",addProject:"Add Project",editProject:"Edit Project",statuses:{active:"Active",completed:"Completed",on_hold:"On Hold",cancelled:"Cancelled"},txStatuses:{draft:"Draft",prepared:"Prepared",confirmed:"Confirmed"},classificationCode:"Code",classificationName:"Name",parentClassification:"Parent Classification",topLevel:"— Top Level —",addClassification:"Add Classification",editClassification:"Edit Classification",itemCode:"Item Code",itemName:"Item Name",classification:"Classification",unitOfMeasure:"Unit",addItem:"Add Item",editItem:"Edit Item",autoCode:"Auto-generate",plannedQty:"Planned Qty",planningTitle:"Project Planning",selectProjectToStart:"Select a project to start planning",noItemsAvailable:"No items available.",savePlanning:"Save",selectProject:"Select Project",allProjects:"All Projects",selectDate:"Select Date",qtyDelivered:"Qty Delivered",qtyInstalled:"Qty Installed",qtyInspected:"Qty Inspected",deliveryRef:"Delivery Ref",notes:"Notes",remarks:"Remarks",inspectionStatus:"Result",totalDelivered:"Total Delivered",totalInstalled:"Total Installed",totalInspected:"Total Inspected",progress:"Progress",saveEntries:"Save",noItemsLinked:"No items planned for this project yet.",totalProjects:"Total Projects",installationProgress:"Installation Progress",deliveryProgress:"Delivery Progress",inspectionProgress:"Inspection Progress",passRate:"Pass Rate",installationByItem:"Installation by Item",deliveryByItem:"Delivery by Item",inspectionResults:"Inspection Results",planned:"Planned",installed:"Installed",delivered:"Delivered",inspected:"Inspected",pass:"Pass",fail:"Fail",pending:"Pending",reportProgress:"Planning vs Delivery vs Installation",reportProjectsSummary:"Project Summary",reportItemTracking:"Item Tracking",reportInspection:"Inspection Report",installPct:"Install %",deliveryPct:"Delivery %",confirmDelete:"Are you sure you want to delete this record? This cannot be undone.",noData:"No data available",errorOccurred:"An error occurred. Please try again.",saveSuccess:"Saved successfully",deleteSuccess:"Deleted successfully",actionKeys:{can_create:"Add New Record",can_edit:"Edit Record",can_delete:"Delete Record",can_delete_selected:"Delete Selected Records",can_view_selected:"View Selected Records",can_export:"Export to CSV",can_confirm:"Confirm Transactions",can_activate:"Activate / Deactivate"},pageKeys:{dashboard:"Dashboard",definitions_companies:"Companies",definitions_position_roles:"Position Roles",definitions_users:"Users",definitions_projects:"Projects",definitions_classifications:"Item Classifications",definitions_measurements:"Measurements",definitions_items:"Items",planning:"Planning",delivery:"Delivery",installation:"Installation",inspection:"Inspection",reports:"Reports"}},AU=[{label:"Overview",icon:"⌂",path:"/overview",pageKey:null},{label:je.dashboard,icon:"▦",path:"/dashboard",pageKey:null},{section:je.definitions},{label:"System Setup",icon:"⚙",path:"/definitions/system-setup",role:"admin"},{label:je.companies,icon:"▣",path:"/definitions/companies",role:"admin"},{label:je.positionRoles,icon:"◇",path:"/definitions/position-roles",role:"admin"},{label:je.users,icon:"♙",path:"/definitions/users",role:"admin"},{label:je.projects,icon:"▤",path:"/definitions/projects",pageKey:"definitions_projects"},{label:je.itemClassifications,icon:"≡",path:"/definitions/classifications",pageKey:"definitions_classifications"},{label:"Measurements",icon:"⌁",path:"/definitions/measurements",pageKey:"definitions_measurements"},{label:je.items,icon:"□",path:"/definitions/items",pageKey:"definitions_items"},{section:"BOQ"},{label:"Bill of Quantity BOQ",icon:"▧",path:"/planning",pageKey:"planning"},{section:je.transactions},{label:je.delivery,icon:"▸",path:"/transactions/delivery",pageKey:"delivery"},{label:je.installation,icon:"⌘",path:"/transactions/installation",pageKey:"installation"},{label:je.inspection,icon:"◎",path:"/transactions/inspection",pageKey:"inspection"},{section:je.reports},{label:"Weekly Summary",icon:"◷",path:"/reports/weekly",pageKey:"reports"},{label:"Daily Productivity",icon:"▥",path:"/reports/daily-productivity",pageKey:"reports"},{label:"Floor Productivity",icon:"▨",path:"/reports/floor-weekly",pageKey:"reports"},{label:je.reports,icon:"↗",path:"/reports",pageKey:"reports"}];function TU(e){return((e==null?void 0:e.full_name)||(e==null?void 0:e.name)||(e==null?void 0:e.username)||"User").split(" ").filter(Boolean).slice(0,2).map(n=>{var r;return(r=n[0])==null?void 0:r.toUpperCase()}).join("")||"U"}function PU({collapsed:e,mobileOpen:t,onCloseMobile:n=()=>{}}){const r=w_(),i=nm(),{user:a,canAccessPage:o,logout:s}=cr();function c(m){return m.role?(a==null?void 0:a.role)===m.role:m.pageKey===null||(a==null?void 0:a.role)==="admin"?!0:o(m.pageKey)}function u(m){r(m),n()}const d=["sidebar cpms-sidebar-orange",e?"collapsed":"",t?"mobile-open":""].filter(Boolean).join(" "),f=(a==null?void 0:a.full_name)||(a==null?void 0:a.name)||(a==null?void 0:a.username)||"System User",h=String((a==null?void 0:a.role)||"User").toUpperCase();return l.jsxs("nav",{className:d,children:[l.jsx("style",{children:MU}),l.jsxs("div",{className:"sidebar-logo cpms-sidebar-brand",children:[l.jsx("div",{className:"cpms-logo-mark","aria-hidden":"true",children:l.jsx("span",{children:"▰"})}),!e&&l.jsxs("div",{className:"cpms-brand-text",children:[l.jsx("strong",{children:"CPMS"}),l.jsx("small",{children:"Project Control"})]})]}),l.jsx("div",{className:"sidebar-nav cpms-sidebar-nav",children:AU.map((m,g)=>{if(m.section)return l.jsx("div",{className:"nav-section-label cpms-section-label",children:e?l.jsx("span",{title:m.section,children:"•"}):m.section},`section-${g}`);if(!c(m))return null;const x=i.pathname===m.path||m.path!=="/"&&i.pathname.startsWith(`${m.path}/`);return l.jsxs("button",{className:`nav-item cpms-nav-item${x?" active":""}`,onClick:()=>u(m.path),title:e?m.label:void 0,type:"button",children:[l.jsx("span",{className:"nav-icon cpms-nav-icon",children:m.icon}),!e&&l.jsx("span",{className:"nav-label cpms-nav-label",children:m.label})]},m.path)})}),l.jsxs("div",{className:"sidebar-footer cpms-sidebar-footer",children:[!e&&l.jsxs("div",{className:"cpms-profile-card",children:[l.jsx("div",{className:"cpms-avatar",children:TU(a)}),l.jsxs("div",{className:"cpms-profile-info",children:[l.jsx("strong",{title:f,children:f}),l.jsx("small",{children:h})]})]}),l.jsxs("button",{className:"nav-item cpms-nav-item cpms-logout",onClick:()=>{s(),r("/login")},title:e?"Logout":void 0,type:"button",children:[l.jsx("span",{className:"nav-icon cpms-nav-icon",children:"↪"}),!e&&l.jsx("span",{className:"nav-label cpms-nav-label",children:je.logout})]})]})]})}const MU=`
 .cpms-sidebar-orange {
   --sb-bg: #ffffff;
-  --sb-bg-soft: #fffaf4;
-  --sb-border: #f1dfc8;
-  --sb-text: #374151;
-  --sb-muted: #8a6b4a;
+  --sb-border: #e5e7eb;
+  --sb-border-soft: #eef2f7;
+  --sb-text: #334155;
+  --sb-text-strong: #0f172a;
+  --sb-muted: #94a3b8;
+  --sb-label: #7c8798;
+  --sb-blue: #2563eb;
+  --sb-blue-dark: #1d4ed8;
+  --sb-blue-soft: #eff6ff;
+  --sb-blue-soft-2: #f8fbff;
   --sb-orange: #f97316;
   --sb-orange-dark: #c2410c;
-  --sb-orange-soft: #fff3e8;
-  --sb-blue: #2563eb;
-  background:
-    linear-gradient(180deg, #ffffff 0%, #fffdf9 48%, #fff8f0 100%) !important;
+  background: #ffffff !important;
   border-right: 1px solid var(--sb-border) !important;
   color: var(--sb-text) !important;
-  box-shadow: 12px 0 32px rgba(124, 45, 18, 0.055) !important;
+  box-shadow: 10px 0 30px rgba(15, 23, 42, 0.055) !important;
 }
 
 .cpms-sidebar-orange .cpms-sidebar-brand,
@@ -100,7 +103,7 @@ Error generating stack: `+r.message+`
   gap: 12px;
   background: #ffffff !important;
   border-bottom: 1px solid #f3e4d2 !important;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  box-shadow: none !important;
 }
 
 .cpms-logo-mark {
@@ -110,11 +113,8 @@ Error generating stack: `+r.message+`
   display: grid;
   place-items: center;
   color: #ffffff;
-  background:
-    linear-gradient(145deg, #ff9a3d 0%, #f97316 52%, #ea580c 100%);
-  box-shadow:
-    0 12px 24px rgba(249, 115, 22, 0.24),
-    inset 0 1px 0 rgba(255,255,255,0.38);
+  background: linear-gradient(145deg, #ff9a3d 0%, #f97316 52%, #ea580c 100%);
+  box-shadow: 0 12px 24px rgba(249, 115, 22, 0.24), inset 0 1px 0 rgba(255,255,255,0.38);
 }
 
 .cpms-logo-mark span {
@@ -147,23 +147,48 @@ Error generating stack: `+r.message+`
 
 .cpms-sidebar-orange .cpms-sidebar-nav,
 .cpms-sidebar-orange .sidebar-nav {
-  padding: 12px 10px 14px;
+  padding: 14px 10px 14px;
   display: grid;
-  gap: 2px;
+  gap: 3px;
   overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: #fed7aa transparent;
+  scrollbar-color: #bfdbfe #f8fafc;
+  background: #ffffff !important;
+}
+
+.cpms-sidebar-orange .cpms-sidebar-nav::-webkit-scrollbar,
+.cpms-sidebar-orange .sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cpms-sidebar-orange .cpms-sidebar-nav::-webkit-scrollbar-track,
+.cpms-sidebar-orange .sidebar-nav::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 999px;
+}
+
+.cpms-sidebar-orange .cpms-sidebar-nav::-webkit-scrollbar-thumb,
+.cpms-sidebar-orange .sidebar-nav::-webkit-scrollbar-thumb {
+  background: #bfdbfe;
+  border-radius: 999px;
 }
 
 .cpms-sidebar-orange .cpms-section-label,
 .cpms-sidebar-orange .nav-section-label {
-  margin: 18px 10px 7px;
-  color: var(--sb-muted) !important;
+  margin: 20px 12px 8px;
+  padding-top: 2px;
+  color: var(--sb-label) !important;
   font-size: 10px;
   font-weight: 900;
-  letter-spacing: .12em;
+  letter-spacing: .14em;
   text-transform: uppercase;
-  opacity: .84;
+  opacity: 1;
+}
+
+.cpms-sidebar-orange .cpms-section-label:first-child,
+.cpms-sidebar-orange .nav-section-label:first-child {
+  margin-top: 6px;
 }
 
 .cpms-sidebar-orange .cpms-nav-item,
@@ -172,7 +197,7 @@ Error generating stack: `+r.message+`
   width: 100%;
   border: 1px solid transparent;
   border-radius: 14px;
-  background: transparent;
+  background: #ffffff !important;
   color: var(--sb-text) !important;
   display: flex;
   align-items: center;
@@ -182,31 +207,29 @@ Error generating stack: `+r.message+`
   cursor: pointer;
   font-weight: 700;
   text-align: left;
-  transition:
-    background .18s ease,
-    border-color .18s ease,
-    color .18s ease,
-    box-shadow .18s ease,
-    transform .18s ease;
+  transition: background .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 
 .cpms-sidebar-orange .cpms-nav-item:hover,
 .cpms-sidebar-orange .nav-item:hover {
-  background: var(--sb-orange-soft) !important;
-  color: var(--sb-orange-dark) !important;
-  border-color: #fed7aa !important;
+  background: var(--sb-blue-soft-2) !important;
+  color: var(--sb-blue-dark) !important;
+  border-color: #dbeafe !important;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.08) !important;
   transform: translateX(2px);
 }
 
 .cpms-sidebar-orange .cpms-nav-item.active,
 .cpms-sidebar-orange .nav-item.active {
-  background:
-    linear-gradient(90deg, #fff7ed 0%, #ffedd5 100%) !important;
-  color: var(--sb-orange-dark) !important;
-  border-color: #fdba74 !important;
-  box-shadow:
-    0 10px 22px rgba(249, 115, 22, 0.14),
-    inset 3px 0 0 var(--sb-orange);
+  background: linear-gradient(90deg, #eff6ff 0%, #f8fbff 100%) !important;
+  color: var(--sb-text-strong) !important;
+  border-color: #93c5fd !important;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.10), inset 3px 0 0 var(--sb-blue);
+}
+
+.cpms-sidebar-orange .cpms-nav-item.active::before,
+.cpms-sidebar-orange .nav-item.active::before {
+  display: none !important;
 }
 
 .cpms-sidebar-orange .cpms-nav-icon,
@@ -217,26 +240,26 @@ Error generating stack: `+r.message+`
   display: inline-grid;
   place-items: center;
   flex: 0 0 28px;
-  color: #64748b;
-  background: #f8fafc;
-  border: 1px solid #eef2f7;
+  color: #64748b !important;
+  background: #f8fafc !important;
+  border: 1px solid #eef2f7 !important;
   font-size: 14px;
   font-weight: 900;
 }
 
 .cpms-sidebar-orange .cpms-nav-item:hover .cpms-nav-icon,
 .cpms-sidebar-orange .nav-item:hover .nav-icon {
-  color: var(--sb-orange-dark);
-  background: #ffffff;
-  border-color: #fed7aa;
+  color: var(--sb-blue-dark) !important;
+  background: #ffffff !important;
+  border-color: #bfdbfe !important;
 }
 
 .cpms-sidebar-orange .cpms-nav-item.active .cpms-nav-icon,
 .cpms-sidebar-orange .nav-item.active .nav-icon {
-  color: #ffffff;
-  background: linear-gradient(145deg, #fb923c, #f97316);
-  border-color: #fb923c;
-  box-shadow: 0 8px 18px rgba(249, 115, 22, .22);
+  color: #ffffff !important;
+  background: linear-gradient(145deg, #3b82f6, #2563eb) !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, .20);
 }
 
 .cpms-sidebar-orange .cpms-nav-label,
@@ -245,14 +268,15 @@ Error generating stack: `+r.message+`
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 13px;
+  color: inherit !important;
 }
 
 .cpms-sidebar-orange .cpms-sidebar-footer,
 .cpms-sidebar-orange .sidebar-footer {
   margin-top: auto;
   padding: 12px 10px 14px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.7), #ffffff) !important;
-  border-top: 1px solid #f3e4d2 !important;
+  background: #ffffff !important;
+  border-top: 1px solid var(--sb-border) !important;
 }
 
 .cpms-profile-card {
@@ -263,9 +287,9 @@ Error generating stack: `+r.message+`
   padding: 10px;
   margin: 0 0 8px;
   border-radius: 16px;
-  background: rgba(255, 250, 244, 0.82);
-  border: 1px solid #fed7aa;
-  box-shadow: 0 10px 22px rgba(124,45,18,.06);
+  background: #ffffff !important;
+  border: 1px solid #dbeafe !important;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, .06);
   min-width: 0;
 }
 
@@ -275,9 +299,9 @@ Error generating stack: `+r.message+`
   border-radius: 15px;
   display: grid;
   place-items: center;
-  background: linear-gradient(145deg, #ffffff 0%, #fff1df 100%);
-  border: 1px solid #fdba74;
-  color: var(--sb-orange-dark);
+  background: linear-gradient(145deg, #ffffff 0%, #eff6ff 100%) !important;
+  border: 1px solid #bfdbfe !important;
+  color: var(--sb-blue-dark) !important;
   font-weight: 900;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
 }
@@ -298,22 +322,36 @@ Error generating stack: `+r.message+`
 }
 
 .cpms-profile-info small {
-  color: var(--sb-muted);
+  color: #64748b;
   font-size: 10px;
   letter-spacing: .08em;
   font-weight: 900;
 }
 
 .cpms-sidebar-orange .cpms-logout {
-  color: #7c2d12 !important;
+  color: #334155 !important;
   background: #ffffff !important;
-  border-color: #f3e4d2 !important;
+  border-color: #dbeafe !important;
+}
+
+.cpms-sidebar-orange .cpms-logout .cpms-nav-icon,
+.cpms-sidebar-orange .cpms-logout .nav-icon {
+  color: #64748b !important;
+  background: #f8fafc !important;
+  border-color: #eef2f7 !important;
 }
 
 .cpms-sidebar-orange .cpms-logout:hover {
-  color: #b91c1c !important;
-  background: #fff7f7 !important;
-  border-color: #fecaca !important;
+  color: #1d4ed8 !important;
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+}
+
+.cpms-sidebar-orange .cpms-logout:hover .cpms-nav-icon,
+.cpms-sidebar-orange .cpms-logout:hover .nav-icon {
+  color: #ffffff !important;
+  background: linear-gradient(145deg, #3b82f6, #2563eb) !important;
+  border-color: #2563eb !important;
 }
 
 .cpms-sidebar-orange.collapsed .cpms-sidebar-brand,
@@ -333,67 +371,6 @@ Error generating stack: `+r.message+`
   justify-content: center;
   padding-inline: 8px;
 }
-
-/* === Hover readability accessibility fix === */
-.cpms-sidebar-orange .cpms-nav-item,
-.cpms-sidebar-orange .nav-item,
-.cpms-sidebar-orange .cpms-nav-label,
-.cpms-sidebar-orange .nav-label {
-  color: #374151 !important;
-}
-
-.cpms-sidebar-orange .cpms-nav-item:hover,
-.cpms-sidebar-orange .nav-item:hover,
-.cpms-sidebar-orange .cpms-nav-item:hover .cpms-nav-label,
-.cpms-sidebar-orange .nav-item:hover .nav-label,
-.cpms-sidebar-orange .cpms-nav-item:hover span,
-.cpms-sidebar-orange .nav-item:hover span {
-  color: #1f2937 !important;
-}
-
-.cpms-sidebar-orange .cpms-nav-item:hover,
-.cpms-sidebar-orange .nav-item:hover {
-  background: #fff3e8 !important;
-  border-color: #fdba74 !important;
-  box-shadow: 0 8px 18px rgba(249, 115, 22, 0.10) !important;
-}
-
-.cpms-sidebar-orange .cpms-nav-item:hover .cpms-nav-icon,
-.cpms-sidebar-orange .nav-item:hover .nav-icon {
-  color: #ea580c !important;
-  background: #ffffff !important;
-  border-color: #fdba74 !important;
-}
-
-.cpms-sidebar-orange .cpms-nav-item.active,
-.cpms-sidebar-orange .nav-item.active,
-.cpms-sidebar-orange .cpms-nav-item.active .cpms-nav-label,
-.cpms-sidebar-orange .nav-item.active .nav-label,
-.cpms-sidebar-orange .cpms-nav-item.active span,
-.cpms-sidebar-orange .nav-item.active span {
-  color: #7c2d12 !important;
-}
-
-.cpms-sidebar-orange .cpms-nav-item.active .cpms-nav-icon,
-.cpms-sidebar-orange .nav-item.active .nav-icon {
-  color: #ffffff !important;
-  background: linear-gradient(145deg, #fb923c, #f97316) !important;
-  border-color: #fb923c !important;
-}
-
-.cpms-sidebar-orange .cpms-logout,
-.cpms-sidebar-orange .cpms-logout .cpms-nav-label,
-.cpms-sidebar-orange .cpms-logout .nav-label {
-  color: #7c2d12 !important;
-}
-
-.cpms-sidebar-orange .cpms-logout:hover,
-.cpms-sidebar-orange .cpms-logout:hover .cpms-nav-label,
-.cpms-sidebar-orange .cpms-logout:hover .nav-label,
-.cpms-sidebar-orange .cpms-logout:hover span {
-  color: #991b1b !important;
-}
-
 `,kU={"/dashboard":je.dashboard,"/definitions/system-setup":"System Setup","/definitions/companies":je.companies,"/definitions/position-roles":je.positionRoles,"/definitions/users":je.users,"/definitions/projects":je.projects,"/definitions/classifications":je.itemClassifications,"/definitions/measurements":"Measurements","/definitions/items":je.items,"/planning":"Bill of Quantity BOQ","/transactions/delivery":je.delivery,"/transactions/installation":je.installation,"/transactions/inspection":je.inspection,"/reports/weekly":"Weekly Summary","/reports/daily-productivity":"Daily Productivity","/reports/floor-weekly":"Floor Productivity","/reports":je.reports},IU=[{match:"/definitions",label:je.definitions},{match:"/planning",label:"BOQ"},{match:"/transactions",label:je.transactions},{match:"/reports",label:je.reports}];function _x({type:e}){const t={width:15,height:15,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round","aria-hidden":!0},n={menu:l.jsx(l.Fragment,{children:l.jsx("path",{d:"M4 6h16M4 12h16M4 18h16"})}),sun:l.jsxs(l.Fragment,{children:[l.jsx("circle",{cx:"12",cy:"12",r:"4"}),l.jsx("path",{d:"M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"})]}),moon:l.jsx(l.Fragment,{children:l.jsx("path",{d:"M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"})}),expand:l.jsx(l.Fragment,{children:l.jsx("path",{d:"M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"})}),collapse:l.jsx(l.Fragment,{children:l.jsx("path",{d:"M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"})})};return l.jsx("svg",{...t,children:n[e]})}function NU({onToggleSidebar:e}){var h;const t=nm(),{user:n}=cr(),[r,i]=p.useState(()=>localStorage.getItem("cp_theme")||"light"),[a,o]=p.useState(!1),s=kU[t.pathname]??je.appName,c=p.useMemo(()=>{const m=IU.find(g=>t.pathname.startsWith(g.match));return(m==null?void 0:m.label)||"Workspace"},[t.pathname]);p.useEffect(()=>{document.documentElement.setAttribute("data-theme",r),localStorage.setItem("cp_theme",r)},[r]);const u=p.useCallback(()=>{document.fullscreenElement?(document.exitFullscreen().catch(()=>{}),o(!1)):(document.documentElement.requestFullscreen().catch(()=>{}),o(!0))},[]);p.useEffect(()=>{const m=()=>o(!!document.fullscreenElement);return document.addEventListener("fullscreenchange",m),()=>document.removeEventListener("fullscreenchange",m)},[]);const d=(n==null?void 0:n.full_name_en)||(n==null?void 0:n.full_name)||(n==null?void 0:n.username)||"User",f=d.split(" ").filter(Boolean).slice(0,2).map(m=>m[0]).join("").toUpperCase();return l.jsxs("header",{className:"header",children:[l.jsx("button",{className:"icon-btn header-menu-btn",onClick:e,title:"Toggle sidebar",children:l.jsx(_x,{type:"menu"})}),l.jsx("div",{className:"header-page-block",children:l.jsxs("div",{className:"header-breadcrumb",children:[l.jsx("span",{children:c}),l.jsx("span",{className:"breadcrumb-separator",children:"/"}),l.jsx("span",{children:s})]})}),l.jsxs("div",{className:"header-actions",children:[l.jsxs("button",{className:"icon-btn header-theme-btn",onClick:()=>i(m=>m==="dark"?"light":"dark"),title:r==="dark"?"Switch to Light":"Switch to Dark",children:[l.jsx(_x,{type:r==="dark"?"sun":"moon"}),l.jsx("span",{children:r==="dark"?"Light":"Dark"})]}),l.jsx("button",{className:"icon-btn",onClick:u,title:a?"Exit Full Screen":"Full Screen",children:l.jsx(_x,{type:a?"collapse":"expand"})}),n&&l.jsxs("div",{className:"user-chip",children:[n.photo_url?l.jsx("img",{src:n.photo_url,alt:"",className:"user-chip-photo"}):l.jsx("span",{className:"user-chip-avatar",children:f}),l.jsxs("span",{className:"user-chip-copy",children:[l.jsx("strong",{children:d}),l.jsx("small",{children:((h=je.roles)==null?void 0:h[n.role])||n.role})]})]})]})]})}const RU="https://my-api-production-c3de.up.railway.app";function DU(){return localStorage.getItem("cp_token")}async function Qe(e,t,n){const r={"Content-Type":"application/json"},i=DU();i&&(r.Authorization=`Bearer ${i}`);const a=await fetch(`${RU}${t}`,{method:e,headers:r,body:n!==void 0?JSON.stringify(n):void 0});a.status===401&&(["cp_token","cp_user","cp_permissions"].forEach(s=>localStorage.removeItem(s)),window.location.hash="#/login");const o=await a.json().catch(()=>({}));if(!a.ok)throw new Error(o.message||`Error ${a.status}`);return o}const lo=e=>"?"+new URLSearchParams(Object.fromEntries(Object.entries(e).filter(([,t])=>t!=null))).toString(),Be={login:e=>Qe("POST","/api/auth/login",e),me:()=>Qe("GET","/api/auth/me"),getUsers:()=>Qe("GET","/api/users"),createUser:e=>Qe("POST","/api/users",e),updateUser:(e,t)=>Qe("PUT",`/api/users/${e}`,t),toggleUser:e=>Qe("PATCH",`/api/users/${e}/toggle-active`),deleteUser:e=>Qe("DELETE",`/api/users/${e}`),getUserPerms:e=>Qe("GET",`/api/users/${e}/permissions`),getCompanies:()=>Qe("GET","/api/companies"),createCompany:e=>Qe("POST","/api/companies",e),updateCompany:(e,t)=>Qe("PUT",`/api/companies/${e}`,t),deleteCompany:e=>Qe("DELETE",`/api/companies/${e}`),getPositionRoles:()=>Qe("GET","/api/position-roles"),createPositionRole:e=>Qe("POST","/api/position-roles",e),updatePositionRole:(e,t)=>Qe("PUT",`/api/position-roles/${e}`,t),deletePositionRole:e=>Qe("DELETE",`/api/position-roles/${e}`),getPositionRolePerms:e=>Qe("GET",`/api/position-roles/${e}/permissions`),getProjects:()=>Qe("GET","/api/projects"),getProject:e=>Qe("GET",`/api/projects/${e}`),createProject:e=>Qe("POST","/api/projects",e),updateProject:(e,t)=>Qe("PUT",`/api/projects/${e}`,t),deleteProject:e=>Qe("DELETE",`/api/projects/${e}`),getClassifications:()=>Qe("GET","/api/classifications"),createClassification:e=>Qe("POST","/api/classifications",e),updateClassification:(e,t)=>Qe("PUT",`/api/classifications/${e}`,t),deleteClassification:e=>Qe("DELETE",`/api/classifications/${e}`),getItems:()=>Qe("GET","/api/items"),getMeasurements:()=>Qe("GET","/api/measurements"),createMeasurement:e=>Qe("POST","/api/measurements",e),updateMeasurement:(e,t)=>Qe("PUT","/api/measurements/"+e,t),deleteMeasurement:e=>Qe("DELETE","/api/measurements/"+e),getNextItemCode:e=>Qe("GET",`/api/items/next-code/${e}`),createItem:e=>Qe("POST","/api/items",e),updateItem:(e,t)=>Qe("PUT",`/api/items/${e}`,t),deleteItem:e=>Qe("DELETE",`/api/items/${e}`),getPlanning:e=>Qe("GET",`/api/planning/${e}`),getAvailableItems:e=>Qe("GET",`/api/planning/available-items/${e}`),insertPlanningItems:e=>Qe("POST","/api/planning/insert-items",e),savePlanning:e=>Qe("POST","/api/planning",e),preparePlanning:e=>Qe("PATCH",`/api/planning/prepare/${e}`),confirmPlanning:e=>Qe("PATCH",`/api/planning/confirm/${e}`),deletePlanningItem:(e,t)=>Qe("DELETE",`/api/planning/${e}/${t}`),draftPlanning:e=>Qe("PATCH",`/api/planning/draft/${e}`),savePlanningStatus:e=>Qe("PATCH",`/api/planning/save/${e}`),approvePlanning:e=>Qe("PATCH",`/api/planning/approve/${e}`),unpostPlanning:e=>Qe("PATCH",`/api/planning/unpost/${e}`),getDelivery:(e,t)=>Qe("GET",`/api/delivery${lo({projectId:e,date:t})}`),saveDelivery:e=>Qe("POST","/api/delivery",e),confirmDelivery:(e,t)=>Qe("PATCH","/api/delivery/confirm",{project_id:e,transaction_date:t}),unpostDelivery:(e,t)=>Qe("PATCH","/api/delivery/unpost",{project_id:e,transaction_date:t}),deleteDelivery:e=>Qe("DELETE",`/api/delivery/${e}`),getDeliveryTotals:e=>Qe("GET",`/api/delivery/totals?projectId=${e}`),getInstallation:(e,t)=>Qe("GET",`/api/installation?projectId=${e}&date=${t}`),saveInstallation:e=>Qe("POST","/api/installation",e),confirmInstallation:(e,t)=>Qe("PATCH","/api/installation/confirm",{project_id:e,transaction_date:t}),unpostInstallation:(e,t)=>Qe("PATCH","/api/installation/unpost",{project_id:e,transaction_date:t}),deleteInstallation:e=>Qe("DELETE",`/api/installation/${e}`),getInstallationLevels:e=>Qe("GET",`/api/installation/levels?projectId=${e}`),saveInstallationLevels:e=>Qe("POST","/api/installation/levels",e),deleteInstallationLevel:e=>Qe("DELETE",`/api/installation/levels/${e}`),getInstallationAllocation:e=>Qe("GET",`/api/installation/allocation?projectId=${e}`),saveInstallationAllocation:e=>Qe("POST","/api/installation/allocation",e),getInstallationMap:e=>Qe("GET",`/api/installation/map?projectId=${e}`),getDeliveryMatrix:e=>Qe("GET",`/api/delivery/matrix?projectId=${e}`),getInspection:(e,t)=>Qe("GET",`/api/inspection${lo({projectId:e,date:t})}`),saveInspection:e=>Qe("POST","/api/inspection",e),confirmInspection:(e,t)=>Qe("PATCH","/api/inspection/confirm",{project_id:e,transaction_date:t}),getDashboardKpis:e=>Qe("GET",`/api/dashboard/kpis${lo({projectId:e})}`),getDashboardByClassification:e=>Qe("GET",`/api/dashboard/by-classification${e&&e!=="all"?"?projectId="+e:""}`),getDashboardByFloor:e=>Qe("GET",`/api/dashboard/by-floor${e&&e!=="all"?"?projectId="+e:""}`),getDashboardByProject:()=>Qe("GET","/api/dashboard/by-project"),getInstallationProgress:e=>Qe("GET",`/api/dashboard/installation-progress${lo({projectId:e})}`),getInspectionStats:e=>Qe("GET",`/api/dashboard/inspection-stats${lo({projectId:e})}`),getDeliveryProgress:e=>Qe("GET",`/api/dashboard/delivery-progress${lo({projectId:e})}`),getAIInsight:e=>Qe("POST","/api/reports/ai-insight",{prompt:e}),getDailyProductivity:(e,t,n)=>Qe("GET",`/api/reports/daily-productivity?projectId=${e}&weekStart=${t}&weekEnd=${n}`),getFloorWeekly:(e,t,n)=>Qe("GET",`/api/reports/floor-weekly?projectId=${e}&weekStart=${t}&weekEnd=${n}`),getItemLogs:e=>Qe("GET",`/api/reports/item-logs?${new URLSearchParams(e).toString()}`),getWeeklyReport:(e,t,n)=>Qe("GET",`/api/reports/weekly?projectId=${e}&weekStart=${t}&weekEnd=${n}`),getReportProgress:e=>Qe("GET",`/api/reports/progress${lo({projectId:e})}`),getReportProjectsSummary:()=>Qe("GET","/api/reports/projects-summary"),getReportItemTracking:e=>Qe("GET",`/api/reports/item-tracking${lo(e)}`),getReportInspection:e=>Qe("GET",`/api/reports/inspection${lo({projectId:e})}`)};function zU(){const{login:e}=cr(),t=w_(),[n,r]=p.useState({username:"",password:""}),[i,a]=p.useState(""),[o,s]=p.useState(!1),[c,u]=p.useState(!1),[d,f]=p.useState(!1);async function h(g){g.preventDefault(),a(""),s(!0);try{const x=await Be.login(n);e(x.token,x.user,x.permissions),t("/overview",{replace:!0})}catch(x){a(x.message||"Invalid credentials")}finally{s(!1)}}return l.jsxs("div",{style:{display:"flex",minHeight:"100vh",fontFamily:"'Inter','Segoe UI',system-ui,sans-serif"},children:[l.jsxs("div",{style:{flex:1,position:"relative",overflow:"hidden",display:"flex",flexDirection:"column",justifyContent:"space-between"},children:[l.jsx("div",{style:{position:"absolute",inset:0,backgroundImage:"url('/construction-projects/login-bg.png')",backgroundSize:"cover",backgroundPosition:"center"}}),l.jsx("div",{style:{position:"absolute",inset:0,background:"rgba(0,0,0,0.50)"}}),l.jsxs("div",{style:{position:"relative",zIndex:5,padding:"32px 40px",display:"flex",alignItems:"center",gap:14},children:[l.jsx("div",{style:{width:44,height:44,borderRadius:10,background:"rgba(233,115,22,0.25)",border:"1.5px solid rgba(233,115,22,0.6)",display:"flex",alignItems:"center",justifyContent:"center"},children:l.jsxs("svg",{width:"24",height:"24",viewBox:"0 0 24 24",fill:"none",stroke:"#e97316",strokeWidth:"2",children:[l.jsx("path",{d:"M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"}),l.jsx("polyline",{points:"9 22 9 12 15 12 15 22"})]})}),l.jsxs("div",{children:[l.jsx("div",{style:{fontSize:16,fontWeight:800,color:"#fff"},children:"Construction Project"}),l.jsx("div",{style:{fontSize:12,color:"rgba(255,255,255,0.6)"},children:"Management System"})]})]}),l.jsxs("div",{style:{position:"relative",zIndex:5,padding:"0 40px"},children:[l.jsxs("div",{style:{fontSize:13,color:"#e97316",fontWeight:600,letterSpacing:"0.05em",textTransform:"uppercase",marginBottom:16,display:"flex",alignItems:"center",gap:8},children:[l.jsx("div",{style:{width:28,height:2,background:"#e97316"}}),"Enterprise Platform"]}),l.jsxs("h1",{style:{fontSize:40,fontWeight:800,color:"#fff",lineHeight:1.2,marginBottom:16},children:["Plan. Build. Manage.",l.jsx("br",{}),l.jsx("span",{style:{color:"#e97316"},children:"Deliver Excellence."})]}),l.jsxs("p",{style:{fontSize:15,color:"rgba(255,255,255,0.65)",lineHeight:1.6},children:["Streamline your construction projects",l.jsx("br",{}),"from planning to completion."]})]}),l.jsx("div",{style:{position:"relative",zIndex:5,padding:"32px 40px",display:"flex",gap:28,flexWrap:"wrap"},children:[{icon:l.jsxs("svg",{width:"18",height:"18",viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:"2",children:[l.jsx("rect",{x:"3",y:"4",width:"18",height:"18",rx:"2"}),l.jsx("line",{x1:"16",y1:"2",x2:"16",y2:"6"}),l.jsx("line",{x1:"8",y1:"2",x2:"8",y2:"6"}),l.jsx("line",{x1:"3",y1:"10",x2:"21",y2:"10"})]}),label:"Project",sub:"Planning"},{icon:l.jsxs("svg",{width:"18",height:"18",viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:"2",children:[l.jsx("line",{x1:"18",y1:"20",x2:"18",y2:"10"}),l.jsx("line",{x1:"12",y1:"20",x2:"12",y2:"4"}),l.jsx("line",{x1:"6",y1:"20",x2:"6",y2:"14"})]}),label:"Progress",sub:"Tracking"},{icon:l.jsxs("svg",{width:"18",height:"18",viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:"2",children:[l.jsx("path",{d:"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"}),l.jsx("circle",{cx:"9",cy:"7",r:"4"}),l.jsx("path",{d:"M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"})]}),label:"Team",sub:"Collaboration"},{icon:l.jsx("svg",{width:"18",height:"18",viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:"2",children:l.jsx("path",{d:"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"})}),label:"Quality",sub:"Control"}].map((g,x)=>l.jsxs("div",{style:{display:"flex",alignItems:"center",gap:8},children:[l.jsx("div",{style:{color:"rgba(255,255,255,0.55)"},children:g.icon}),l.jsxs("div",{children:[l.jsx("div",{style:{fontSize:12,fontWeight:600,color:"#fff"},children:g.label}),l.jsx("div",{style:{fontSize:11,color:"rgba(255,255,255,0.5)"},children:g.sub})]})]},x))})]}),l.jsxs("div",{style:{width:440,minWidth:380,flexShrink:0,background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",padding:"40px",position:"relative",zIndex:10,boxShadow:"-8px 0 40px rgba(0,0,0,0.15)"},children:[l.jsx("div",{style:{position:"absolute",inset:0,opacity:.03,backgroundImage:"repeating-linear-gradient(0deg,#888 0,#888 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,#888 0,#888 1px,transparent 1px,transparent 40px)"}}),l.jsxs("div",{style:{width:"100%",maxWidth:360,position:"relative"},children:[l.jsx("div",{style:{display:"flex",justifyContent:"center",marginBottom:32},children:l.jsxs("div",{style:{display:"flex",alignItems:"center",gap:12,padding:"12px 20px",border:"1px solid #f0e8d8",borderRadius:12,background:"#fffaf5"},children:[l.jsxs("svg",{width:"32",height:"32",viewBox:"0 0 24 24",fill:"none",stroke:"#e97316",strokeWidth:"1.5",children:[l.jsx("path",{d:"M2 20h20M4 20V10L12 4l8 6v10"}),l.jsx("path",{d:"M10 20v-6h4v6"})]}),l.jsxs("div",{children:[l.jsx("div",{style:{fontSize:13,fontWeight:700,color:"#1a0e00",direction:"rtl"},children:"شعار الشركة"}),l.jsx("div",{style:{fontSize:11,color:"#9ca3af"},children:"Company Logo"})]})]})}),l.jsx("h2",{style:{fontSize:24,fontWeight:800,color:"#111827",textAlign:"center",marginBottom:6},children:"Welcome Back!"}),l.jsx("p",{style:{fontSize:13,color:"#9ca3af",textAlign:"center",marginBottom:28},children:"Sign in to continue to your account"}),i&&l.jsxs("div",{style:{background:"#fef2f2",border:"1px solid #fca5a5",color:"#dc2626",borderRadius:8,padding:"10px 14px",fontSize:13,marginBottom:16},children:["⚠ ",i]}),l.jsxs("form",{onSubmit:h,children:[l.jsxs("div",{style:{marginBottom:18},children:[l.jsx("label",{style:{display:"block",fontSize:13,fontWeight:600,color:"#374151",marginBottom:7},children:"Username"}),l.jsxs("div",{style:{position:"relative",display:"flex",alignItems:"center"},children:[l.jsx("span",{style:{position:"absolute",left:12,color:"#9ca3af",display:"flex",pointerEvents:"none"},children:l.jsxs("svg",{width:"16",height:"16",viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:"2",children:[l.jsx("path",{d:"M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"}),l.jsx("circle",{cx:"12",cy:"7",r:"4"})]})}),l.jsx("input",{style:{width:"100%",padding:"11px 12px 11px 40px",border:"1.5px solid #e5e7eb",borderRadius:10,fontSize:14,fontFamily:"inherit",color:"#111827",background:"#f9fafb",outline:"none",boxSizing:"border-box",transition:"border-color 0.15s"},value:n.username,onChange:g=>r(x=>({...x,username:g.target.value})),placeholder:"Enter username",autoComplete:"username",onFocus:g=>{g.target.style.borderColor="#e97316",g.target.style.background="#fff"},onBlur:g=>{g.target.style.borderColor="#e5e7eb",g.target.style.background="#f9fafb"}})]})]}),l.jsxs("div",{style:{marginBottom:16},children:[l.jsx("label",{style:{display:"block",fontSize:13,fontWeight:600,color:"#374151",marginBottom:7},children:"Password"}),l.jsxs("div",{style:{position:"relative",display:"flex",alignItems:"center"},children:[l.jsx("span",{style:{position:"absolute",left:12,color:"#9ca3af",display:"flex",pointerEvents:"none"},children:l.jsxs("svg",{width:"16",height:"16",viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:"2",children:[l.jsx("rect",{x:"3",y:"11",width:"18",height:"11",rx:"2"}),l.jsx("path",{d:"M7 11V7a5 5 0 0110 0v4"})]})}),l.jsx("input",{style:{width:"100%",padding:"11px 40px 11px 40px",border:"1.5px solid #e5e7eb",borderRadius:10,fontSize:14,fontFamily:"inherit",color:"#111827",background:"#f9fafb",outline:"none",boxSizing:"border-box",transition:"border-color 0.15s"},type:c?"text":"password",value:n.password,onChange:g=>r(x=>({...x,password:g.target.value})),placeholder:"Enter password",autoComplete:"current-password",onFocus:g=>{g.target.style.borderColor="#e97316",g.target.style.background="#fff"},onBlur:g=>{g.target.style.borderColor="#e5e7eb",g.target.style.background="#f9fafb"}}),l.jsx("button",{type:"button",onClick:()=>u(g=>!g),style:{position:"absolute",right:10,background:"none",border:"none",cursor:"pointer",color:"#9ca3af",padding:4,display:"flex",alignItems:"center"},children:c?l.jsxs("svg",{width:"16",height:"16",viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:"2",children:[l.jsx("path",{d:"M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"}),l.jsx("line",{x1:"1",y1:"1",x2:"23",y2:"23"})]}):l.jsxs("svg",{width:"16",height:"16",viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:"2",children:[l.jsx("path",{d:"M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"}),l.jsx("circle",{cx:"12",cy:"12",r:"3"})]})})]})]}),l.jsxs("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:24},children:[l.jsxs("label",{style:{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:13,color:"#374151"},children:[l.jsx("input",{type:"checkbox",checked:d,onChange:g=>f(g.target.checked),style:{width:15,height:15,accentColor:"#e97316",cursor:"pointer"}}),"Remember me"]}),l.jsx("span",{style:{fontSize:13,color:"#e97316",fontWeight:500,cursor:"pointer"},children:"Forgot Password?"})]}),l.jsx("button",{type:"submit",disabled:o,style:{width:"100%",padding:"13px",background:"#e97316",color:"#fff",border:"none",borderRadius:24,fontSize:15,fontWeight:700,cursor:o?"not-allowed":"pointer",fontFamily:"inherit",opacity:o?.7:1,boxShadow:"0 4px 14px rgba(233,115,22,0.4)"},children:o?"Signing in...":"Continue"})]})]})]})]})}const Wl=(e,t=0)=>Number(e||0).toLocaleString(void 0,{maximumFractionDigits:t,minimumFractionDigits:t}),Jr=(e,t)=>Number(t||0)>0?Math.max(0,Math.min(100,Number(e||0)/Number(t||0)*100)):0,Xd=e=>String(e??"").trim().toLowerCase();function uA(e,t=650){const[n,r]=p.useState(Number(e||0)),i=p.useRef(Number(e||0));return p.useEffect(()=>{const a=performance.now(),o=i.current,s=Number(e||0);let c;const u=d=>{const f=Math.min(1,(d-a)/t),h=1-Math.pow(1-f,3);r(o+(s-o)*h),f<1?c=requestAnimationFrame(u):i.current=s};return c=requestAnimationFrame(u),()=>cancelAnimationFrame(c)},[e,t]),n}function VS({type:e}){const t={boq:"M4 7l8-4 8 4-8 4-8-4zm0 4l8 4 8-4M4 15l8 4 8-4",truck:"M3 7h10v8H3V7zm10 3h4l3 3v2h-7v-5zM6 18a2 2 0 100-4 2 2 0 000 4zm11 0a2 2 0 100-4 2 2 0 000 4z",install:"M14 4l6 6-3 3-2-2-6 6-3-3 6-6-2-2 4-2zM4 20l5-5",box:"M4 7l8-4 8 4v10l-8 4-8-4V7zm8 4v10M4 7l8 4 8-4",hour:"M12 2a10 10 0 1010 10A10 10 0 0012 2zm0 5v6l4 2",trend:"M4 16l5-5 4 4 7-8M15 7h5v5",speed:"M4 15a8 8 0 1116 0M12 15l4-5",delay:"M12 7v6l4 2M12 22a10 10 0 110-20 10 10 0 010 20z",refresh:"M20 6v6h-6M4 18v-6h6M18 9a7 7 0 00-12-3M6 15a7 7 0 0012 3",export:"M12 3v12M7 10l5 5 5-5M5 21h14",calendar:"M7 3v4M17 3v4M4 8h16M5 5h14v16H5z"};return l.jsx("svg",{width:"22",height:"22",viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:"1.8",strokeLinecap:"round",strokeLinejoin:"round",children:l.jsx("path",{d:t[e]||t.boq})})}function BU({value:e,color:t="#2563eb"}){const n=Math.max(0,Math.min(100,Number(e||0))),r=24,i=2*Math.PI*r;return l.jsxs("svg",{className:"dash-radial",viewBox:"0 0 64 64",children:[l.jsx("circle",{cx:"32",cy:"32",r,fill:"none",stroke:"#e8edf5",strokeWidth:"8"}),l.jsx("circle",{cx:"32",cy:"32",r,fill:"none",stroke:t,strokeWidth:"8",strokeLinecap:"round",strokeDasharray:`${i} ${i}`,strokeDashoffset:i-n/100*i,transform:"rotate(-90 32 32)"}),l.jsx("circle",{cx:"32",cy:"32",r:"18",fill:"#ffffff"}),l.jsxs("text",{x:"32",y:"36",textAnchor:"middle",fontSize:"12",fontWeight:"900",fill:"#0f172a",children:[Wl(n,n<10&&n>0?1:0),"%"]})]})}function za({label:e,value:t,suffix:n="",icon:r="boq",percent:i,trend:a=0,color:o="#2563eb",primary:s=!1}){const c=uA(t),u=uA(i||0),d=Number(a||0)>=0;return l.jsxs("div",{className:`dash-kpi ${s?"dash-kpi-primary":""}`,children:[l.jsxs("div",{className:"dash-kpi-top",children:[l.jsx("div",{className:"dash-kpi-icon",style:{color:o},children:l.jsx(VS,{type:r})}),i!==void 0&&l.jsx(BU,{value:u,color:s?"#ffffff":o})]}),l.jsx("div",{className:"dash-kpi-label",children:e}),l.jsxs("div",{className:"dash-kpi-value",children:[Wl(c,n==="%"?1:0),n]}),l.jsx("div",{className:"dash-kpi-sub",children:n==="%"?"of total scope":"Units"}),l.jsx("div",{className:"dash-kpi-bottom",children:l.jsxs("span",{className:`dash-trend ${d?"up":"down"}`,children:[d?"▲":"▼"," ",Wl(Math.abs(a),1),"%"]})})]})}function dA({value:e=0,color:t="#2563eb",label:n="",height:r=170}){const i=Math.max(0,Math.min(100,Number(e||0))),a=82,o=190,s=122,c=i>0?6:2,u=Math.max(c,i/100*s),d=o-u,f=46,h=16,m=-10,g=`g${String(t).replace(/[^a-zA-Z0-9]/g,"")}${Math.round(i*10)}`;return l.jsxs("svg",{className:"bar3d",viewBox:"0 0 210 238",preserveAspectRatio:"xMidYMid meet",style:{height:r},children:[l.jsxs("defs",{children:[l.jsxs("linearGradient",{id:`${g}f`,x1:"0",x2:"0",y1:"0",y2:"1",children:[l.jsx("stop",{offset:"0",stopColor:t,stopOpacity:"0.78"}),l.jsx("stop",{offset:"1",stopColor:t})]}),l.jsxs("linearGradient",{id:`${g}s`,x1:"0",x2:"1",y1:"0",y2:"0",children:[l.jsx("stop",{offset:"0",stopColor:t}),l.jsx("stop",{offset:"1",stopColor:"#0f3b91",stopOpacity:"0.85"})]}),l.jsxs("linearGradient",{id:`${g}t`,x1:"0",x2:"1",y1:"0",y2:"0",children:[l.jsx("stop",{offset:"0",stopColor:"#dbeafe"}),l.jsx("stop",{offset:"1",stopColor:t,stopOpacity:"0.86"})]}),l.jsx("filter",{id:`${g}shadow`,x:"-30%",y:"-30%",width:"160%",height:"180%",children:l.jsx("feDropShadow",{dx:"0",dy:"8",stdDeviation:"7",floodColor:t,floodOpacity:"0.22"})})]}),[72,104,136,168].map((x,y)=>l.jsx("line",{x1:"42",x2:"178",y1:x,y2:x,stroke:"#d9e3f2",strokeDasharray:"4 4",strokeWidth:"1.3"},y)),l.jsx("polygon",{points:"62,198 126,198 154,184 90,184",fill:"#e9eff7"}),l.jsx("polygon",{points:`${a},${d} ${a+f},${d} ${a+f+h},${d+m} ${a+h},${d+m}`,fill:`url(#${g}t)`}),l.jsx("polygon",{points:`${a+f},${d} ${a+f+h},${d+m} ${a+f+h},${o+m} ${a+f},${o}`,fill:`url(#${g}s)`}),l.jsx("rect",{x:a,y:d,width:f,height:u,rx:"8",fill:`url(#${g}f)`,filter:`url(#${g}shadow)`}),l.jsx("foreignObject",{x:"58",y:"20",width:"92",height:"34",children:l.jsxs("div",{className:"bar3d-label",children:[Wl(i,i<10&&i>0?1:0),"%"]})}),n&&l.jsx("text",{x:"105",y:"225",textAnchor:"middle",fontSize:"13",fontWeight:"800",fill:"#0f172a",children:n})]})}function LU({name:e,deliveryPct:t,installationPct:n}){const r=Math.max(0,Number(t||0)-Number(n||0));return l.jsxs("div",{className:"dual-bar-card",children:[l.jsxs("div",{className:`gap-callout ${r>25?"danger":r>10?"warn":""}`,children:[l.jsx("span",{children:"Gap"}),l.jsxs("strong",{children:[Wl(r,1),"%"]})]}),l.jsx("div",{className:"gap-connector"}),l.jsxs("div",{className:"dual-bars",children:[l.jsx("div",{children:l.jsx(dA,{value:t,color:"#2563eb",label:"Delivered",height:208})}),l.jsx("div",{children:l.jsx(dA,{value:n,color:"#22c55e",label:"Installed",height:208})})]}),l.jsx("div",{className:"dual-name",children:e})]})}function FU({item:e,value:t}){const n=Math.max(0,Math.min(100,Number(t||0))),r=Math.max(n>0?10:3,n/100*118);return l.jsxs("div",{className:"completion-vertical-item",title:`${e}: ${Wl(n,n<10&&n>0?1:0)}%`,children:[l.jsxs("div",{className:"completion-vertical-pct",children:[Wl(n,n<10&&n>0?1:0),"%"]}),l.jsxs("div",{className:"completion-vertical-stage",children:[l.jsx("div",{className:"completion-grid-line l1"}),l.jsx("div",{className:"completion-grid-line l2"}),l.jsx("div",{className:"completion-grid-line l3"}),l.jsxs("div",{className:"completion-vertical-bar",style:{height:`${r}px`},children:[l.jsx("span",{className:"completion-front"}),l.jsx("span",{className:"completion-side-face"}),l.jsx("span",{className:"completion-top-face"})]})]}),l.jsx("div",{className:"completion-vertical-name",children:e})]})}function fA({title:e,subtitle:t,right:n,children:r,className:i=""}){return l.jsxs("section",{className:`dash-section ${i}`,children:[l.jsxs("div",{className:"dash-section-head",children:[l.jsxs("div",{children:[l.jsx("h3",{children:e}),t&&l.jsx("p",{children:t})]}),n&&l.jsx("div",{children:n})]}),r]})}function WU(){const{user:e}=cr(),[t,n]=p.useState([]),[r,i]=p.useState([]),[a,o]=p.useState("all"),[s,c]=p.useState(null),[u,d]=p.useState([]),[f,h]=p.useState([]),[m,g]=p.useState(!1);p.useEffect(()=>{Promise.all([Be.getProjects().catch(()=>[]),Be.getItems().catch(()=>[])]).then(([_,$])=>{n(_||[]),i($||[])})},[]);const x=p.useCallback(async _=>{g(!0);try{const[$,O,A]=await Promise.all([Be.getDashboardKpis(_),Be.getInstallationProgress(_),Be.getDeliveryProgress(_)]);c($||{}),d(O||[]),h(A||[])}catch($){console.warn("Dashboard loading failed",$)}finally{g(!1)}},[]);p.useEffect(()=>{x(a)},[a,x]);const y=_=>[_.project_name_en,_.project_name_ar].filter(Boolean).join(" / ")||_.project_name||`Project ${_.id}`,b=p.useMemo(()=>{const _=new Map;return r.forEach($=>{const O={code:$.item_code,name:$.item_name,leaf:$.classification_name||"Uncategorized",parent:$.parent_classification_name||$.grandparent_classification_name||"",unit:$.unit_code||$.unit_of_measure||""};$.item_code&&_.set(`code:${Xd($.item_code)}`,O),$.item_name&&_.set(`name:${Xd($.item_name)}`,O)}),_},[r]),v=p.useMemo(()=>{const _=new Map,$=O=>{const A=Xd(O.item_code||O.item_name);if(!_.has(A)){const E=b.get(`code:${Xd(O.item_code)}`)||b.get(`name:${Xd(O.item_name)}`)||{};_.set(A,{key:A,item_code:O.item_code,item_name:O.item_name||E.name||"Unnamed item",classification:E.leaf||"Uncategorized",parent:E.parent||"",planned_qty:0,delivered_qty:0,installed_qty:0})}return _.get(A)};return f.forEach(O=>{const A=$(O);A.planned_qty=Math.max(Number(A.planned_qty||0),Number(O.planned_qty||0)),A.delivered_qty+=Number(O.delivered_qty||0)}),u.forEach(O=>{const A=$(O);A.planned_qty=Math.max(Number(A.planned_qty||0),Number(O.planned_qty||0)),A.installed_qty+=Number(O.installed_qty||0)}),Array.from(_.values()).map(O=>({...O,delivery_pct:Jr(O.delivered_qty,O.planned_qty),installation_pct:Jr(O.installed_qty,O.planned_qty),remaining_qty:Math.max(0,Number(O.planned_qty||0)-Number(O.installed_qty||0)),gap_pct:Math.max(0,Jr(O.delivered_qty,O.planned_qty)-Jr(O.installed_qty,O.planned_qty))})).sort((O,A)=>A.planned_qty-O.planned_qty)},[f,u,b]),S=p.useMemo(()=>{const _=new Map;return v.forEach($=>{const O=$.classification||$.parent||"Uncategorized";_.has(O)||_.set(O,{name:O,parent:$.parent,planned:0,delivered:0,installed:0,items:[]});const A=_.get(O);A.planned+=Number($.planned_qty||0),A.delivered+=Number($.delivered_qty||0),A.installed+=Number($.installed_qty||0),A.items.push($)}),Array.from(_.values()).map($=>({...$,delivery_pct:Jr($.delivered,$.planned),installation_pct:Jr($.installed,$.planned),gap_pct:Math.max(0,Jr($.delivered,$.planned)-Jr($.installed,$.planned))})).sort(($,O)=>O.planned-$.planned)},[v]),w=p.useMemo(()=>{const _=Number((s==null?void 0:s.planned_qty)||v.reduce((P,R)=>P+Number(R.planned_qty||0),0)),$=Number((s==null?void 0:s.delivered_qty)||v.reduce((P,R)=>P+Number(R.delivered_qty||0),0)),O=Number((s==null?void 0:s.installed_qty)||v.reduce((P,R)=>P+Number(R.installed_qty||0),0)),A=Number((s==null?void 0:s.delivery_pct)??Jr($,_)),E=Number((s==null?void 0:s.installation_pct)??Jr(O,_)),k=Math.max(0,$-O),z=Math.max(0,_-O),I=$>0?Jr(O,$):0,N=v.filter(P=>P.delivery_pct>P.installation_pct+25||P.delivered_qty>0&&P.installed_qty===0).length;return{planned:_,delivered:$,installed:O,deliveryPct:A,installPct:E,deliveredNotInstalled:k,remainingInstall:z,efficiency:I,delayed:N,weeklyGrowth:0}},[s,v]),C=S.slice(0,5);function j(){const $="\uFEFF"+[["Classification","Item","BOQ","Delivered","Installed","Delivery %","Installation %","Gap %"],...v.map(E=>[E.classification,E.item_name,E.planned_qty,E.delivered_qty,E.installed_qty,E.delivery_pct.toFixed(1),E.installation_pct.toFixed(1),E.gap_pct.toFixed(1)])].map(E=>E.map(k=>`"${String(k??"").replace(/"/g,'""')}"`).join(",")).join(`
 `),O=new Blob([$],{type:"text/csv;charset=utf-8;"}),A=document.createElement("a");A.href=URL.createObjectURL(O),A.download="executive-overview.csv",A.click(),URL.revokeObjectURL(A.href)}return l.jsxs("div",{className:"executive-overview-page",children:[l.jsx("style",{children:HU}),l.jsxs("div",{className:"overview-topbar",children:[l.jsxs("div",{className:"filter-card wide",children:[l.jsx("span",{children:"Project"}),l.jsxs("select",{value:a,onChange:_=>o(_.target.value),children:[l.jsx("option",{value:"all",children:"All Projects"}),t.map(_=>l.jsx("option",{value:_.id,children:y(_)},_.id))]})]}),l.jsx("button",{className:"top-action",onClick:()=>x(a),title:"Refresh",children:l.jsx(VS,{type:"refresh"})}),l.jsxs("button",{className:"top-action export",onClick:j,children:[l.jsx(VS,{type:"export"})," Export"]}),m&&l.jsx("div",{className:"loading-dot",children:"Loading..."})]}),l.jsxs("div",{className:"kpi-grid",children:[l.jsx(za,{primary:!0,label:"Total BOQ",value:w.planned,icon:"boq",percent:100,trend:0,color:"#2563eb"}),l.jsx(za,{label:"Total Delivered",value:w.delivered,icon:"truck",percent:w.deliveryPct,trend:0,color:"#2563eb"}),l.jsx(za,{label:"Total Installed",value:w.installed,icon:"install",percent:w.installPct,trend:0,color:"#22c55e"}),l.jsx(za,{label:"Delivery %",value:w.deliveryPct,suffix:"%",icon:"trend",percent:w.deliveryPct,trend:0,color:"#2563eb"}),l.jsx(za,{label:"Installation %",value:w.installPct,suffix:"%",icon:"speed",percent:w.installPct,trend:0,color:"#22c55e"}),l.jsx(za,{label:"Delivered Not Installed",value:w.deliveredNotInstalled,icon:"box",percent:Jr(w.deliveredNotInstalled,w.planned),trend:0,color:"#2563eb"}),l.jsx(za,{label:"Remaining Installation",value:w.remainingInstall,icon:"hour",percent:Jr(w.remainingInstall,w.planned),trend:0,color:"#22c55e"}),l.jsx(za,{label:"Weekly Growth %",value:w.weeklyGrowth,suffix:"%",icon:"trend",percent:w.weeklyGrowth,trend:0,color:"#22c55e"}),l.jsx(za,{label:"Installation Efficiency %",value:w.efficiency,suffix:"%",icon:"speed",percent:w.efficiency,trend:0,color:"#22c55e"}),l.jsx(za,{label:"Delayed Items Count",value:w.delayed,icon:"delay",percent:Jr(w.delayed,Math.max(1,v.length)),trend:0,color:"#2563eb"})]}),l.jsxs("div",{className:"overview-main-grid",children:[l.jsxs(fA,{title:"Delivery vs Installation Performance",subtitle:"Comparison of delivered vs installed items with gap analysis",right:l.jsxs("span",{className:"efficiency-chip",children:["Overall Efficiency: ",Wl(w.efficiency,1),"%"]}),children:[l.jsx("div",{className:"dual-bars-grid",children:(C.length?C:[{name:"No Data",delivery_pct:0,installation_pct:0}]).map(_=>l.jsx(LU,{name:_.name,deliveryPct:_.delivery_pct,installationPct:_.installation_pct},_.name))}),l.jsxs("div",{className:"insight-note",children:[l.jsx("strong",{children:"Gap analysis:"})," High delivery with low installation indicates pending installation backlog."]})]}),l.jsx(fA,{title:"Overall Installation Completion",subtitle:"Installation completion percentage by system and item",children:l.jsx("div",{className:"completion-classes-grid",children:(S.length?S:[{name:"No Data",items:[]}]).slice(0,8).map(_=>{var $;return l.jsxs("div",{className:"completion-class-card",children:[l.jsxs("div",{className:"class-title",children:[l.jsx("span",{className:"class-icon",children:"▣"}),l.jsxs("div",{children:[l.jsx("strong",{children:_.name}),_.parent&&l.jsx("small",{children:_.parent})]})]}),l.jsx("div",{className:"class-items-scroll",children:(($=_.items)!=null&&$.length?_.items:[{item_name:"No items",installation_pct:0}]).slice(0,12).map((O,A)=>l.jsx(FU,{item:O.item_name,value:O.installation_pct||0},`${_.name}-${O.item_code||O.item_name}-${A}`))})]},_.name)})})})]}),l.jsxs("div",{className:"footer-note",children:[l.jsxs("span",{children:["◷ Last updated: ",new Date().toLocaleString()]}),l.jsx("span",{children:"ⓘ All percentage values are based on total BOQ quantities."})]})]})}const HU=`
 .executive-overview-page{
