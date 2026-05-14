@@ -176,14 +176,24 @@ Error generating stack: `+r.message+`
 
 .cpms-sidebar-orange .cpms-section-label,
 .cpms-sidebar-orange .nav-section-label {
-  margin: 20px 12px 8px;
-  padding-top: 2px;
-  color: var(--sb-label) !important;
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  opacity: 1;
+  margin: 18px 12px 9px !important;
+  padding: 0 0 0 2px !important;
+  min-height: 16px !important;
+  height: auto !important;
+  line-height: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  color: #8b95a6 !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: .16em !important;
+  text-transform: uppercase !important;
+  opacity: 1 !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+  position: relative !important;
+  z-index: 2 !important;
+  background: #ffffff !important;
 }
 
 .cpms-sidebar-orange .cpms-section-label:first-child,
