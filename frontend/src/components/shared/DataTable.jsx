@@ -67,7 +67,7 @@ function AdvancedFilter({ open, onClose, fields, values, onChange, onApply, onCl
     <>
       <div className="adv-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
         <div className="adv-modal">
-          <div style={{ background:'linear-gradient(135deg,#6d28d9 0%,#7c3aed 100%)', padding:'18px 24px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
+          <div style={{ background:'linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%)', padding:'18px 24px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
             <div style={{ display:'flex', flexDirection:'column', gap:3 }}>
               <span style={{ fontSize:11, color:'rgba(255,255,255,0.65)', textTransform:'uppercase', letterSpacing:'0.08em', fontWeight:500 }}>Definitions › Filter</span>
               <span style={{ fontSize:17, fontWeight:700, color:'#fff', letterSpacing:'-0.01em' }}>Advanced Search</span>

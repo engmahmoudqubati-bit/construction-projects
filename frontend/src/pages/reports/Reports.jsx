@@ -5,22 +5,30 @@ import t from '../../lang';
 
 const fmt2 = v => (parseFloat(v)||0).toFixed(2);
 const fmtPct = v => `${(parseFloat(v)||0).toFixed(1)}%`;
-const pctColor = p => p >= 100 ? '#16a34a' : p >= 60 ? '#7c3aed' : p >= 30 ? '#f59e0b' : '#dc2626';
-const pctBg    = p => p >= 100 ? '#f0fdf4' : p >= 60 ? '#f5f3ff' : p >= 30 ? '#fffbeb' : '#fef2f2';
+const pctColor = p => p >= 100 ? '#22c55e' : p >= 60 ? '#22c55e' : p >= 30 ? '#22c55e' : '#22c55e';
+const pctBg    = p => p >= 100 ? '#ecfdf5' : p >= 60 ? '#ecfdf5' : p >= 30 ? '#ecfdf5' : '#ecfdf5';
 
 // ── Shared styles ──────────────────────────────────────────────────────────
-const thS = { background:'#f0f7ff', color:'#111827', fontWeight:700, fontSize:11,
-  padding:'10px 12px', borderBottom:'1px solid #e0ecff', textAlign:'left',
-  whiteSpace:'nowrap', letterSpacing:'0.02em' };
-const tdS = { padding:'10px 12px', fontSize:12, color:'#374151', verticalAlign:'middle' };
-const fSel = { background:'var(--card)', border:'2px solid #7c3aed', borderRadius:10,
-  padding:'8px 14px', fontSize:13, fontWeight:600, color:'var(--text)',
-  cursor:'pointer', fontFamily:'inherit', outline:'none', height:40, minWidth:280 };
+const DESIGN = {
+  blue:'#2563eb', blueDark:'#1d4ed8', navy:'#0f172a', text:'#111827', muted:'#64748b',
+  green:'#22c55e', line:'#e2e8f0', soft:'#f8fafc', panel:'#ffffff'
+};
+
+const thS = { background:'#f8fafc', color:'#0f172a', fontWeight:800, fontSize:11,
+  padding:'12px 14px', borderBottom:'1px solid #e2e8f0', borderRight:'1px solid #edf2f7', textAlign:'left',
+  whiteSpace:'nowrap', letterSpacing:'0.04em', textTransform:'uppercase' };
+const tdS = { padding:'11px 14px', fontSize:12, color:'#111827', verticalAlign:'middle', borderBottom:'1px solid #eef2f7', background:'#fff' };
+const fSel = { background:'#fff', border:'1px solid #cfe0ff', borderRadius:10,
+  padding:'8px 14px', fontSize:13, fontWeight:600, color:'#0f172a',
+  cursor:'pointer', fontFamily:'inherit', outline:'none', height:40, minWidth:280, boxShadow:'0 1px 2px rgba(15,23,42,.03)' };
+const panelStyle = { background:'#fff', border:'1px solid #dbeafe', borderRadius:16, padding:16, boxShadow:'0 10px 26px rgba(15,23,42,.06)' };
+const tableWrapStyle = { background:'#fff', border:'1px solid #dbeafe', borderRadius:16, overflow:'hidden', boxShadow:'0 12px 30px rgba(15,23,42,.06)' };
+const filterLabelStyle = { fontSize:11, fontWeight:800, textTransform:'uppercase', letterSpacing:'0.06em', color:'#334155' };
 
 // ── Progress bar cell ──────────────────────────────────────────────────────
 function PctCell({ pct }) {
   const p = parseFloat(pct||0);
-  const color = pctColor(p);
+  const color = DESIGN.green;
   return (
     <td style={{ ...tdS, minWidth:120 }}>
       <div style={{ display:'flex', alignItems:'center', gap:6 }}>
@@ -34,15 +42,22 @@ function PctCell({ pct }) {
 }
 
 // ── KPI card ───────────────────────────────────────────────────────────────
-function KPICard({ label, value, icon, color='#7c3aed', bg='#f5f3ff', sub }) {
+function KPICard({ label, value, icon, color=DESIGN.blue, bg='#eff6ff', sub }) {
+  const isPercent = String(value || '').includes('%');
   return (
-    <div style={{ flex:'1 1 130px', background:bg, border:`1px solid ${color}22`, borderRadius:12,
-      padding:'12px 16px', borderLeft:`3px solid ${color}` }}>
-      <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', color, marginBottom:4 }}>
-        {icon} {label}
+    <div style={{ flex:'1 1 170px', background:'#fff', border:'1px solid #e2e8f0', borderRadius:16,
+      padding:'16px 18px', boxShadow:'0 14px 30px rgba(15,23,42,.07)', minHeight:104, position:'relative', overflow:'hidden' }}>
+      <div style={{ position:'absolute', right:-20, top:-20, width:82, height:82, borderRadius:'50%', background:bg, opacity:.85 }} />
+      <div style={{ display:'flex', alignItems:'center', gap:12, position:'relative' }}>
+        <div style={{ width:42, height:42, borderRadius:12, background:bg, color, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>
+          {icon}
+        </div>
+        <div style={{ minWidth:0 }}>
+          <div style={{ fontSize:12, fontWeight:800, color:'#475569', marginBottom:5 }}>{label}</div>
+          <div style={{ fontSize:24, fontWeight:900, color:isPercent?DESIGN.green:DESIGN.navy, lineHeight:1 }}>{value}</div>
+          {sub && <div style={{ fontSize:11, color:'#94a3b8', marginTop:6 }}>{sub}</div>}
+        </div>
       </div>
-      <div style={{ fontSize:20, fontWeight:700, color:'#111827' }}>{value}</div>
-      {sub && <div style={{ fontSize:11, color:'#9ca3af', marginTop:2 }}>{sub}</div>}
     </div>
   );
 }
@@ -53,10 +68,10 @@ function SmartInsights({ data, type }) {
   const insights = useMemo(() => generateInsights(data, type), [data, type]);
   if (!data?.length) return null;
   return (
-    <div style={{ marginTop:16, border:'1.5px solid #7c3aed', borderRadius:12, overflow:'hidden' }}>
+    <div style={{ marginTop:16, border:'1px solid #bfdbfe', borderRadius:12, overflow:'hidden' }}>
       <button onClick={() => setOpen(o=>!o)} style={{
         width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
-        background:'linear-gradient(135deg,#6d28d9,#7c3aed)', border:'none', padding:'12px 18px',
+        background:'linear-gradient(135deg,#0f172a,#2563eb)', border:'none', padding:'12px 18px',
         cursor:'pointer', fontFamily:'inherit',
       }}>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -76,7 +91,7 @@ function SmartInsights({ data, type }) {
               warn:   { bg:'#fffbeb', border:'#fde68a', color:'#d97706', icon:'⚠️' },
               bad:    { bg:'#fef2f2', border:'#fecaca', color:'#dc2626', icon:'🔴' },
               info:   { bg:'#eff6ff', border:'#bfdbfe', color:'#2563eb', icon:'ℹ️' },
-              action: { bg:'#f5f3ff', border:'#ddd6fe', color:'#7c3aed', icon:'🎯' },
+              action: { bg:'#eff6ff', border:'#bfdbfe', color:DESIGN.blue, icon:'🎯' },
             }[ins.type] || { bg:'#f9fafb', border:'#e5e7eb', color:'#6b7280', icon:'➡️' };
             return (
               <div key={i} style={{ background:cfg.bg, border:`1px solid ${cfg.border}`,
@@ -160,7 +175,7 @@ function generateInsights(data, type) {
 // ── Search bar (inline — no sub-component to avoid focus loss) ─────────────
 const searchStyle = {
   display:'flex', alignItems:'center', background:'var(--card)',
-  border:'2px solid #7c3aed', borderRadius:10, height:40, paddingLeft:12, maxWidth:380,
+  border:'1px solid #cfe0ff', borderRadius:10, height:40, paddingLeft:12, maxWidth:380,
 };
 
 // ── Tab 1: Progress Report ─────────────────────────────────────────────────
@@ -204,7 +219,7 @@ function ProgressReport({ projects }) {
     <div>
       <div style={{ display:'flex', gap:12, marginBottom:16, flexWrap:'wrap', alignItems:'flex-end' }}>
         <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>🏗️ Project</label>
+          <label style={{ ...filterLabelStyle }}>🏗️ Project</label>
           <select value={projectId} onChange={e => { setProjectId(e.target.value); setSearch(''); }} style={fSel}>
             <option value="">— Select Project —</option>
             {projects.map(p => <option key={p.id} value={p.id}>{projectLabel(p)}</option>)}
@@ -212,7 +227,7 @@ function ProgressReport({ projects }) {
         </div>
         {data.length > 0 && (
           <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-            <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>🔍 Search</label>
+            <label style={{ ...filterLabelStyle }}>🔍 Search</label>
             <div style={searchStyle}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input style={{ border:'none', outline:'none', fontSize:13, color:'var(--text)', background:'none', width:'100%', padding:'0 10px', fontFamily:'inherit' }}
@@ -235,7 +250,7 @@ function ProgressReport({ projects }) {
             <KPICard label="Install %" value={fmtPct(avgInstPct)} icon="🔧" color={pctColor(avgInstPct)} bg={pctBg(avgInstPct)} sub={`${fmt2(totalInstalled)} / ${fmt2(totalPlanned)}`} />
           </div>
 
-          <div style={{ background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:14, overflow:'hidden' }}>
+          <div style={{ ...tableWrapStyle }}>
             <div style={{ overflowX:'auto' }}>
               <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
                 <thead>
@@ -253,7 +268,7 @@ function ProgressReport({ projects }) {
                 </thead>
                 <tbody>
                   {filtered.map((r, i) => (
-                    <tr key={i} style={{ borderBottom:'1px solid #f3f4f6', background:i%2===0?'#fafbff':'#fff' }}>
+                    <tr key={i} style={{ borderBottom:'1px solid #f3f4f6', background:'#fff' }}>
                       <td style={{ ...tdS, fontFamily:'monospace', fontSize:11, color:'#6b7280' }}>{r.item_code}</td>
                       <td style={{ ...tdS, fontWeight:600 }}>{r.item_name}</td>
                       <td style={{ ...tdS, fontSize:11, color:'#9ca3af' }}>{[r.parent_classification_name,r.classification_name].filter(Boolean).join(' › ')}</td>
@@ -261,7 +276,7 @@ function ProgressReport({ projects }) {
                       <td style={{ ...tdS, textAlign:'right', fontWeight:600 }}>{fmt2(r.planned_qty)}</td>
                       <td style={{ ...tdS, textAlign:'right', color:'#0369a1', fontWeight:600 }}>{fmt2(r.total_delivered)}</td>
                       <PctCell pct={r.delivery_pct} />
-                      <td style={{ ...tdS, textAlign:'right', color:'#7c3aed', fontWeight:600 }}>{fmt2(r.total_installed)}</td>
+                      <td style={{ ...tdS, textAlign:'right', color:DESIGN.blue, fontWeight:600 }}>{fmt2(r.total_installed)}</td>
                       <PctCell pct={r.install_pct} />
                     </tr>
                   ))}
@@ -272,7 +287,7 @@ function ProgressReport({ projects }) {
                     <td style={{ ...tdS, textAlign:'right', fontWeight:700 }}>{fmt2(totalPlanned)}</td>
                     <td style={{ ...tdS, textAlign:'right', fontWeight:700, color:'#0369a1' }}>{fmt2(totalDelivered)}</td>
                     <td style={{ ...tdS }}><span style={{ fontWeight:700, color:pctColor(avgDelPct) }}>{fmtPct(avgDelPct)}</span></td>
-                    <td style={{ ...tdS, textAlign:'right', fontWeight:700, color:'#7c3aed' }}>{fmt2(totalInstalled)}</td>
+                    <td style={{ ...tdS, textAlign:'right', fontWeight:700, color:DESIGN.blue }}>{fmt2(totalInstalled)}</td>
                     <td style={{ ...tdS }}><span style={{ fontWeight:700, color:pctColor(avgInstPct) }}>{fmtPct(avgInstPct)}</span></td>
                   </tr>
                 </tfoot>
@@ -322,7 +337,7 @@ function ProjectsSummaryReport() {
         <>
           <div style={{ display:'flex', gap:12, marginBottom:16, flexWrap:'wrap', alignItems:'flex-end' }}>
             <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-              <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>🔍 Search</label>
+              <label style={{ ...filterLabelStyle }}>🔍 Search</label>
               <div style={searchStyle}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input style={{ border:'none', outline:'none', fontSize:13, color:'var(--text)', background:'none', width:'100%', padding:'0 10px', fontFamily:'inherit' }}
@@ -339,7 +354,7 @@ function ProjectsSummaryReport() {
             <KPICard label="Total Installed" value={fmt2(totalInstalled)} icon="🔧" color={pctColor(avgInstPct)} bg={pctBg(avgInstPct)} sub={fmtPct(avgInstPct)+' overall'} />
           </div>
 
-          <div style={{ background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:14, overflow:'hidden' }}>
+          <div style={{ ...tableWrapStyle }}>
             <div style={{ overflowX:'auto' }}>
               <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
                 <thead>
@@ -355,7 +370,7 @@ function ProjectsSummaryReport() {
                 </thead>
                 <tbody>
                   {filtered.map((r,i) => (
-                    <tr key={r.id} style={{ borderBottom:'1px solid #f3f4f6', background:i%2===0?'#fafbff':'#fff' }}>
+                    <tr key={r.id} style={{ borderBottom:'1px solid #f3f4f6', background:'#fff' }}>
                       <td style={{ ...tdS, fontFamily:'monospace', fontSize:11, color:'#6b7280' }}>{r.project_code}</td>
                       <td style={{ ...tdS, fontWeight:600 }}>
                         <div>{r.project_name_en}</div>
@@ -368,7 +383,7 @@ function ProjectsSummaryReport() {
                       </td>
                       <td style={{ ...tdS, textAlign:'right', fontWeight:600 }}>{fmt2(r.planned_qty)}</td>
                       <td style={{ ...tdS, textAlign:'right', color:'#0369a1', fontWeight:600 }}>{fmt2(r.delivered_qty)}</td>
-                      <td style={{ ...tdS, textAlign:'right', color:'#7c3aed', fontWeight:600 }}>{fmt2(r.installed_qty)}</td>
+                      <td style={{ ...tdS, textAlign:'right', color:DESIGN.blue, fontWeight:600 }}>{fmt2(r.installed_qty)}</td>
                       <PctCell pct={r.install_pct} />
                     </tr>
                   ))}
@@ -378,7 +393,7 @@ function ProjectsSummaryReport() {
                     <td colSpan={3} style={{ ...tdS, fontWeight:700 }}>TOTAL</td>
                     <td style={{ ...tdS, textAlign:'right', fontWeight:700 }}>{fmt2(totalPlanned)}</td>
                     <td style={{ ...tdS, textAlign:'right', fontWeight:700, color:'#0369a1' }}>{fmt2(totalDelivered)}</td>
-                    <td style={{ ...tdS, textAlign:'right', fontWeight:700, color:'#7c3aed' }}>{fmt2(totalInstalled)}</td>
+                    <td style={{ ...tdS, textAlign:'right', fontWeight:700, color:DESIGN.blue }}>{fmt2(totalInstalled)}</td>
                     <td style={tdS}><span style={{ fontWeight:700, color:pctColor(avgInstPct) }}>{fmtPct(avgInstPct)}</span></td>
                   </tr>
                 </tfoot>
@@ -427,14 +442,14 @@ function ItemTrackingReport({ projects, items }) {
     <div>
       <div style={{ display:'flex', gap:12, marginBottom:16, flexWrap:'wrap', alignItems:'flex-end' }}>
         <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>🏗️ Project</label>
+          <label style={{ ...filterLabelStyle }}>🏗️ Project</label>
           <select value={projectId} onChange={e => setProjectId(e.target.value)} style={{ ...fSel, minWidth:240 }}>
             <option value="">All Projects</option>
             {projects.map(p => <option key={p.id} value={p.id}>{projectLabel(p)}</option>)}
           </select>
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>📦 Item</label>
+          <label style={{ ...filterLabelStyle }}>📦 Item</label>
           <select value={itemId} onChange={e => setItemId(e.target.value)} style={{ ...fSel, minWidth:220 }}>
             <option value="">All Items</option>
             {items.map(i => <option key={i.id} value={i.id}>{i.item_name}</option>)}
@@ -442,7 +457,7 @@ function ItemTrackingReport({ projects, items }) {
         </div>
         {data.length > 0 && (
           <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-            <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>🔍 Search</label>
+            <label style={{ ...filterLabelStyle }}>🔍 Search</label>
             <div style={searchStyle}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input style={{ border:'none', outline:'none', fontSize:13, color:'var(--text)', background:'none', width:'100%', padding:'0 10px', fontFamily:'inherit' }}
@@ -462,7 +477,7 @@ function ItemTrackingReport({ projects, items }) {
             <KPICard label="Complete" value={filtered.filter(r=>parseFloat(r.install_pct||0)>=100).length} icon="✅" color="#16a34a" bg="#f0fdf4" />
             <KPICard label="Not Started" value={filtered.filter(r=>parseFloat(r.total_installed||0)===0).length} icon="⏳" color="#f59e0b" bg="#fffbeb" />
           </div>
-          <div style={{ background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:14, overflow:'hidden' }}>
+          <div style={{ ...tableWrapStyle }}>
             <div style={{ overflowX:'auto' }}>
               <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
                 <thead>
@@ -479,14 +494,14 @@ function ItemTrackingReport({ projects, items }) {
                 </thead>
                 <tbody>
                   {filtered.map((r,i) => (
-                    <tr key={i} style={{ borderBottom:'1px solid #f3f4f6', background:i%2===0?'#fafbff':'#fff' }}>
+                    <tr key={i} style={{ borderBottom:'1px solid #f3f4f6', background:'#fff' }}>
                       <td style={{ ...tdS, fontSize:11, color:'#6b7280' }}>{r.project_name_en||r.project_code}</td>
                       <td style={{ ...tdS, fontFamily:'monospace', fontSize:11, color:'#6b7280' }}>{r.item_code}</td>
                       <td style={{ ...tdS, fontWeight:600 }}>{r.item_name}</td>
                       <td style={{ ...tdS, color:'#6b7280' }}>{r.unit_of_measure||'—'}</td>
                       <td style={{ ...tdS, textAlign:'right', fontWeight:600 }}>{fmt2(r.planned_qty)}</td>
                       <td style={{ ...tdS, textAlign:'right', color:'#0369a1', fontWeight:600 }}>{fmt2(r.total_delivered)}</td>
-                      <td style={{ ...tdS, textAlign:'right', color:'#7c3aed', fontWeight:600 }}>{fmt2(r.total_installed)}</td>
+                      <td style={{ ...tdS, textAlign:'right', color:DESIGN.blue, fontWeight:600 }}>{fmt2(r.total_installed)}</td>
                       <PctCell pct={r.install_pct} />
                     </tr>
                   ))}
@@ -544,13 +559,13 @@ function ItemLogsReport({ projects }) {
 
   const STATUS_CFG = {
     incomplete: { bg:'#fff7ed', color:'#ea580c', border:'#fed7aa', label:'Incomplete' },
-    saved:      { bg:'#f5f3ff', color:'#7c3aed', border:'#ddd6fe', label:'Saved'      },
+    saved:      { bg:'#eff6ff', color:DESIGN.blue, border:'#bfdbfe', label:'Saved'      },
     no_entry:   { bg:'#f3f4f6', color:'#6b7280', border:'#e5e7eb', label:'No Entry'   },
   };
   const PROCESS_CFG = {
     planning:     { icon:'📋', color:'#2563eb', bg:'#eff6ff', label:'Planning'     },
     delivery:     { icon:'🚚', color:'#0369a1', bg:'#e0f2fe', label:'Delivery'     },
-    installation: { icon:'🔧', color:'#7c3aed', bg:'#f5f3ff', label:'Installation' },
+    installation: { icon:'🔧', color:DESIGN.blue, bg:'#eff6ff', label:'Installation' },
     no_entry:     { icon:'⭕', color:'#6b7280', bg:'#f3f4f6', label:'No Entry'     },
   };
 
@@ -592,14 +607,14 @@ function ItemLogsReport({ projects }) {
       {/* Filters */}
       <div style={{ display:'flex', gap:12, marginBottom:16, flexWrap:'wrap', alignItems:'flex-end' }}>
         <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>🏗️ Project</label>
+          <label style={{ ...filterLabelStyle }}>🏗️ Project</label>
           <select value={projectId} onChange={e => setProjectId(e.target.value)} style={fSel}>
             <option value="">— Select Project —</option>
             {projects.map(p => <option key={p.id} value={p.id}>{projectLabel(p)}</option>)}
           </select>
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>⚙️ Process</label>
+          <label style={{ ...filterLabelStyle }}>⚙️ Process</label>
           <select value={process} onChange={e => setProcess(e.target.value)}
             style={{ ...fSel, minWidth:160 }}>
             <option value="">All Processes</option>
@@ -610,7 +625,7 @@ function ItemLogsReport({ projects }) {
           </select>
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>📋 Status</label>
+          <label style={{ ...filterLabelStyle }}>📋 Status</label>
           <select value={status} onChange={e => setStatus(e.target.value)}
             style={{ ...fSel, minWidth:160 }}>
             <option value="">All Statuses</option>
@@ -620,18 +635,18 @@ function ItemLogsReport({ projects }) {
           </select>
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>📅 From</label>
+          <label style={{ ...filterLabelStyle }}>📅 From</label>
           <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
             style={{ ...fSel, minWidth:150, cursor:'default', fontWeight:400 }} />
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>📅 To</label>
+          <label style={{ ...filterLabelStyle }}>📅 To</label>
           <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
             style={{ ...fSel, minWidth:150, cursor:'default', fontWeight:400 }} />
         </div>
         {data.length > 0 && (
           <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-            <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>🔍 Search</label>
+            <label style={{ ...filterLabelStyle }}>🔍 Search</label>
             <div style={searchStyle}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input style={{ border:'none', outline:'none', fontSize:13, color:'var(--text)', background:'none', width:'100%', padding:'0 10px', fontFamily:'inherit' }}
@@ -659,7 +674,7 @@ function ItemLogsReport({ projects }) {
             {counts.installation > 0   && <KPICard label="Installation" value={counts.installation} icon="🔧" color="#7c3aed" bg="#f5f3ff" />}
           </div>
 
-          <div style={{ background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:14, overflow:'hidden' }}>
+          <div style={{ ...tableWrapStyle }}>
             <div style={{ overflowX:'auto' }}>
               <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
                 <thead>
@@ -676,7 +691,7 @@ function ItemLogsReport({ projects }) {
                 </thead>
                 <tbody>
                   {filtered.map((r, i) => (
-                    <tr key={i} style={{ borderBottom:'1px solid #f3f4f6', background:i%2===0?'#fafbff':'#fff' }}>
+                    <tr key={i} style={{ borderBottom:'1px solid #f3f4f6', background:'#fff' }}>
                       <td style={{ ...tdS, whiteSpace:'nowrap', color:'#374151', fontWeight:500 }}>
                         {r.event_date ? r.event_date.slice(0,10) : <span style={{ color:'#d1d5db' }}>—</span>}
                       </td>
@@ -701,8 +716,8 @@ function ItemLogsReport({ projects }) {
           </div>
 
           {/* Action Required */}
-          <div style={{ marginTop:14, background:'#f5f3ff', border:'1px solid #ddd6fe', borderRadius:10, padding:'12px 16px' }}>
-            <div style={{ fontSize:11, fontWeight:700, color:'#7c3aed', marginBottom:8, textTransform:'uppercase', letterSpacing:'0.07em' }}>🎯 Action Required</div>
+          <div style={{ marginTop:14, background:'#eff6ff', border:'1px solid #ddd6fe', borderRadius:10, padding:'12px 16px' }}>
+            <div style={{ fontSize:11, fontWeight:700, color:DESIGN.blue, marginBottom:8, textTransform:'uppercase', letterSpacing:'0.07em' }}>🎯 Action Required</div>
             <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
               {counts.incomplete > 0 && (
                 <div style={{ fontSize:12, color:'#374151', display:'flex', gap:8, alignItems:'flex-start' }}>
@@ -757,31 +772,34 @@ export default function Reports() {
   }, []);
 
   return (
-    <div>
-      {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:24 }}>
-        <div style={{ width:48, height:48, borderRadius:14, background:'#ede9fe', display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <span style={{ fontSize:24 }}>📊</span>
+    <div style={{ marginTop:-10, paddingBottom:24 }}>
+      <div style={{ background:'linear-gradient(180deg,#fff,#f8fbff)', border:'1px solid #dbeafe', borderRadius:18,
+        padding:'16px 18px', boxShadow:'0 12px 30px rgba(15,23,42,.06)', display:'flex', alignItems:'center', gap:14, marginBottom:18 }}>
+        <div style={{ width:46, height:46, borderRadius:14, background:'linear-gradient(135deg,#2563eb,#3b82f6)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 10px 22px rgba(37,99,235,.25)' }}>
+          <span style={{ fontSize:22 }}>📊</span>
         </div>
-        <div>
-          <h1 style={{ fontSize:20, fontWeight:700, color:'var(--text)', margin:0 }}>Reports</h1>
-          <p style={{ fontSize:12, color:'#9ca3af', margin:'4px 0 0 0' }}>
-            Project progress, delivery and installation analytics with smart insights
+        <div style={{ flex:1 }}>
+          <h1 style={{ fontSize:20, fontWeight:900, color:'#0f172a', margin:0 }}>Reports</h1>
+          <p style={{ fontSize:12, color:'#64748b', margin:'5px 0 0 0' }}>
+            Progress, summary, tracking and logs with consistent project monitoring analytics.
           </p>
         </div>
       </div>
 
-      {/* Tab bar */}
-      <div style={{ display:'flex', gap:0, marginBottom:20, borderBottom:'2px solid #ede9fe' }}>
-        {TABS.map(tb => (
-          <button key={tb.key} onClick={() => setTab(tb.key)} style={{
-            padding:'10px 24px', fontSize:13, fontWeight:600, cursor:'pointer',
-            background:'none', border:'none', fontFamily:'inherit',
-            color: tab===tb.key?'#7c3aed':'#6b7280',
-            borderBottom: tab===tb.key?'2px solid #7c3aed':'2px solid transparent',
-            marginBottom:-2, transition:'all 0.15s', whiteSpace:'nowrap',
-          }}>{tb.label}</button>
-        ))}
+      <div style={{ display:'flex', gap:10, marginBottom:18, flexWrap:'wrap' }}>
+        {TABS.map(tb => {
+          const active = tab === tb.key;
+          const cleanLabel = tb.label.replace(/^\S+\s+/, '');
+          return (
+            <button key={tb.key} onClick={() => setTab(tb.key)} style={{
+              padding:'11px 18px', fontSize:13, fontWeight:800, cursor:'pointer', borderRadius:12,
+              background:active?'linear-gradient(135deg,#2563eb,#1d4ed8)':'#fff',
+              border:active?'1px solid #1d4ed8':'1px solid #dbeafe', fontFamily:'inherit',
+              color: active?'#fff':'#334155', boxShadow:active?'0 12px 24px rgba(37,99,235,.22)':'0 6px 16px rgba(15,23,42,.04)',
+              transition:'all .15s', whiteSpace:'nowrap'
+            }}>{tb.icon} {cleanLabel}</button>
+          );
+        })}
       </div>
 
       {tab==='progress' && <ProgressReport   projects={projects} />}

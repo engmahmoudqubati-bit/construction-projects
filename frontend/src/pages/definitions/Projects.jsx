@@ -36,14 +36,14 @@ function KpiCards({ projects }) {
   const pct = n => total > 0 ? Math.round((n/total)*100) : 0;
 
   const cards = [
-    { label:'Total Projects', value:total,     sub:'All registered projects', color:'#7c3aed', bg:'#ede9fe', pct:null,
-      icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> },
+    { label:'Total Projects', value:total,     sub:'All registered projects', color:'#2563eb', bg:'#eff6ff', pct:null,
+      icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> },
     { label:'Active Projects', value:active,   sub:'Currently active',        color:'#16a34a', bg:'#dcfce7', pct:pct(active),    pctBg:'#dcfce7',
       icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> },
     { label:'On Hold',         value:onHold,   sub:'Paused projects',         color:'#ea580c', bg:'#fff7ed', pct:pct(onHold),    pctBg:'#fff7ed',
       icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ea580c" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
-    { label:'Completed',       value:completed,sub:'Successfully completed',  color:'#7c3aed', bg:'#ede9fe', pct:pct(completed), pctBg:'#ede9fe',
-      icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> },
+    { label:'Completed',       value:completed,sub:'Successfully completed',  color:'#2563eb', bg:'#eff6ff', pct:pct(completed), pctBg:'#eff6ff',
+      icon:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> },
   ];
 
   return (
@@ -80,7 +80,7 @@ function ProjectViewPanel({ projects, selected, onClose }) {
   if (!items.length) return null;
   const proj = items[Math.min(page, items.length-1)];
   const fmt = val => { if(!val) return '—'; const[y,m,d]=val.slice(0,10).split('-'); return `${d}/${m}/${y}`; };
-  const statusColor = { active:{bg:'#dcfce7',color:'#16a34a'}, completed:{bg:'#ede9fe',color:'#7c3aed'}, on_hold:{bg:'#fff7ed',color:'#ea580c'}, cancelled:{bg:'#fee2e2',color:'#dc2626'} }[proj.status] || { bg:'#f3f4f6', color:'#374151' };
+  const statusColor = { active:{bg:'#dcfce7',color:'#16a34a'}, completed:{bg:'#eff6ff',color:'#2563eb'}, on_hold:{bg:'#fff7ed',color:'#ea580c'}, cancelled:{bg:'#fee2e2',color:'#dc2626'} }[proj.status] || { bg:'#f3f4f6', color:'#374151' };
   const Field = ({label,value}) => (
     <div style={{ marginBottom:18 }}>
       <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', color:'#9ca3af', marginBottom:6 }}>{label}</div>
@@ -92,7 +92,7 @@ function ProjectViewPanel({ projects, selected, onClose }) {
       onClick={e => e.target===e.currentTarget && onClose()}>
       <div style={{ background:'var(--card)', borderRadius:16, boxShadow:'0 24px 60px rgba(0,0,0,0.18)', width:'100%', maxWidth:640, overflow:'hidden' }}
         onClick={e => e.stopPropagation()}>
-        <div style={{ background:'linear-gradient(135deg,#6d28d9 0%,#7c3aed 100%)', padding:'18px 24px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ background:'linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%)', padding:'18px 24px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div>
             <div style={{ fontSize:11, color:'rgba(255,255,255,0.65)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:4 }}>Projects › View Project</div>
             <div style={{ fontSize:16, fontWeight:600, color:'#fff' }}>{proj.project_name_en}</div>
@@ -120,7 +120,7 @@ function ProjectViewPanel({ projects, selected, onClose }) {
             <span style={{ width:6, height:6, borderRadius:'50%', background:statusColor.color }}></span>
             {proj.status?.replace('_',' ')}
           </span>
-          <span style={{ marginLeft:'auto', fontSize:11, color:'#9ca3af' }}>Code: <strong style={{ color:'#7c3aed', background:'#ede9fe', padding:'1px 7px', borderRadius:5, fontFamily:'monospace' }}>{proj.project_code}</strong></span>
+          <span style={{ marginLeft:'auto', fontSize:11, color:'#9ca3af' }}>Code: <strong style={{ color:'#2563eb', background:'#eff6ff', padding:'1px 7px', borderRadius:5, fontFamily:'monospace' }}>{proj.project_code}</strong></span>
         </div>
         <div style={{ padding:'24px', display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 32px' }}>
           <Field label="Project Name (English)" value={proj.project_name_en} />
@@ -219,7 +219,7 @@ export default function Projects() {
       render:r=><div style={{display:'flex',alignItems:'center',gap:5,fontSize:13,color:'#374151',whiteSpace:'nowrap'}}>{calIcon}{fmt(r.end_date)}</div> },
     { key:'status', label:'Status', style:{width:120},
       render:r=>{
-        const s={active:{bg:'#dcfce7',c:'#16a34a',label:'ACTIVE'},completed:{bg:'#ede9fe',c:'#7c3aed',label:'COMPLETED'},on_hold:{bg:'#fff7ed',c:'#ea580c',label:'ON_HOLD'},cancelled:{bg:'#fee2e2',c:'#dc2626',label:'CANCELLED'}}[r.status]||{bg:'#f3f4f6',c:'#6b7280',label:r.status};
+        const s={active:{bg:'#dcfce7',c:'#16a34a',label:'ACTIVE'},completed:{bg:'#eff6ff',c:'#2563eb',label:'COMPLETED'},on_hold:{bg:'#fff7ed',c:'#ea580c',label:'ON_HOLD'},cancelled:{bg:'#fee2e2',c:'#dc2626',label:'CANCELLED'}}[r.status]||{bg:'#f3f4f6',c:'#6b7280',label:r.status};
         return <span style={{display:'inline-flex',alignItems:'center',gap:5,background:s.bg,color:s.c,fontSize:11,fontWeight:700,padding:'5px 12px',borderRadius:20,textTransform:'uppercase',letterSpacing:'0.03em'}}>
           <span style={{width:6,height:6,borderRadius:'50%',background:s.c,flexShrink:0}}></span>{s.label}
         </span>;
@@ -241,8 +241,8 @@ export default function Projects() {
     <div>
       {/* Page header — icon + title + subtitle + all buttons */}
       <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:24, flexWrap:'wrap' }}>
-        <div style={{ width:48, height:48, borderRadius:14, background:'#ede9fe', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <div style={{ width:48, height:48, borderRadius:14, background:'#eff6ff', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
         </div>
         <div>
           <h1 style={{ fontSize:20, fontWeight:700, color:'#111827', letterSpacing:'-0.3px' }}>{t.projects}</h1>
@@ -289,7 +289,7 @@ export default function Projects() {
               Delete ({selectedRows.length})
             </button>
           )}
-          <button onClick={openAdd} style={{ display:'flex', alignItems:'center', gap:7, background:'#7c3aed', border:'none', borderRadius:10, padding:'9px 18px', fontSize:13, fontWeight:600, color:'#fff', cursor:'pointer', fontFamily:'inherit' }}>
+          <button onClick={openAdd} style={{ display:'flex', alignItems:'center', gap:7, background:'#2563eb', border:'none', borderRadius:10, padding:'9px 18px', fontSize:13, fontWeight:600, color:'#fff', cursor:'pointer', fontFamily:'inherit' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             New Project
           </button>

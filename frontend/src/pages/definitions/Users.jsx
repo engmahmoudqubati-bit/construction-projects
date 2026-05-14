@@ -138,7 +138,7 @@ export default function Users() {
     { key:'photo_url', label:'', style:{width:48},
       render: r => r.photo_url
         ? <img src={r.photo_url} alt="" style={{width:32,height:32,borderRadius:'50%',objectFit:'cover',border:'2px solid var(--border)'}} />
-        : <div style={{width:32,height:32,borderRadius:'50%',background:'#ede9fe',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#7c3aed'}}>
+        : <div style={{width:32,height:32,borderRadius:'50%',background:'#eff6ff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#2563eb'}}>
             {(r.full_name_en||r.full_name||'?')[0].toUpperCase()}
           </div> },
     { key:'full_name_en', label:'Full Name',
@@ -152,7 +152,7 @@ export default function Users() {
       render: r => <span style={{fontFamily:'monospace',fontSize:12,color:'#6b7280'}}>{r.username}</span> },
     { key:'role', label:'Role',
       render: r => {
-        const s = {admin:{bg:'#ede9fe',c:'#7c3aed'},project_manager:{bg:'#eff6ff',c:'#1d4ed8'},site_engineer:{bg:'#f0fdf4',c:'#16a34a'}}[r.role]||{bg:'#f3f4f6',c:'#6b7280'};
+        const s = {admin:{bg:'#eff6ff',c:'#2563eb'},project_manager:{bg:'#eff6ff',c:'#1d4ed8'},site_engineer:{bg:'#f0fdf4',c:'#16a34a'}}[r.role]||{bg:'#f3f4f6',c:'#6b7280'};
         return <span style={{fontSize:11,fontWeight:600,padding:'3px 10px',borderRadius:20,background:s.bg,color:s.c}}>{t.roles[r.role]||r.role}</span>;
       }},
     { key:'position_role_name', label:'Position', render: r => <span style={{fontSize:12,color:'#6b7280'}}>{r.position_role_name||'—'}</span> },
@@ -189,8 +189,8 @@ export default function Users() {
     <div>
       {/* Page header */}
       <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:24,flexWrap:'wrap'}}>
-        <div style={{width:48,height:48,borderRadius:14,background:'#ede9fe',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <div style={{width:48,height:48,borderRadius:14,background:'#eff6ff',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
         <div><h1 style={{fontSize:20,fontWeight:700,color:'var(--text)',letterSpacing:'-0.3px'}}>{t.users}</h1></div>
         <div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
@@ -221,7 +221,7 @@ export default function Users() {
             </button>
           )}
           {canAction('can_create') && (
-            <button onClick={openAdd} style={{display:'flex',alignItems:'center',gap:7,background:'#7c3aed',border:'none',borderRadius:10,padding:'9px 18px',fontSize:13,fontWeight:600,color:'#fff',cursor:'pointer',fontFamily:'inherit'}}>
+            <button onClick={openAdd} style={{display:'flex',alignItems:'center',gap:7,background:'#2563eb',border:'none',borderRadius:10,padding:'9px 18px',fontSize:13,fontWeight:600,color:'#fff',cursor:'pointer',fontFamily:'inherit'}}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               New User
             </button>
@@ -242,12 +242,12 @@ export default function Users() {
         <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:20,padding:'16px',background:'var(--card2)',borderRadius:10,border:'1px solid var(--border-light)'}}>
           <div style={{position:'relative',cursor:'pointer'}} onClick={()=>fileRef.current.click()}>
             {photoPreview
-              ? <img src={photoPreview} alt="" style={{width:72,height:72,borderRadius:'50%',objectFit:'cover',border:'3px solid #7c3aed'}} />
-              : <div style={{width:72,height:72,borderRadius:'50%',background:'#ede9fe',display:'flex',alignItems:'center',justifyContent:'center',border:'3px dashed #c4b5fd'}}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              ? <img src={photoPreview} alt="" style={{width:72,height:72,borderRadius:'50%',objectFit:'cover',border:'3px solid #2563eb'}} />
+              : <div style={{width:72,height:72,borderRadius:'50%',background:'#eff6ff',display:'flex',alignItems:'center',justifyContent:'center',border:'3px dashed #c4b5fd'}}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
             }
-            <div style={{position:'absolute',bottom:0,right:0,width:22,height:22,background:'#7c3aed',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid #fff'}}>
+            <div style={{position:'absolute',bottom:0,right:0,width:22,height:22,background:'#2563eb',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid #fff'}}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </div>
           </div>

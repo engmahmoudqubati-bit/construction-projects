@@ -5,6 +5,7 @@ import { ToastProvider } from './components/shared/Toast';
 import Sidebar   from './components/layout/Sidebar';
 import Header    from './components/layout/Header';
 import Login     from './pages/Login';
+import Overview  from './pages/Overview';
 import Dashboard from './pages/Dashboard';
 import Users              from './pages/definitions/Users';
 import Projects           from './pages/definitions/Projects';
@@ -30,13 +31,13 @@ function RequireAuth({ children }) {
 function RequirePage({ pageKey, children }) {
   const { user, canAccessPage } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
-  if (!canAccessPage(pageKey)) return <Navigate to="/dashboard" replace />;
+  if (!canAccessPage(pageKey)) return <Navigate to="/overview" replace />;
   return children;
 }
 function RequireRole({ roles, children }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
-  if (!roles.includes(user.role)) return <Navigate to="/dashboard" replace />;
+  if (!roles.includes(user.role)) return <Navigate to="/overview" replace />;
   return children;
 }
 
@@ -61,8 +62,9 @@ function AppShell() {
         <Header onToggleSidebar={() => setCollapsed(c => !c)} />
         <main className="page-content">
           <Routes>
-            <Route path="/"          element={<Navigate to="/dashboard" replace />} />
-            <Route path="/login"     element={<Navigate to="/dashboard" replace />} />
+            <Route path="/"          element={<Navigate to="/overview" replace />} />
+            <Route path="/login"     element={<Navigate to="/overview" replace />} />
+            <Route path="/overview"  element={<RequireAuth><Overview /></RequireAuth>} />
             <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
             <Route path="/definitions/system-setup" element={<RequireRole roles={['admin']}><SystemSetup /></RequireRole>} />
             <Route path="/definitions/companies"      element={<RequireRole roles={['admin']}><Companies /></RequireRole>} />
@@ -80,7 +82,7 @@ function AppShell() {
             <Route path="/reports/weekly"               element={<RequirePage pageKey="reports"><WeeklySummary /></RequirePage>} />
             <Route path="/reports/daily-productivity"    element={<RequirePage pageKey="reports"><DailyProductivity /></RequirePage>} />
             <Route path="/reports/floor-weekly"           element={<RequirePage pageKey="reports"><FloorWeeklyProductivity /></RequirePage>} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/overview" replace />} />
           </Routes>
         </main>
       </div>

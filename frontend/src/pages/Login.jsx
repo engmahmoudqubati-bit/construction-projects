@@ -20,7 +20,7 @@ export default function Login() {
     try {
       const res = await api.login(form);
       login(res.token, res.user, res.permissions);
-      navigate('/dashboard', { replace: true });
+      navigate('/overview', { replace: true });
     } catch (err) {
       setError(err.message || 'Invalid credentials');
     } finally {

@@ -35,7 +35,7 @@ export default function SystemSetup() {
     <div>
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:24 }}>
-        <div style={{ width:48, height:48, borderRadius:14, background:'#ede9fe',
+        <div style={{ width:48, height:48, borderRadius:14, background:'#eff6ff',
           display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
           <span style={{ fontSize:24 }}>🛠️</span>
         </div>
@@ -48,13 +48,13 @@ export default function SystemSetup() {
       </div>
 
       {/* Tab bar */}
-      <div style={{ display:'flex', gap:0, marginBottom:24, borderBottom:'2px solid #ede9fe' }}>
+      <div style={{ display:'flex', gap:0, marginBottom:24, borderBottom:'2px solid #eff6ff' }}>
         {TABS.map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
             padding:'10px 28px', fontSize:13, fontWeight:600, cursor:'pointer',
             background:'none', border:'none', fontFamily:'inherit',
-            color: activeTab===tab.key ? '#7c3aed' : '#6b7280',
-            borderBottom: activeTab===tab.key ? '2px solid #7c3aed' : '2px solid transparent',
+            color: activeTab===tab.key ? '#2563eb' : '#6b7280',
+            borderBottom: activeTab===tab.key ? '2px solid #2563eb' : '2px solid transparent',
             marginBottom:-2, transition:'all 0.15s', whiteSpace:'nowrap',
           }}>{tab.label}</button>
         ))}

@@ -103,6 +103,7 @@ export const api = {
   confirmInspection: (project_id, transaction_date) => request('PATCH', '/api/inspection/confirm', { project_id, transaction_date }),
 
   getDashboardKpis:        (pid) => request('GET', `/api/dashboard/kpis${qs({ projectId: pid })}`),
+  getOverviewDetails:      (pid) => request('GET', `/api/dashboard/overview-details${qs({ projectId: pid })}`),
   getDashboardByClassification: (pid) => request('GET', `/api/dashboard/by-classification${pid&&pid!=='all'?'?projectId='+pid:''}`),
   getDashboardByFloor:          (pid) => request('GET', `/api/dashboard/by-floor${pid&&pid!=='all'?'?projectId='+pid:''}`),
   getDashboardByProject:        ()    => request('GET', '/api/dashboard/by-project'),

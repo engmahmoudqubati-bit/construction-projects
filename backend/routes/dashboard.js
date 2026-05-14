@@ -107,6 +107,70 @@ router.get('/inspection-stats', async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+// Overview detail payload for executive dashboard
+router.get('/overview-details', async (req, res) => {
+  const { projectId } = req.query;
+  const planningFilter = projectFilter(projectId, req, 'pp');
+  const deliveryFilter = projectFilter(projectId, req, 'd');
+  const installationFilter = projectFilter(projectId, req, 'it');
+
+  try {
+    const [boq, deliveries, installations] = await Promise.all([
+      pool.query(
+        `SELECT
+           pp.project_id,
+           pp.item_id,
+           i.item_code,
+           i.item_name,
+           i.unit_of_measure,
+           COALESCE(c.classification_name, 'Uncategorized') AS classification_name,
+           COALESCE(pc.classification_name, c.classification_name, 'General') AS parent_classification_name,
+           SUM(pp.planned_qty) AS planned_qty
+         FROM cp_project_planning pp
+         JOIN cp_items i ON i.id = pp.item_id
+         LEFT JOIN cp_item_classifications c  ON c.id = i.classification_id
+         LEFT JOIN cp_item_classifications pc ON pc.id = c.parent_id
+         WHERE 1=1 ${planningFilter.clause}
+         GROUP BY pp.project_id, pp.item_id, i.item_code, i.item_name, i.unit_of_measure, c.classification_name, pc.classification_name
+         ORDER BY COALESCE(pc.classification_name, c.classification_name, 'General'), COALESCE(c.classification_name, 'Uncategorized'), i.item_name`,
+        planningFilter.params,
+      ),
+      pool.query(
+        `SELECT
+           d.project_id,
+           d.item_id,
+           d.transaction_date,
+           SUM(d.qty_delivered) AS qty_delivered
+         FROM cp_delivery_transactions d
+         WHERE COALESCE(d.tx_status, 'confirmed') = 'confirmed' ${deliveryFilter.clause}
+         GROUP BY d.project_id, d.item_id, d.transaction_date
+         ORDER BY d.transaction_date`,
+        deliveryFilter.params,
+      ),
+      pool.query(
+        `SELECT
+           it.project_id,
+           it.item_id,
+           it.transaction_date,
+           SUM(it.qty_installed) AS qty_installed
+         FROM cp_installation_transactions it
+         WHERE COALESCE(it.tx_status, 'confirmed') = 'confirmed' ${installationFilter.clause}
+         GROUP BY it.project_id, it.item_id, it.transaction_date
+         ORDER BY it.transaction_date`,
+        installationFilter.params,
+      ),
+    ]);
+
+    res.json({
+      boq: boq.rows,
+      deliveries: deliveries.rows,
+      installations: installations.rows,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Delivery progress per item
 router.get('/delivery-progress', async (req, res) => {
   const { projectId } = req.query;

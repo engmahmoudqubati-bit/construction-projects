@@ -37,6 +37,106 @@ function generateWeeks(firstDateStr) {
   return weeks;
 }
 
+
+
+// ── Installation/Daily-style fixed filter panel ───────────────────────────────
+function FilterShell({ title, subtitle, children, right, columns }) {
+  return (
+    <div style={{
+      background:'#fff', border:'1px solid #bfdbfe', borderRadius:16, overflow:'hidden',
+      boxShadow:'0 10px 22px rgba(15,23,42,0.04)', marginBottom:10
+    }}>
+      <div style={{
+        minHeight:36, padding:'7px 10px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12,
+        background:'linear-gradient(180deg,#ffffff 0%,#f8fbff 100%)', borderBottom:'1px solid #bfdbfe'
+      }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10, minWidth:0 }}>
+          <div style={{ width:26, height:26, borderRadius:9, background:'#1d4ed8', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15, boxShadow:'0 8px 18px rgba(29,78,216,0.18)' }}>⚙️</div>
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontSize:13, fontWeight:900, color:'#0f172a', lineHeight:1.1 }}>{title}</div>
+            <div style={{ fontSize:11, color:'#64748b', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', marginTop:2 }}>{subtitle}</div>
+          </div>
+        </div>
+        {right}
+      </div>
+      <div style={{ padding:10, display:'grid', gridTemplateColumns: columns || 'repeat(auto-fit, minmax(240px, 1fr))', gap:10, alignItems:'end' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function FilterField({ label, children }) {
+  return (
+    <div style={{ minWidth:0 }}>
+      <label style={{ display:'block', fontSize:10, fontWeight:900, color:'#334155', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function FloorWeekFilter({ projects, projectId, setProjectId, weeks, years, months, selectedYear, setSelectedYear, selectedMonth, setSelectedMonth, weekNum, setWeekNum, weekInput, setWeekInput, selectedWeek, search, setSearch, filterClass, setFilterClass, classifications, fSel, projectLabel }) {
+  const monthName = m => new Date(`2000-${m}-01`).toLocaleDateString('en-GB',{month:'long'});
+  const filteredWeeks = useMemo(()=>{
+    let ws=weeks;
+    if (selectedYear)  ws=ws.filter(w=>w.sat.startsWith(selectedYear)||w.thu.startsWith(selectedYear));
+    if (selectedMonth) ws=ws.filter(w=>w.sat.slice(0,7)===`${selectedYear}-${selectedMonth}`||w.thu.slice(0,7)===`${selectedYear}-${selectedMonth}`);
+    return ws;
+  },[weeks,selectedYear,selectedMonth]);
+  const resetFilters = () => { setSelectedYear(''); setSelectedMonth(''); setWeekNum(''); setWeekInput(''); setSearch(''); setFilterClass(''); };
+  return (
+    <FilterShell
+      title="Report Filters"
+      subtitle="Project, installation period, selected week, floor/basement and search."
+      columns={'minmax(220px,1.35fr) minmax(90px,.55fr) minmax(130px,.75fr) minmax(90px,.55fr) minmax(220px,1.35fr) minmax(180px,1fr) minmax(220px,1.35fr)'}
+      right={selectedWeek ? <div style={{ background:'#ffffff', border:'1px solid #bfdbfe', color:'#0f172a', borderRadius:999, padding:'6px 10px', fontSize:11, fontWeight:800, whiteSpace:'nowrap' }}>Week {selectedWeek.weekNum}: {formatDate(selectedWeek.sat)} → {formatDate(selectedWeek.thu)}</div> : null}
+    >
+      <FilterField label="Select Project">
+        <select value={projectId} onChange={e => setProjectId(e.target.value)} style={{ ...fSel, width:'100%' }}>
+          <option value="">— Select Project —</option>
+          {projects.map(p => <option key={p.id} value={p.id}>{projectLabel(p)}</option>)}
+        </select>
+      </FilterField>
+      <FilterField label="Year">
+        <select value={selectedYear} onChange={e=>{setSelectedYear(e.target.value);setSelectedMonth('');setWeekNum('');setWeekInput('');}} style={{ ...fSel, width:'100%' }} disabled={!years.length}>
+          <option value="">All</option>
+          {years.map(y=><option key={y} value={y}>{y}</option>)}
+        </select>
+      </FilterField>
+      <FilterField label="Month">
+        <select value={selectedMonth} onChange={e=>{setSelectedMonth(e.target.value);setWeekNum('');setWeekInput('');}} style={{ ...fSel, width:'100%' }} disabled={!selectedYear || !months.length}>
+          <option value="">All Months</option>
+          {months.map(m=><option key={m} value={m}>{monthName(m)}</option>)}
+        </select>
+      </FilterField>
+      <FilterField label={`Week No. ${weeks.length ? `(1-${weeks.length})` : ''}`}>
+        <input type="number" min={1} max={weeks.length || 1} value={weekInput} placeholder="#"
+          onChange={e=>{const n=parseInt(e.target.value);setWeekInput(e.target.value);if(!isNaN(n)&&weeks.find(w=>w.weekNum===n))setWeekNum(String(n));}}
+          style={{ ...fSel, width:'100%', fontWeight:800, textAlign:'center' }} disabled={!weeks.length} />
+      </FilterField>
+      <FilterField label="Select Week">
+        <select value={weekNum} onChange={e=>{setWeekNum(e.target.value);setWeekInput(e.target.value);}} style={{ ...fSel, width:'100%' }} disabled={!filteredWeeks.length}>
+          <option value="">— Select —</option>
+          {filteredWeeks.map(w=><option key={w.weekNum} value={w.weekNum}>W{w.weekNum}: {formatDate(w.sat)} → {formatDate(w.thu)}</option>)}
+        </select>
+      </FilterField>
+      <FilterField label="Classification">
+        <select value={filterClass} onChange={e=>setFilterClass(e.target.value)} style={{ ...fSel, width:'100%' }} disabled={!classifications?.length || classifications.length <= 1}>
+          <option value="">All Classifications</option>
+          {classifications.map(c=><option key={c} value={c}>{c}</option>)}
+        </select>
+      </FilterField>
+      <FilterField label="Smart Search">
+        <input value={search||''} onChange={e=>setSearch(e.target.value)} placeholder="Item, code, classification..." style={{ ...fSel, width:'100%', cursor:'text' }} />
+      </FilterField>
+      <div style={{ gridColumn:'1 / -1', display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop:2, gap:10 }}>
+        <div style={{ fontSize:11, color:'#64748b' }}>Search includes item code, item name and classification.</div>
+        <button type="button" onClick={resetFilters} style={{ border:'1px solid #bfdbfe', background:'#ffffff', color:'#0f172a', borderRadius:10, padding:'8px 12px', fontSize:12, fontWeight:800, cursor:'pointer' }}>Clear Filters</button>
+      </div>
+    </FilterShell>
+  );
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function FloorWeeklyProductivity() {
   const toast = useToast();
@@ -54,6 +154,7 @@ export default function FloorWeeklyProductivity() {
   const [search,       setSearch]       = useState('');
   const [filterClass,  setFilterClass]  = useState('');
   const [activeTab,    setActiveTab]    = useState('single');
+  const [pageSize,     setPageSize]     = useState(10);
 
   // Compare state
   const [cmpProjectId,  setCmpProjectId]  = useState('');
@@ -202,13 +303,13 @@ export default function FloorWeeklyProductivity() {
     });
     const csv = [headers.join(','), ...rows].join('\n');
     const a = document.createElement('a');
-    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.href = 'data:text/csv;charset=utf-8,%EF%BB%BF' + encodeURIComponent(csv);
     a.download = `floor_weekly_W${weekNum}_${projectId}.csv`;
     a.click();
   }
 
-  const fSel = { background:'var(--card)', border:'2px solid #7c3aed', borderRadius:10, padding:'8px 14px', fontSize:13, fontWeight:600, color:'var(--text)', cursor:'pointer', fontFamily:'inherit', outline:'none', height:40 };
-  const thBase = { background:'#f0f7ff', color:'#111827', fontWeight:700, fontSize:11, padding:'10px 12px', borderBottom:'1px solid #e0ecff', whiteSpace:'nowrap', letterSpacing:'0.02em', textAlign:'center' };
+  const fSel = { background:'var(--card)', border:'1.5px solid #bfdbfe', borderRadius:12, padding:'8px 14px', fontSize:13, fontWeight:650, color:'var(--text)', cursor:'pointer', fontFamily:'inherit', outline:'none', height:40, boxShadow:'0 8px 18px rgba(37,99,235,0.06)' };
+  const thBase = { background:'#ffffff', color:'#0f172a', fontWeight:850, fontSize:11, padding:'12px 12px', borderBottom:'1px solid #e5eaf3', borderRight:'1px solid #edf2f8', whiteSpace:'nowrap', letterSpacing:'0.02em', textAlign:'center' };
 
   // KPI totals
   const kpi = useMemo(()=>{
@@ -223,121 +324,72 @@ export default function FloorWeeklyProductivity() {
       });
     });
     const pct = totalSugg>0 ? Math.min(100,(totalAllTime/totalSugg)*100) : 0;
+    const remaining = Math.max(totalSugg-totalAllTime, 0);
+    const remainingPct = totalSugg>0 ? Math.max(0, Math.min(100,(remaining/totalSugg)*100)) : 0;
+    const weekPct = totalSugg>0 ? Math.min(100,(totalThisWeek/totalSugg)*100) : 0;
     const activeItems = visibleItems.filter(item => levels.some(lv=>(weekMap[item.item_id]?.[lv.id]||0)>0)).length;
-    return { totalSugg, totalThisWeek, totalAllTime, pct, activeItems };
+    return { totalSugg, totalThisWeek, totalAllTime, remaining, remainingPct, pct, weekPct, activeItems };
   },[matrixData, visibleItems]);
 
   return (
-    <div>
-      {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:24, flexWrap:'wrap' }}>
-        <div style={{ width:48, height:48, borderRadius:14, background:'#ede9fe', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-          <span style={{ fontSize:24 }}>🏢</span>
-        </div>
-        <div style={{ flex:1 }}>
-          <h1 style={{ fontSize:20, fontWeight:700, color:'var(--text)', letterSpacing:'-0.3px', margin:0 }}>Floor Weekly Productivity</h1>
-          <p style={{ fontSize:12, color:'#9ca3af', margin:'4px 0 0 0' }}>
-            Confirmed installation qty per item per floor/basement — week view (Sat–Thu)
-          </p>
+    <div className="floor-weekly-productivity-page floor-productivity-wow" style={{ fontFamily:'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif', marginTop:-34, paddingTop:0 }}>
+      {/* Compact Professional Header */}
+      <div style={{
+        display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, marginBottom:10, flexWrap:'wrap',
+        background:'linear-gradient(180deg,#ffffff 0%,#f8fbff 100%)', border:'1px solid #dbeafe',
+        borderRadius:16, padding:'12px 16px', boxShadow:'0 14px 34px rgba(15,23,42,0.07)', backdropFilter:'blur(10px)'
+      }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12, minWidth:0 }}>
+          <div style={{ width:42, height:42, borderRadius:13, background:'linear-gradient(135deg,#2563eb,#38bdf8)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, boxShadow:'0 12px 24px rgba(37,99,235,0.22)' }}>
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9h1M9 13h1M9 17h1M15 13h1M15 17h1"/></svg>
+          </div>
+          <div style={{ minWidth:0 }}>
+            <h1 style={{ fontSize:18, fontWeight:900, color:'var(--text)', letterSpacing:'-0.4px', margin:0 }}>Floor Weekly Productivity</h1>
+            <p style={{ fontSize:12, color:'#52647a', margin:'5px 0 0 0', fontWeight:500 }}>Confirmed installation productivity by item, floor/basement and selected week.</p>
+          </div>
         </div>
         {matrixData && visibleItems.length > 0 && (
-          <button onClick={exportCSV} style={{ display:'flex', alignItems:'center', gap:6, background:'#7c3aed', border:'none', borderRadius:10, padding:'9px 18px', fontSize:13, fontWeight:600, color:'#fff', cursor:'pointer', fontFamily:'inherit' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <button onClick={exportCSV} style={{ display:'flex', alignItems:'center', gap:7, background:'#fff', border:'1px solid #dbeafe', borderRadius:12, padding:'10px 16px', fontSize:13, fontWeight:750, color:'#0f172a', cursor:'pointer', fontFamily:'inherit', boxShadow:'0 12px 22px rgba(37,99,235,0.18)' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0f172a" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Export CSV
           </button>
         )}
       </div>
 
       {/* Tab bar */}
-      <div style={{ display:'flex', gap:0, marginBottom:20, borderBottom:'2px solid #ede9fe' }}>
+      <div style={{ display:'inline-flex', gap:8, marginBottom:10, background:'transparent', padding:'0', borderRadius:14, position:'relative' }}>
         {[
-          { id:'single',  label:'🏢 Single Week' },
-          { id:'compare', label:'⚖️ Compare Two Weeks' },
+          { id:'single',  label:'Single Week' },
+          { id:'compare', label:'Compare Two Weeks' },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
-            padding:'10px 28px', fontSize:13, fontWeight:600, cursor:'pointer',
-            background:'none', border:'none', fontFamily:'inherit',
-            color: activeTab===tab.id?'#7c3aed':'#6b7280',
-            borderBottom: activeTab===tab.id?'2px solid #7c3aed':'2px solid transparent',
-            marginBottom:-2, transition:'all 0.15s',
+            padding:'9px 22px', fontSize:13, fontWeight:800, cursor:'pointer',
+            border:'1px solid #dbeafe', fontFamily:'inherit',
+            background: activeTab===tab.id?'linear-gradient(135deg,#2563eb,#1d4ed8)':'#fff',
+            color: activeTab===tab.id?'#fff':'#334155',
+            borderRadius:10,
+            boxShadow: activeTab===tab.id?'0 14px 24px rgba(37,99,235,0.22)':'0 8px 20px rgba(15,23,42,0.04)',
+            marginBottom:0, transition:'all 0.15s', position:'relative',
           }}>{tab.label}</button>
         ))}
       </div>
 
       {activeTab === 'single' && <>
 
-      {/* Filters */}
-      <div style={{ display:'flex', gap:12, marginBottom:16, flexWrap:'wrap', alignItems:'flex-end' }}>
-        <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>🏗️ Project</label>
-          <select value={projectId} onChange={e => setProjectId(e.target.value)} style={{ ...fSel, minWidth:280 }}>
-            <option value="">— Select Project —</option>
-            {projects.map(p => <option key={p.id} value={p.id}>{projectLabel(p)}</option>)}
-          </select>
-        </div>
-        {years.length > 0 && (
-          <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-            <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>📆 Year</label>
-            <select value={selectedYear} onChange={e=>{setSelectedYear(e.target.value);setSelectedMonth('');setWeekNum('');setWeekInput('');}} style={{ ...fSel, minWidth:100 }}>
-              <option value="">All</option>
-              {years.map(y=><option key={y} value={y}>{y}</option>)}
-            </select>
-          </div>
-        )}
-        {selectedYear && months.length > 0 && (
-          <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-            <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>🗓️ Month</label>
-            <select value={selectedMonth} onChange={e=>{setSelectedMonth(e.target.value);setWeekNum('');setWeekInput('');}} style={{ ...fSel, minWidth:130 }}>
-              <option value="">All</option>
-              {months.map(m=><option key={m} value={m}>{monthName(m)}</option>)}
-            </select>
-          </div>
-        )}
-        {weeks.length > 0 && (
-          <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-            <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>
-              # Week No. <span style={{ color:'#9ca3af', fontWeight:400, textTransform:'none' }}>(1–{weeks.length})</span>
-            </label>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <input type="number" min={1} max={weeks.length} value={weekInput} placeholder={`1–${weeks.length}`}
-                onChange={e=>{const n=parseInt(e.target.value);setWeekInput(e.target.value);if(!isNaN(n)&&weeks.find(w=>w.weekNum===n))setWeekNum(String(n));}}
-                style={{ ...fSel, width:85, minWidth:85, fontWeight:700, textAlign:'center' }} />
-              {selectedWeek && (
-                <div style={{ background:'#f5f3ff', border:'1px solid #ddd6fe', borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:600, color:'#7c3aed', whiteSpace:'nowrap' }}>
-                  📅 <strong>Sat</strong> {formatDate(selectedWeek.sat)} → <strong>Thu</strong> {formatDate(selectedWeek.thu)}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-        {filteredWeeks.length > 0 && (
-          <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-            <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>📋 Or Select Week</label>
-            <select value={weekNum} onChange={e=>{setWeekNum(e.target.value);setWeekInput(e.target.value);}} style={{ ...fSel, minWidth:320 }}>
-              <option value="">— Select Week —</option>
-              {filteredWeeks.map(w=><option key={w.weekNum} value={w.weekNum}>{w.label}</option>)}
-            </select>
-          </div>
-        )}
-      </div>
-
-      {/* Search + Class filter */}
-      {matrixData && visibleItems.length > 0 && (
-        <div style={{ display:'flex', gap:12, marginBottom:16, flexWrap:'wrap', alignItems:'flex-end' }}>
-          <div style={{ display:'flex', alignItems:'center', background:'var(--card)', border:'2px solid #7c3aed', borderRadius:10, height:40, paddingLeft:12, minWidth:220 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input style={{ border:'none', outline:'none', fontSize:13, color:'var(--text)', background:'none', width:'100%', padding:'0 10px', fontFamily:'inherit' }}
-              placeholder="Search items..." value={search} onChange={e=>setSearch(e.target.value)} />
-            {search && <button onClick={()=>setSearch('')} style={{ background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:'0 10px' }}>✕</button>}
-          </div>
-          {classifications.length > 1 && (
-            <select value={filterClass} onChange={e=>setFilterClass(e.target.value)} style={{ ...fSel, minWidth:200, border:'2px solid #7c3aed', fontWeight:400 }}>
-              <option value="">All Classifications</option>
-              {classifications.map(c=><option key={c} value={c}>{c}</option>)}
-            </select>
-          )}
-        </div>
-      )}
+      {/* Fixed filters */}
+      <FloorWeekFilter
+        projects={projects} projectId={projectId} setProjectId={setProjectId}
+        weeks={weeks} years={years} months={months}
+        selectedYear={selectedYear} setSelectedYear={setSelectedYear}
+        selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth}
+        weekNum={weekNum} setWeekNum={setWeekNum}
+        weekInput={weekInput} setWeekInput={setWeekInput}
+        selectedWeek={selectedWeek}
+        search={search} setSearch={setSearch}
+        filterClass={filterClass} setFilterClass={setFilterClass}
+        classifications={classifications}
+        fSel={fSel} projectLabel={projectLabel}
+      />
 
       {/* Empty states */}
       {!projectId && <div className="empty-state"><div className="empty-icon">🏢</div><p>Select a project to view floor productivity</p></div>}
@@ -346,25 +398,35 @@ export default function FloorWeeklyProductivity() {
         <div style={{ textAlign:'center', padding:'40px 20px', color:'#9ca3af' }}>
           <div style={{ fontSize:40, marginBottom:10 }}>👆</div>
           <div style={{ fontSize:14, fontWeight:500 }}>Enter a week number or select from the dropdown</div>
-          <div style={{ fontSize:12, marginTop:4 }}>Project has <strong style={{ color:'#7c3aed' }}>{weeks.length}</strong> weeks since first delivery on <strong style={{ color:'#7c3aed' }}>{formatDate(firstDate)}</strong></div>
+          <div style={{ fontSize:12, marginTop:4 }}>Project has <strong style={{ color:'#0f172a' }}>{weeks.length}</strong> weeks since first delivery on <strong style={{ color:'#0f172a' }}>{formatDate(firstDate)}</strong></div>
         </div>
       )}
       {loading && <div style={{ textAlign:'center', padding:40 }}><div className="spinner" /></div>}
 
-      {/* KPI cards */}
+      {/* KPI cards — photo style */}
       {!loading && kpi && selectedWeek && (
-        <div style={{ display:'flex', gap:12, marginBottom:18, flexWrap:'wrap' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(210px, 1fr))', gap:12, marginBottom:18 }}>
           {[
-            { label:'Week',            value:`Week ${selectedWeek.weekNum}`,   color:'#7c3aed', bg:'#f5f3ff' },
-            { label:'Suggested Total', value:fmt2(kpi.totalSugg),             color:'#374151', bg:'#f9fafb' },
-            { label:'This Week',       value:fmt2(kpi.totalThisWeek),         color:'#0369a1', bg:'#eff6ff' },
-            { label:'Installed Total', value:fmt2(kpi.totalAllTime),          color:'#16a34a', bg:'#f0fdf4' },
-            { label:'Overall Progress',value:`${kpi.pct.toFixed(1)}%`,        color: kpi.pct>=100?'#16a34a':kpi.pct>=60?'#7c3aed':'#f59e0b', bg: kpi.pct>=100?'#f0fdf4':kpi.pct>=60?'#f5f3ff':'#fffbeb' },
-            { label:'Active Items',    value:kpi.activeItems,                 color:'#0369a1', bg:'#eff6ff' },
+            { label:'Total Items', value:visibleItems.length.toLocaleString(), sub:`${matrixData?.levels?.length||0} floors / basements`, color:'#0f172a', icon:'▣' },
+            { label:'Total Quantity', value:fmt2(kpi.totalSugg), sub:'planned / suggested allocation', color:'#0f172a', icon:'⌘' },
+            { label:'Completed Quantity', value:fmt2(kpi.totalAllTime), sub:'installed until selected week', color:'#0f172a', icon:'◎', ring:kpi.pct },
+            { label:'Remaining Quantity', value:fmt2(kpi.remaining), sub:'balance against suggested', color:'#0f172a', icon:'▥', ring:kpi.remainingPct },
+            { label:'Weekly Productivity', value:`${kpi.weekPct.toFixed(1)}%`, sub:`this week: ${fmt2(kpi.totalThisWeek)}`, color:'#22c55e', icon:'↗', ring:kpi.weekPct },
           ].map(k => (
-            <div key={k.label} style={{ flex:'1 1 130px', background:k.bg, border:`1px solid ${k.color}22`, borderRadius:12, padding:'12px 16px', borderLeft:`3px solid ${k.color}` }}>
-              <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', color:k.color, marginBottom:4 }}>{k.label}</div>
-              <div style={{ fontSize:18, fontWeight:700, color:'#111827' }}>{k.value}</div>
+            <div key={k.label} style={{ background:'#ffffff', border:'1px solid #e5eefb', borderRadius:16, padding:'18px 18px', boxShadow:'0 16px 34px rgba(15,23,42,0.06)', display:'flex', alignItems:'center', justifyContent:'space-between', gap:14, minHeight:110 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:14, minWidth:0 }}>
+                <div style={{ width:44, height:44, borderRadius:14, background:`${k.color}12`, border:`1px solid ${k.color}18`, color:k.color, display:'grid', placeItems:'center', fontSize:18, fontWeight:900, flexShrink:0 }}>{k.icon}</div>
+                <div style={{ minWidth:0 }}>
+                  <div style={{ fontSize:12, fontWeight:800, color:'#475569', marginBottom:8 }}>{k.label}</div>
+                  <div style={{ fontSize:25, fontWeight:950, color:'#0f172a', letterSpacing:'-0.04em', lineHeight:1 }}>{k.value}</div>
+                  <div style={{ marginTop:12, fontSize:10, color:'#64748b', fontWeight:700 }}>— {k.sub}</div>
+                </div>
+              </div>
+              {typeof k.ring === 'number' && (
+                <div style={{ width:62, height:62, borderRadius:'50%', background:`conic-gradient(#22c55e ${Math.min(100,k.ring)}%, #e8eef6 0)`, display:'grid', placeItems:'center', flexShrink:0 }}>
+                  <div style={{ width:48, height:48, borderRadius:'50%', background:'#fff', display:'grid', placeItems:'center', color:'#22c55e', fontSize:12, fontWeight:900 }}>{Math.min(100,k.ring).toFixed(1)}%</div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -392,12 +454,12 @@ export default function FloorWeeklyProductivity() {
 
         const pctBar = (installed, suggested) => {
           const p = suggested>0 ? Math.min(100,(installed/suggested)*100) : 0;
-          const color = p>=100?'#16a34a':p>=60?'#7c3aed':'#f59e0b';
+          const color = '#22c55e';
           return { p, color };
         };
 
         return (
-          <div style={{ background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:14, overflow:'hidden' }}>
+          <div style={{ background:'#ffffff', border:'1px solid #dbe7f6', borderRadius:18, overflow:'hidden', boxShadow:'0 18px 42px rgba(15,23,42,0.065)' }}>
             <div style={{ overflowX:'auto' }}>
               <table style={{ width:'100%', minWidth:300+levels.length*90+200, borderCollapse:'collapse', fontSize:12, tableLayout:'fixed' }}>
                 <colgroup>
@@ -413,37 +475,37 @@ export default function FloorWeeklyProductivity() {
                 <thead>
                   {/* Row 1 — level codes */}
                   <tr>
-                    <th colSpan={4} style={{ ...thBase, textAlign:'left', background:'#f8faff', borderRight:'1px solid #e0ecff' }}></th>
+                    <th colSpan={4} style={{ ...thBase, textAlign:'left', background:'#ffffff', borderRight:'1px solid #edf2f8' }}></th>
                     {levels.map(lv => (
-                      <th key={lv.id} style={{ ...thBase, background:'#ede9fe', color:'#7c3aed', borderLeft:'1px solid #ddd6fe', fontSize:13, fontWeight:800 }}>
+                      <th key={lv.id} style={{ ...thBase, background:'#ffffff', color:'#0f172a', borderLeft:'1px solid #edf2f8', fontSize:13, fontWeight:850 }}>
                         {lv.level_code}
                         <div style={{ fontSize:9, fontWeight:500, color:'#9ca3af', marginTop:2 }}>{lv.level_name}</div>
                       </th>
                     ))}
-                    <th style={{ ...thBase, background:'#dbeafe', color:'#1d4ed8', borderLeft:'2px solid #bfdbfe' }}>This Week</th>
-                    <th style={{ ...thBase, background:'#d1fae5', color:'#065f46', borderLeft:'1px solid #a7f3d0' }}>Installed Total</th>
-                    <th style={{ ...thBase, background:'#f0f7ff', color:'#374151', borderLeft:'1px solid #e0ecff' }}>Progress</th>
+                    <th style={{ ...thBase, background:'#ffffff', color:'#0f172a', borderLeft:'1px solid #edf2f8' }}>This Week</th>
+                    <th style={{ ...thBase, background:'#ffffff', color:'#0f172a', borderLeft:'1px solid #edf2f8' }}>Installed Total</th>
+                    <th style={{ ...thBase, background:'#ffffff', color:'#0f172a', borderLeft:'1px solid #edf2f8' }}>Progress</th>
                   </tr>
                   {/* Row 2 — Suggested QTY per level */}
-                  <tr style={{ background:'#f5f3ff' }}>
-                    <td colSpan={4} style={{ padding:'5px 12px', fontSize:10, fontWeight:700, color:'#7c3aed', textTransform:'uppercase', letterSpacing:'0.05em' }}>
+                  <tr style={{ background:'#ffffff' }}>
+                    <td colSpan={4} style={{ padding:'5px 12px', fontSize:10, fontWeight:700, color:'#64748b', textTransform:'uppercase', letterSpacing:'0.05em' }}>
                       Suggested QTY →
                     </td>
                     {levels.map(lv => {
                       const lvSugg = visibleItems.reduce((s,i)=>s+(allocMap[i.item_id]?.[lv.id]||0),0);
                       return (
-                        <td key={lv.id} style={{ padding:'5px 8px', textAlign:'center', fontSize:11, fontWeight:700, color:'#7c3aed', borderLeft:'1px solid #ddd6fe', background:'#f5f3ff' }}>
-                          {lvSugg>0 ? fmt2(lvSugg) : <span style={{ color:'#ddd6fe' }}>—</span>}
+                        <td key={lv.id} style={{ padding:'5px 8px', textAlign:'center', fontSize:11, fontWeight:700, color:'#0f172a', borderLeft:'1px solid #edf2f8', background:'#ffffff' }}>
+                          {lvSugg>0 ? fmt2(lvSugg) : <span style={{ color:'#cfe0ff' }}>—</span>}
                         </td>
                       );
                     })}
-                    <td style={{ padding:'5px 8px', textAlign:'center', fontSize:11, fontWeight:700, color:'#1d4ed8', background:'#dbeafe', borderLeft:'2px solid #bfdbfe' }}>
+                    <td style={{ padding:'5px 8px', textAlign:'center', fontSize:11, fontWeight:700, color:'#0f172a', background:'#ffffff', borderLeft:'1px solid #dbeafe' }}>
                       {fmt2(visibleItems.reduce((s,i)=>s+levels.reduce((ss,lv)=>ss+(weekMap[i.item_id]?.[lv.id]||0),0),0))}
                     </td>
-                    <td style={{ padding:'5px 8px', textAlign:'center', fontSize:11, fontWeight:700, color:'#065f46', background:'#d1fae5', borderLeft:'1px solid #a7f3d0' }}>
+                    <td style={{ padding:'5px 8px', textAlign:'center', fontSize:11, fontWeight:700, color:'#0f172a', background:'#ffffff', borderLeft:'1px solid #d1fae5' }}>
                       {fmt2(kpi?.totalSugg||0)}
                     </td>
-                    <td style={{ padding:'5px 8px', background:'#f0f7ff', borderLeft:'1px solid #e0ecff' }}></td>
+                    <td style={{ padding:'5px 8px', background:'#ffffff', borderLeft:'1px solid #e0ecff' }}></td>
                   </tr>
                 </thead>
                 <tbody>
@@ -458,19 +520,19 @@ export default function FloorWeeklyProductivity() {
                     return (
                       <>
                         {/* Classification group header */}
-                        <tr key={`g-${group}`} style={{ background:'#ede9fe' }}>
-                          <td colSpan={4} style={{ padding:'7px 12px', fontSize:11, fontWeight:700, color:'#7c3aed' }}>{group}</td>
+                        <tr key={`g-${group}`} style={{ background:'#ffffff', borderTop:'1px solid #e5eaf3', borderLeft:'4px solid #22c55e' }}>
+                          <td colSpan={4} style={{ padding:'7px 12px', fontSize:11, fontWeight:700, color:'#0f172a' }}>{group}</td>
                           {gWeek.map((qty,i) => (
-                            <td key={i} style={{ padding:'7px 8px', textAlign:'center', fontSize:11, fontWeight:700, color:qty>0?'#7c3aed':'#ddd6fe', borderLeft:'1px solid #ddd6fe' }}>
+                            <td key={i} style={{ padding:'7px 8px', textAlign:'center', fontSize:11, fontWeight:700, color:qty>0?'#0f172a':'#cbd5e1', borderLeft:'1px solid #cfe0ff' }}>
                               {qty>0 ? fmt2(qty) : '—'}
                             </td>
                           ))}
-                          <td style={{ padding:'7px 8px', textAlign:'center', fontWeight:700, color:'#1d4ed8', background:'#dbeafe', borderLeft:'2px solid #bfdbfe' }}>{gWeekTotal>0?fmt2(gWeekTotal):'—'}</td>
-                          <td style={{ padding:'7px 8px', textAlign:'center', fontWeight:700, color:'#065f46', background:'#d1fae5', borderLeft:'1px solid #a7f3d0' }}>{gTotalInst>0?fmt2(gTotalInst):'—'}</td>
-                          <td style={{ padding:'7px 8px', background:'#f0f7ff', borderLeft:'1px solid #e0ecff' }}>
+                          <td style={{ padding:'7px 8px', textAlign:'center', fontWeight:700, color:'#0f172a', background:'#ffffff', borderLeft:'1px solid #dbeafe' }}>{gWeekTotal>0?fmt2(gWeekTotal):'—'}</td>
+                          <td style={{ padding:'7px 8px', textAlign:'center', fontWeight:700, color:'#0f172a', background:'#ffffff', borderLeft:'1px solid #d1fae5' }}>{gTotalInst>0?fmt2(gTotalInst):'—'}</td>
+                          <td style={{ padding:'7px 8px', background:'#ffffff', borderLeft:'1px solid #e0ecff' }}>
                             <div style={{ display:'flex', alignItems:'center', gap:4 }}>
                               <div style={{ flex:1, height:5, background:'#e5e7eb', borderRadius:99, overflow:'hidden', minWidth:40 }}>
-                                <div style={{ height:'100%', width:`${gPct}%`, background:gPct>=100?'#16a34a':'#7c3aed', borderRadius:99 }} />
+                                <div style={{ height:'100%', width:`${gPct}%`, background:'#22c55e', borderRadius:99 }} />
                               </div>
                               <span style={{ fontSize:10, fontWeight:700, color:'#374151', minWidth:30 }}>{gPct.toFixed(0)}%</span>
                             </div>
@@ -486,35 +548,35 @@ export default function FloorWeeklyProductivity() {
                           const itemTotalInst  = itemTotal.reduce((s,v)=>s+v,0);
                           const { p:itemPct, color:pColor } = pctBar(itemTotalInst, itemSugg);
                           return (
-                            <tr key={item.item_id} style={{ borderBottom:'1px solid #f3f4f6', background:idx%2===0?'#fafbff':'#fff' }}>
+                            <tr key={item.item_id} style={{ borderBottom:'1px solid #f3f4f6', background:'#ffffff' }}>
                               <td style={{ padding:'10px 12px', fontFamily:'monospace', fontSize:10, color:'#6b7280' }}>{item.item_code}</td>
                               <td style={{ padding:'10px 12px', fontWeight:600, color:'#111827' }}>{item.item_name}</td>
                               <td style={{ padding:'10px 8px', textAlign:'center', fontSize:11, color:'#9ca3af' }}>{item.unit_of_measure||'—'}</td>
                               <td style={{ padding:'10px 8px', textAlign:'right', fontSize:11, color:'#6b7280' }}>{itemSugg>0?fmt2(itemSugg):'—'}</td>
                               {itemWeek.map((qty,i) => (
-                                <td key={i} style={{ padding:'8px', textAlign:'center', borderLeft:'1px solid #f0f0f0', background:qty>0?'#f5f3ff':'transparent' }}>
+                                <td key={i} style={{ padding:'8px', textAlign:'center', borderLeft:'1px solid #f0f0f0', background:'#ffffff' }}>
                                   {qty>0
                                     ? <div>
-                                        <div style={{ fontWeight:700, color:'#7c3aed', fontSize:13 }}>{fmt2(qty)}</div>
+                                        <div style={{ fontWeight:700, color:'#0f172a', fontSize:13 }}>{fmt2(qty)}</div>
                                         <div style={{ fontSize:9, color:'#9ca3af', marginTop:1 }}>/{fmt2(itemTotal[i])}</div>
                                       </div>
                                     : <span style={{ color:'#e5e7eb', fontSize:15 }}>·</span>
                                   }
                                 </td>
                               ))}
-                              <td style={{ padding:'8px', textAlign:'center', fontWeight:700, color:itemWeekTotal>0?'#1d4ed8':'#9ca3af', background:itemWeekTotal>0?'#eff6ff':'transparent', borderLeft:'2px solid #bfdbfe' }}>
+                              <td style={{ padding:'8px', textAlign:'center', fontWeight:700, color:itemWeekTotal>0?'#0f172a':'#9ca3af', background:'#ffffff', borderLeft:'2px solid #bfdbfe' }}>
                                 {itemWeekTotal>0 ? fmt2(itemWeekTotal) : '—'}
                               </td>
-                              <td style={{ padding:'8px', textAlign:'center', fontWeight:700, color:itemTotalInst>=itemSugg&&itemSugg>0?'#16a34a':itemTotalInst>0?'#065f46':'#9ca3af', background:itemTotalInst>0?'#f0fdf4':'transparent', borderLeft:'1px solid #a7f3d0' }}>
+                              <td style={{ padding:'8px', textAlign:'center', fontWeight:700, color:itemTotalInst>0?'#0f172a':'#9ca3af', background:'#ffffff', borderLeft:'1px solid #a7f3d0' }}>
                                 {itemTotalInst>0 ? fmt2(itemTotalInst) : '—'}
                               </td>
                               <td style={{ padding:'8px 10px', borderLeft:'1px solid #e0ecff' }}>
                                 {itemSugg>0 ? (
                                   <div style={{ display:'flex', alignItems:'center', gap:4 }}>
                                     <div style={{ flex:1, height:6, background:'#e5e7eb', borderRadius:99, overflow:'hidden', minWidth:40 }}>
-                                      <div style={{ height:'100%', width:`${itemPct}%`, background:pColor, borderRadius:99, transition:'width 0.3s' }} />
+                                      <div style={{ height:'100%', width:`${itemPct}%`, background:'#22c55e', borderRadius:99, transition:'width 0.3s' }} />
                                     </div>
-                                    <span style={{ fontSize:11, fontWeight:700, color:pColor, minWidth:32, textAlign:'right' }}>{itemPct.toFixed(0)}%</span>
+                                    <span style={{ fontSize:11, fontWeight:700, color:'#0f172a', minWidth:32, textAlign:'right' }}>{itemPct.toFixed(0)}%</span>
                                   </div>
                                 ) : <span style={{ color:'#e5e7eb', fontSize:11 }}>—</span>}
                               </td>
@@ -528,30 +590,30 @@ export default function FloorWeeklyProductivity() {
                 {/* Totals footer */}
                 <tfoot>
                   {/* This week row */}
-                  <tr style={{ background:'#dbeafe', borderTop:'2px solid #bfdbfe' }}>
-                    <td colSpan={4} style={{ padding:'10px 12px', fontWeight:700, fontSize:12, color:'#1d4ed8' }}>THIS WEEK TOTAL</td>
+                  <tr style={{ background:'#ffffff', borderTop:'2px solid #bfdbfe' }}>
+                    <td colSpan={4} style={{ padding:'10px 12px', fontWeight:700, fontSize:12, color:'#0f172a' }}>THIS WEEK TOTAL</td>
                     {lvWeekTotals.map((t,i) => (
-                      <td key={i} style={{ padding:'10px 8px', textAlign:'center', fontWeight:700, color:t>0?'#1d4ed8':'#93c5fd', borderLeft:'1px solid #bfdbfe', fontSize:13 }}>
+                      <td key={i} style={{ padding:'10px 8px', textAlign:'center', fontWeight:700, color:t>0?'#0f172a':'#93c5fd', borderLeft:'1px solid #bfdbfe', fontSize:13 }}>
                         {t>0 ? fmt2(t) : '—'}
                       </td>
                     ))}
-                    <td style={{ padding:'10px 8px', textAlign:'center', fontWeight:800, color:'#1d4ed8', fontSize:14, borderLeft:'2px solid #1d4ed8' }}>{fmt2(grandWeek)}</td>
-                    <td colSpan={2} style={{ background:'#dbeafe' }} />
+                    <td style={{ padding:'10px 8px', textAlign:'center', fontWeight:800, color:'#0f172a', fontSize:14, borderLeft:'2px solid #1d4ed8' }}>{fmt2(grandWeek)}</td>
+                    <td colSpan={2} style={{ background:'#ffffff' }} />
                   </tr>
                   {/* All time row */}
-                  <tr style={{ background:'#d1fae5', borderTop:'1px solid #a7f3d0' }}>
-                    <td colSpan={4} style={{ padding:'10px 12px', fontWeight:700, fontSize:12, color:'#065f46' }}>ALL TIME TOTAL</td>
+                  <tr style={{ background:'#ffffff', borderTop:'1px solid #a7f3d0' }}>
+                    <td colSpan={4} style={{ padding:'10px 12px', fontWeight:700, fontSize:12, color:'#0f172a' }}>ALL TIME TOTAL</td>
                     {lvTotalTotals.map((t,i) => (
-                      <td key={i} style={{ padding:'10px 8px', textAlign:'center', fontWeight:700, color:t>0?'#065f46':'#6ee7b7', borderLeft:'1px solid #a7f3d0', fontSize:13 }}>
+                      <td key={i} style={{ padding:'10px 8px', textAlign:'center', fontWeight:700, color:t>0?'#0f172a':'#6ee7b7', borderLeft:'1px solid #a7f3d0', fontSize:13 }}>
                         {t>0 ? fmt2(t) : '—'}
                       </td>
                     ))}
-                    <td style={{ background:'#d1fae5', borderLeft:'2px solid #bfdbfe', padding:'10px 8px' }} />
-                    <td style={{ padding:'10px 8px', textAlign:'center', fontWeight:800, color:'#065f46', fontSize:14, borderLeft:'1px solid #a7f3d0' }}>{fmt2(grandTotal)}</td>
-                    <td style={{ padding:'10px 8px', background:'#f0f7ff', borderLeft:'1px solid #e0ecff' }}>
+                    <td style={{ background:'#ffffff', borderLeft:'2px solid #bfdbfe', padding:'10px 8px' }} />
+                    <td style={{ padding:'10px 8px', textAlign:'center', fontWeight:800, color:'#0f172a', fontSize:14, borderLeft:'1px solid #a7f3d0' }}>{fmt2(grandTotal)}</td>
+                    <td style={{ padding:'10px 8px', background:'#ffffff', borderLeft:'1px solid #e0ecff' }}>
                       <div style={{ display:'flex', alignItems:'center', gap:4 }}>
                         <div style={{ flex:1, height:7, background:'#e5e7eb', borderRadius:99, overflow:'hidden', minWidth:50 }}>
-                          <div style={{ height:'100%', width:`${kpi?.pct||0}%`, background:kpi?.pct>=100?'#16a34a':'#7c3aed', borderRadius:99 }} />
+                          <div style={{ height:'100%', width:`${kpi?.pct||0}%`, background:'#22c55e', borderRadius:99 }} />
                         </div>
                         <span style={{ fontSize:12, fontWeight:700, color:'#374151', minWidth:36 }}>{(kpi?.pct||0).toFixed(1)}%</span>
                       </div>
@@ -562,10 +624,41 @@ export default function FloorWeeklyProductivity() {
             </div>
 
             {/* Bottom note */}
-            <div style={{ padding:'10px 16px', borderTop:'1px solid #f3f4f6', fontSize:11, color:'#9ca3af', display:'flex', gap:16, flexWrap:'wrap' }}>
-              <span>📊 {visibleItems.length} items · {levels.length} floors/basements</span>
-              <span>📅 Week {selectedWeek?.weekNum}: {formatDate(selectedWeek?.sat)} – {formatDate(selectedWeek?.thu)}</span>
-              <span style={{ color:'#9ca3af' }}>Numbers show: <strong style={{ color:'#7c3aed' }}>this week</strong> / <span style={{ color:'#6b7280' }}>all-time total</span></span>
+            <div style={{ padding:'10px 16px', borderTop:'1px solid #e5eaf3', fontSize:11, color:'#64748b', display:'flex', gap:16, flexWrap:'wrap', alignItems:'center', justifyContent:'space-between', background:'#ffffff' }}>
+              <div style={{ display:'flex', gap:16, flexWrap:'wrap', alignItems:'center' }}>
+                <span style={{ color:'#0f172a', fontWeight:700 }}>📊 {visibleItems.length} items · {levels.length} floors/basements</span>
+                <span>📅 Week {selectedWeek?.weekNum}: {formatDate(selectedWeek?.sat)} – {formatDate(selectedWeek?.thu)}</span>
+                <span>Numbers show: <strong style={{ color:'#0f172a' }}>this week</strong> / <span style={{ color:'#0f172a' }}>all-time total</span></span>
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:10, color:'#0f172a', fontWeight:800, flexWrap:'wrap' }}>
+                <select
+                  value={pageSize}
+                  onChange={e=>setPageSize(Number(e.target.value))}
+                  style={{
+                    minWidth:132,
+                    height:40,
+                    border:'1px solid #dbe7f6',
+                    background:'#ffffff',
+                    color:'#2563eb',
+                    borderRadius:12,
+                    padding:'0 14px',
+                    fontWeight:900,
+                    fontSize:13,
+                    outline:'none',
+                    boxShadow:'0 8px 20px rgba(15,23,42,0.05)',
+                    cursor:'pointer'
+                  }}
+                >
+                  {[10,25,50,100].map(n => <option key={n} value={n}>{n} per page</option>)}
+                </select>
+                <span style={{ color:'#64748b', fontWeight:700 }}>Showing</span>
+                <span style={{ color:'#2563eb', fontWeight:900 }}>{visibleItems.length ? 1 : 0}-{Math.min(pageSize, visibleItems.length)}</span>
+                <span style={{ color:'#64748b', fontWeight:700 }}>of</span>
+                <span style={{ color:'#2563eb', fontWeight:900 }}>{visibleItems.length}</span>
+                <button type="button" disabled style={{ border:'1px solid #dbe7f6', background:'#ffffff', color:'#94a3b8', borderRadius:8, padding:'5px 9px', cursor:'not-allowed' }}>‹</button>
+                <span style={{ minWidth:28, height:28, display:'grid', placeItems:'center', borderRadius:8, background:'#2563eb', color:'#ffffff', boxShadow:'0 8px 18px rgba(37,99,235,0.18)' }}>1</span>
+                <button type="button" disabled style={{ border:'1px solid #dbe7f6', background:'#ffffff', color:'#94a3b8', borderRadius:8, padding:'5px 9px', cursor:'not-allowed' }}>›</button>
+              </div>
             </div>
           </div>
         );
@@ -668,49 +761,63 @@ function FloorCompare({ projects, projectLabel, cmpProjectId, setCmpProjectId, c
     return ins;
   }, [matA, matB, cmpWeekA, cmpWeekB]);
 
-  const thBase = { background:'#f0f7ff', color:'#111827', fontWeight:700, fontSize:11, padding:'9px 10px', borderBottom:'1px solid #e0ecff', whiteSpace:'nowrap', textAlign:'center' };
+  const thBase = { background:'#ffffff', color:'#111827', fontWeight:700, fontSize:11, padding:'9px 10px', borderBottom:'1px solid #e0ecff', whiteSpace:'nowrap', textAlign:'center' };
 
   // Combined level list from dataA (both weeks share same project)
   const levels = matA?.levels || matB?.levels || [];
 
   return (
     <div>
-      {/* Project + Week selectors */}
-      <div style={{ display:'flex', gap:12, marginBottom:20, flexWrap:'wrap', alignItems:'flex-end' }}>
-        <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>🏗️ Project</label>
-          <select value={cmpProjectId} onChange={e=>setCmpProjectId(e.target.value)} style={{ ...fSel, minWidth:280 }}>
-            <option value="">— Select Project —</option>
-            {projects.map(p=><option key={p.id} value={p.id}>{projectLabel(p)}</option>)}
-          </select>
+      {/* Fixed compare filters */}
+      <FilterShell
+        title="Compare Weeks"
+        subtitle="Select one project, then choose Week 1 and Week 2 for a clear floor productivity comparison."
+        right={(cmpWeekA && cmpWeekB) ? <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          <span style={{ background:'#ffffff', border:'1px solid #93c5fd', color:'#0f172a', borderRadius:999, padding:'6px 10px', fontSize:11, fontWeight:900 }}>W1: Week {cmpWeekA.weekNum}</span>
+          <span style={{ background:'#f0fdf4', border:'1px solid #86efac', color:'#15803d', borderRadius:999, padding:'6px 10px', fontSize:11, fontWeight:900 }}>W2: Week {cmpWeekB.weekNum}</span>
+        </div> : null}
+      >
+        <div style={{ gridColumn:'1 / -1', display:'grid', gridTemplateColumns:'minmax(280px,1.1fr) minmax(330px,1.35fr) minmax(330px,1.35fr) auto', gap:12, alignItems:'end' }}>
+          <FilterField label="Project">
+            <select value={cmpProjectId} onChange={e=>setCmpProjectId(e.target.value)} style={{ ...fSel, width:'100%', border:'1.5px solid #bfdbfe', background:'#ffffff' }}>
+              <option value="">— Select Project —</option>
+              {projects.map(p=><option key={p.id} value={p.id}>{projectLabel(p)}</option>)}
+            </select>
+          </FilterField>
+          <FilterField label="Week 1 - Blue">
+            <div style={{ background:'linear-gradient(135deg,#eff6ff,#dbeafe)', border:'1px solid #93c5fd', borderRadius:14, padding:8, boxShadow:'0 8px 18px rgba(29,78,216,0.08)', opacity:cmpProjectId?1:.55 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'64px 1fr', gap:8 }}>
+                <input type="number" min={1} max={cmpWeeks.length || 1} value={cmpWeekInputA} placeholder="#" disabled={!cmpProjectId || !cmpWeeks.length}
+                  onChange={e=>{const n=parseInt(e.target.value);setCmpWeekInputA(e.target.value);if(!isNaN(n)&&cmpWeeks.find(w=>w.weekNum===n))setCmpWeekNumA(String(n));}}
+                  style={{ ...fSel, width:'100%', fontWeight:900, textAlign:'center', border:'1px solid #60a5fa', background:'#fff', color:'#0f172a' }} />
+                <select value={cmpWeekNumA} disabled={!cmpProjectId || !cmpWeeks.length} onChange={e=>{setCmpWeekNumA(e.target.value);setCmpWeekInputA(e.target.value);}}
+                  style={{ ...fSel, width:'100%', border:'1px solid #60a5fa', background:'#fff', color:'#0f172a' }}>
+                  <option value="">— Week 1 —</option>
+                  {cmpWeeks.map(w=><option key={w.weekNum} value={w.weekNum}>{w.label}</option>)}
+                </select>
+              </div>
+              {cmpWeekA && <div style={{ marginTop:6, color:'#0f172a', fontSize:11, fontWeight:800 }}>{formatDate(cmpWeekA.sat)} → {formatDate(cmpWeekA.thu)}</div>}
+            </div>
+          </FilterField>
+          <FilterField label="Week 2 - Green">
+            <div style={{ background:'linear-gradient(135deg,#f0fdf4,#dcfce7)', border:'1px solid #86efac', borderRadius:14, padding:8, boxShadow:'0 8px 18px rgba(34,197,94,0.10)', opacity:cmpProjectId?1:.55 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'64px 1fr', gap:8 }}>
+                <input type="number" min={1} max={cmpWeeks.length || 1} value={cmpWeekInputB} placeholder="#" disabled={!cmpProjectId || !cmpWeeks.length}
+                  onChange={e=>{const n=parseInt(e.target.value);setCmpWeekInputB(e.target.value);if(!isNaN(n)&&cmpWeeks.find(w=>w.weekNum===n))setCmpWeekNumB(String(n));}}
+                  style={{ ...fSel, width:'100%', fontWeight:900, textAlign:'center', border:'1px solid #22c55e', background:'#fff', color:'#15803d' }} />
+                <select value={cmpWeekNumB} disabled={!cmpProjectId || !cmpWeeks.length} onChange={e=>{setCmpWeekNumB(e.target.value);setCmpWeekInputB(e.target.value);}}
+                  style={{ ...fSel, width:'100%', border:'1px solid #22c55e', background:'#fff', color:'#15803d' }}>
+                  <option value="">— Week 2 —</option>
+                  {cmpWeeks.map(w=><option key={w.weekNum} value={w.weekNum}>{w.label}</option>)}
+                </select>
+              </div>
+              {cmpWeekB && <div style={{ marginTop:6, color:'#15803d', fontSize:11, fontWeight:800 }}>{formatDate(cmpWeekB.sat)} → {formatDate(cmpWeekB.thu)}</div>}
+            </div>
+          </FilterField>
+          <button type="button" onClick={() => { setCmpWeekNumA(''); setCmpWeekInputA(''); setCmpWeekNumB(''); setCmpWeekInputB(''); }} style={{ border:'1px solid #bfdbfe', background:'#ffffff', color:'#0f172a', borderRadius:10, padding:'10px 12px', fontSize:12, fontWeight:800, cursor:'pointer', height:40 }}>Clear</button>
         </div>
-        {cmpProjectId && cmpWeeks.length > 0 && (
-          <>
-            {[
-              { label:'Week 1', num:cmpWeekNumA, setNum:setCmpWeekNumA, inp:cmpWeekInputA, setInp:setCmpWeekInputA, color:'#7c3aed', bg:'#f5f3ff', border:'#ddd6fe' },
-              { label:'Week 2', num:cmpWeekNumB, setNum:setCmpWeekNumB, inp:cmpWeekInputB, setInp:setCmpWeekInputB, color:'#0369a1', bg:'#eff6ff', border:'#bfdbfe' },
-            ].map(({ label, num, setNum, inp, setInp, color, bg, border }) => {
-              const selWeek = cmpWeeks.find(w=>w.weekNum===parseInt(num));
-              return (
-                <div key={label} style={{ display:'flex', flexDirection:'column', gap:5 }}>
-                  <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color }}>📅 {label}</label>
-                  <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-                    <input type="number" min={1} max={cmpWeeks.length} value={inp} placeholder="#"
-                      onChange={e=>{const n=parseInt(e.target.value);setInp(e.target.value);if(!isNaN(n)&&cmpWeeks.find(w=>w.weekNum===n))setNum(String(n));}}
-                      style={{ ...fSel, width:64, minWidth:64, fontWeight:700, textAlign:'center', border:`2px solid ${color}`, background:bg }} />
-                    <select value={num} onChange={e=>{setNum(e.target.value);setInp(e.target.value);}}
-                      style={{ ...fSel, minWidth:240, border:`2px solid ${color}`, background:bg }}>
-                      <option value="">— {label} —</option>
-                      {cmpWeeks.map(w=><option key={w.weekNum} value={w.weekNum}>{w.label}</option>)}
-                    </select>
-                    {selWeek && <span style={{ fontSize:11, color, fontWeight:600, whiteSpace:'nowrap' }}>{formatDate(selWeek.sat)} → {formatDate(selWeek.thu)}</span>}
-                  </div>
-                </div>
-              );
-            })}
-          </>
-        )}
-      </div>
+        <div style={{ gridColumn:'1 / -1', fontSize:11, color:'#64748b', marginTop:-2 }}>Choose one project, then select Week 1 and Week 2 beside it. Blue = Week 1, Green = Week 2.</div>
+      </FilterShell>
 
       {/* No project selected */}
       {!cmpProjectId && (
@@ -721,8 +828,8 @@ function FloorCompare({ projects, projectLabel, cmpProjectId, setCmpProjectId, c
       {matA && matB && (
         <div style={{ display:'flex', gap:20, padding:'9px 16px', background:'#f8faff', border:'1px solid #e0ecff', borderRadius:10, marginBottom:16, alignItems:'center', flexWrap:'wrap' }}>
           {[
-            { color:'#7c3aed', bg:'#f5f3ff', label:`Week ${cmpWeekA?.weekNum}`, date:cmpWeekA?`${formatDate(cmpWeekA.sat)} – ${formatDate(cmpWeekA.thu)}`:''},
-            { color:'#0369a1', bg:'#eff6ff', label:`Week ${cmpWeekB?.weekNum}`, date:cmpWeekB?`${formatDate(cmpWeekB.sat)} – ${formatDate(cmpWeekB.thu)}`:''},
+            { color:'#2563eb', bg:'#eff6ff', label:`Week ${cmpWeekA?.weekNum}`, date:cmpWeekA?`${formatDate(cmpWeekA.sat)} – ${formatDate(cmpWeekA.thu)}`:''},
+            { color:'#22c55e', bg:'#f0fdf4', label:`Week ${cmpWeekB?.weekNum}`, date:cmpWeekB?`${formatDate(cmpWeekB.sat)} – ${formatDate(cmpWeekB.thu)}`:''},
           ].map((l,i) => (
             <div key={i} style={{ display:'flex', alignItems:'center', gap:8 }}>
               <span style={{ width:12, height:12, borderRadius:3, background:l.color, display:'inline-block', flexShrink:0 }} />
@@ -766,16 +873,16 @@ function FloorCompare({ projects, projectLabel, cmpProjectId, setCmpProjectId, c
                 <thead>
                   {/* Row 1 — floor level codes (same as single week: light purple) */}
                   <tr>
-                    <th colSpan={3} style={{ ...thBase, textAlign:'left', background:'#f8faff', borderRight:'1px solid #e0ecff' }}></th>
+                    <th colSpan={3} style={{ ...thBase, textAlign:'left', background:'#ffffff', borderRight:'1px solid #edf2f8' }}></th>
                     {levels.map(lv=>(
-                      <th key={lv.id} colSpan={2} style={{ ...thBase, background:'#ede9fe', color:'#7c3aed', borderLeft:'1px solid #ddd6fe', fontSize:13, fontWeight:800 }}>
+                      <th key={lv.id} colSpan={2} style={{ ...thBase, background:'#ffffff', color:'#0f172a', borderLeft:'1px solid #edf2f8', fontSize:13, fontWeight:850 }}>
                         {lv.level_code}
                         <div style={{ fontSize:9, fontWeight:500, color:'#9ca3af', marginTop:2 }}>{lv.level_name}</div>
                       </th>
                     ))}
-                    <th style={{ ...thBase, background:'#dbeafe', color:'#1d4ed8', borderLeft:'2px solid #bfdbfe' }}>W{cmpWeekA?.weekNum} Total</th>
-                    <th style={{ ...thBase, background:'#dbeafe', color:'#1d4ed8', borderLeft:'1px solid #bfdbfe' }}>W{cmpWeekB?.weekNum} Total</th>
-                    <th style={{ ...thBase, background:'#d1fae5', color:'#065f46', borderLeft:'2px solid #a7f3d0' }}>Δ Change</th>
+                    <th style={{ ...thBase, background:'#ffffff', color:'#0f172a', borderLeft:'1px solid #edf2f8' }}>W{cmpWeekA?.weekNum} Total</th>
+                    <th style={{ ...thBase, background:'#ffffff', color:'#0f172a', borderLeft:'1px solid #bfdbfe' }}>W{cmpWeekB?.weekNum} Total</th>
+                    <th style={{ ...thBase, background:'#ffffff', color:'#0f172a', borderLeft:'2px solid #a7f3d0' }}>Δ Change</th>
                   </tr>
                   {/* Row 2 — W1 / W2 sub-labels per floor */}
                   <tr>
@@ -784,13 +891,13 @@ function FloorCompare({ projects, projectLabel, cmpProjectId, setCmpProjectId, c
                     <th style={thBase}>Unit</th>
                     {levels.map(lv=>(
                       <>
-                        <th key={`a${lv.id}`} style={{ ...thBase, background:'#f5f3ff', color:'#7c3aed', borderLeft:'1px solid #ddd6fe', fontSize:10, padding:'5px 4px' }}>W{cmpWeekA?.weekNum}</th>
-                        <th key={`b${lv.id}`} style={{ ...thBase, background:'#eff6ff', color:'#0369a1', borderLeft:'1px solid #bfdbfe', fontSize:10, padding:'5px 4px' }}>W{cmpWeekB?.weekNum}</th>
+                        <th key={`a${lv.id}`} style={{ ...thBase, background:'#ffffff', color:'#2563eb', borderLeft:'1px solid #cfe0ff', fontSize:10, padding:'5px 4px' }}>W{cmpWeekA?.weekNum}</th>
+                        <th key={`b${lv.id}`} style={{ ...thBase, background:'#ffffff', color:'#22c55e', borderLeft:'1px solid #bbf7d0', fontSize:10, padding:'5px 4px' }}>W{cmpWeekB?.weekNum}</th>
                       </>
                     ))}
-                    <th style={{ ...thBase, background:'#dbeafe', color:'#1d4ed8', borderLeft:'2px solid #bfdbfe', fontSize:10 }}>W{cmpWeekA?.weekNum}</th>
-                    <th style={{ ...thBase, background:'#dbeafe', color:'#1d4ed8', borderLeft:'1px solid #bfdbfe', fontSize:10 }}>W{cmpWeekB?.weekNum}</th>
-                    <th style={{ ...thBase, background:'#d1fae5', color:'#065f46', borderLeft:'2px solid #a7f3d0', fontSize:10 }}>Δ</th>
+                    <th style={{ ...thBase, background:'#ffffff', color:'#0f172a', borderLeft:'1px solid #edf2f8', fontSize:10 }}>W{cmpWeekA?.weekNum}</th>
+                    <th style={{ ...thBase, background:'#ffffff', color:'#22c55e', borderLeft:'1px solid #bbf7d0', fontSize:10 }}>W{cmpWeekB?.weekNum}</th>
+                    <th style={{ ...thBase, background:'#ffffff', color:'#0f172a', borderLeft:'2px solid #a7f3d0', fontSize:10 }}>Δ</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -800,20 +907,20 @@ function FloorCompare({ projects, projectLabel, cmpProjectId, setCmpProjectId, c
                     const gTotA=gA.reduce((s,v)=>s+v,0), gTotB=gB.reduce((s,v)=>s+v,0);
                     return (
                       <>
-                        <tr key={`g-${group}`} style={{ background:'#ede9fe' }}>
-                          <td colSpan={3} style={{ padding:'7px 12px', fontSize:11, fontWeight:700, color:'#7c3aed' }}>{group}</td>
+                        <tr key={`g-${group}`} style={{ background:'#ffffff', borderTop:'1px solid #e5eaf3', borderLeft:'4px solid #22c55e' }}>
+                          <td colSpan={3} style={{ padding:'7px 12px', fontSize:11, fontWeight:700, color:'#0f172a' }}>{group}</td>
                           {levels.map((lv,i)=>(
                             <>
-                              <td key={`ga${i}`} style={{ padding:'6px 6px', textAlign:'center', borderLeft:'1px solid #ddd6fe', background:'#f5f3ff' }}>
-                                <span style={{ fontSize:11, fontWeight:700, color:gA[i]>0?'#7c3aed':'#ddd6fe' }}>{gA[i]>0?fmt(gA[i]):'·'}</span>
+                              <td key={`ga${i}`} style={{ padding:'6px 6px', textAlign:'center', borderLeft:'1px solid #cfe0ff', background:'#ffffff' }}>
+                                <span style={{ fontSize:11, fontWeight:700, color:gA[i]>0?'#0f172a':'#cbd5e1' }}>{gA[i]>0?fmt(gA[i]):'·'}</span>
                               </td>
-                              <td key={`gb${i}`} style={{ padding:'6px 6px', textAlign:'center', borderLeft:'1px solid #bfdbfe', background:'#eff6ff' }}>
-                                <span style={{ fontSize:11, fontWeight:700, color:gB[i]>0?'#0369a1':'#bfdbfe' }}>{gB[i]>0?fmt(gB[i]):'·'}</span>
+                              <td key={`gb${i}`} style={{ padding:'6px 6px', textAlign:'center', borderLeft:'1px solid #bfdbfe', background:'#ffffff' }}>
+                                <span style={{ fontSize:11, fontWeight:700, color:gB[i]>0?'#0f172a':'#cbd5e1' }}>{gB[i]>0?fmt(gB[i]):'·'}</span>
                               </td>
                             </>
                           ))}
-                          <td style={{ padding:'7px 8px', textAlign:'center', fontWeight:700, color:'#7c3aed', borderLeft:'2px solid #ddd6fe' }}>{fmt(gTotA)}</td>
-                          <td style={{ padding:'7px 8px', textAlign:'center', fontWeight:700, color:'#0369a1', borderLeft:'1px solid #bfdbfe' }}>{fmt(gTotB)}</td>
+                          <td style={{ padding:'7px 8px', textAlign:'center', fontWeight:700, color:'#0f172a', borderLeft:'2px solid #cfe0ff' }}>{fmt(gTotA)}</td>
+                          <td style={{ padding:'7px 8px', textAlign:'center', fontWeight:700, color:'#0f172a', borderLeft:'1px solid #bfdbfe' }}>{fmt(gTotB)}</td>
                           <td style={{ padding:'7px 8px', textAlign:'center', fontWeight:700, color:dc(gTotB-gTotA), borderLeft:'2px solid #fde68a' }}>
                             {gTotB-gTotA!==0?`${di(gTotB-gTotA)} ${Math.abs(gTotB-gTotA).toFixed(1)}`:'='}
                           </td>
@@ -824,7 +931,7 @@ function FloorCompare({ projects, projectLabel, cmpProjectId, setCmpProjectId, c
                           const iTotA=iA.reduce((s,v)=>s+v,0), iTotB=iB.reduce((s,v)=>s+v,0);
                           const iDelta=iTotB-iTotA;
                           return (
-                            <tr key={item.item_id} style={{ borderBottom:'1px solid #f3f4f6', background:idx%2===0?'#fafbff':'#fff' }}>
+                            <tr key={item.item_id} style={{ borderBottom:'1px solid #f3f4f6', background:'#ffffff' }}>
                               <td style={{ padding:'9px 12px', fontFamily:'monospace', fontSize:10, color:'#6b7280' }}>{item.item_code}</td>
                               <td style={{ padding:'9px 12px', fontWeight:600, color:'#111827', fontSize:12 }}>{item.item_name}</td>
                               <td style={{ padding:'9px 8px', textAlign:'center', color:'#9ca3af', fontSize:10 }}>{item.unit_of_measure||'—'}</td>
@@ -832,17 +939,17 @@ function FloorCompare({ projects, projectLabel, cmpProjectId, setCmpProjectId, c
                                 const vA=iA[i], vB=iB[i];
                                 return (
                                   <>
-                                    <td key={`ia${i}`} style={{ padding:'6px', textAlign:'center', borderLeft:'1px solid #f3f4f6', background:vA>0?'#f5f3ff':'transparent' }}>
-                                      {vA>0?<span style={{ fontWeight:700, color:'#7c3aed', fontSize:12 }}>{fmt(vA)}</span>:<span style={{ color:'#e5e7eb' }}>·</span>}
+                                    <td key={`ia${i}`} style={{ padding:'6px', textAlign:'center', borderLeft:'1px solid #f3f4f6', background:'#ffffff' }}>
+                                      {vA>0?<span style={{ fontWeight:700, color:'#0f172a', fontSize:12 }}>{fmt(vA)}</span>:<span style={{ color:'#e5e7eb' }}>·</span>}
                                     </td>
-                                    <td key={`ib${i}`} style={{ padding:'6px', textAlign:'center', borderLeft:'1px solid #e0f2fe', background:vB>0?'#eff6ff':'transparent' }}>
-                                      {vB>0?<span style={{ fontWeight:700, color:'#0369a1', fontSize:12 }}>{fmt(vB)}</span>:<span style={{ color:'#e5e7eb' }}>·</span>}
+                                    <td key={`ib${i}`} style={{ padding:'6px', textAlign:'center', borderLeft:'1px solid #e0f2fe', background:'#ffffff' }}>
+                                      {vB>0?<span style={{ fontWeight:700, color:'#0f172a', fontSize:12 }}>{fmt(vB)}</span>:<span style={{ color:'#e5e7eb' }}>·</span>}
                                     </td>
                                   </>
                                 );
                               })}
-                              <td style={{ padding:'9px 8px', textAlign:'center', fontWeight:700, color:'#7c3aed', background:iTotA>0?'#f5f3ff':'transparent', borderLeft:'2px solid #ddd6fe' }}>{iTotA>0?fmt(iTotA):'—'}</td>
-                              <td style={{ padding:'9px 8px', textAlign:'center', fontWeight:700, color:'#0369a1', background:iTotB>0?'#eff6ff':'transparent', borderLeft:'1px solid #bfdbfe' }}>{iTotB>0?fmt(iTotB):'—'}</td>
+                              <td style={{ padding:'9px 8px', textAlign:'center', fontWeight:700, color:'#0f172a', background:'#ffffff', borderLeft:'2px solid #cfe0ff' }}>{iTotA>0?fmt(iTotA):'—'}</td>
+                              <td style={{ padding:'9px 8px', textAlign:'center', fontWeight:700, color:'#0f172a', background:'#ffffff', borderLeft:'1px solid #bfdbfe' }}>{iTotB>0?fmt(iTotB):'—'}</td>
                               <td style={{ padding:'9px 8px', textAlign:'center', fontWeight:700, color:dc(iDelta),
                                 background:iDelta>0?'#f0fdf4':iDelta<0?'#fef2f2':'transparent', borderLeft:'2px solid #fde68a', fontSize:12 }}>
                                 {iDelta!==0?`${di(iDelta)} ${Math.abs(iDelta).toFixed(1)}`:<span style={{ color:'#d1d5db' }}>—</span>}
@@ -855,16 +962,16 @@ function FloorCompare({ projects, projectLabel, cmpProjectId, setCmpProjectId, c
                   })}
                 </tbody>
                 <tfoot>
-                  <tr style={{ background:'#dbeafe', borderTop:'2px solid #bfdbfe' }}>
-                    <td colSpan={3} style={{ padding:'10px 12px', fontWeight:700, color:'#1d4ed8', fontSize:12 }}>THIS WEEK TOTAL</td>
+                  <tr style={{ background:'#ffffff', borderTop:'2px solid #bfdbfe' }}>
+                    <td colSpan={3} style={{ padding:'10px 12px', fontWeight:700, color:'#0f172a', fontSize:12 }}>THIS WEEK TOTAL</td>
                     {levels.map((lv,i)=>(
                       <>
-                        <td key={`fa${i}`} style={{ padding:'8px 6px', textAlign:'center', fontWeight:700, color:floorTotA[i]>0?'#7c3aed':'#c4b5fd', borderLeft:'1px solid #ddd6fe', background:'#f5f3ff', fontSize:12 }}>{floorTotA[i]>0?fmt(floorTotA[i]):'—'}</td>
-                        <td key={`fb${i}`} style={{ padding:'8px 6px', textAlign:'center', fontWeight:700, color:floorTotB[i]>0?'#0369a1':'#bfdbfe', borderLeft:'1px solid #bfdbfe', background:'#eff6ff', fontSize:12 }}>{floorTotB[i]>0?fmt(floorTotB[i]):'—'}</td>
+                        <td key={`fa${i}`} style={{ padding:'8px 6px', textAlign:'center', fontWeight:700, color:floorTotA[i]>0?'#0f172a':'#bfdbfe', borderLeft:'1px solid #cfe0ff', background:'#ffffff', fontSize:12 }}>{floorTotA[i]>0?fmt(floorTotA[i]):'—'}</td>
+                        <td key={`fb${i}`} style={{ padding:'8px 6px', textAlign:'center', fontWeight:700, color:floorTotB[i]>0?'#0f172a':'#bfdbfe', borderLeft:'1px solid #bfdbfe', background:'#ffffff', fontSize:12 }}>{floorTotB[i]>0?fmt(floorTotB[i]):'—'}</td>
                       </>
                     ))}
-                    <td style={{ padding:'10px 8px', textAlign:'center', fontWeight:800, color:'#1d4ed8', borderLeft:'2px solid #bfdbfe', fontSize:13 }}>{fmt(grandA)}</td>
-                    <td style={{ padding:'10px 8px', textAlign:'center', fontWeight:800, color:'#1d4ed8', borderLeft:'1px solid #bfdbfe', fontSize:13 }}>{fmt(grandB)}</td>
+                    <td style={{ padding:'10px 8px', textAlign:'center', fontWeight:800, color:'#0f172a', borderLeft:'2px solid #bfdbfe', fontSize:13 }}>{fmt(grandA)}</td>
+                    <td style={{ padding:'10px 8px', textAlign:'center', fontWeight:800, color:'#0f172a', borderLeft:'1px solid #bfdbfe', fontSize:13 }}>{fmt(grandB)}</td>
                     <td style={{ padding:'10px 8px', textAlign:'center', fontWeight:700, color:dc(grandDelta), background: grandDelta>0?'#d1fae5':grandDelta<0?'#fee2e2':'#f0f7ff', borderLeft:'2px solid #a7f3d0', fontSize:13 }}>
                       {grandDelta!==0?`${di(grandDelta)} ${Math.abs(grandDelta).toFixed(1)}`:'='}
                     </td>
@@ -910,7 +1017,7 @@ function FloorCompare({ projects, projectLabel, cmpProjectId, setCmpProjectId, c
         const activeFloorsA = floorStats.filter(f=>f.a>0).length;
         const activeFloorsB = floorStats.filter(f=>f.b>0).length;
 
-        const Card = ({ icon, title, children, accent='#7c3aed' }) => (
+        const Card = ({ icon, title, children, accent='#2563eb' }) => (
           <div style={{ background:'var(--card)', border:`1px solid ${accent}22`, borderRadius:12, padding:'14px 16px', borderLeft:`3px solid ${accent}` }}>
             <div style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.07em', color:accent, marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>
               <span>{icon}</span>{title}
@@ -921,16 +1028,16 @@ function FloorCompare({ projects, projectLabel, cmpProjectId, setCmpProjectId, c
         const Row = ({ label, valA, valB, deltaV }) => (
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'5px 0', borderBottom:'1px solid #f3f4f6', fontSize:12 }}>
             <span style={{ color:'#6b7280', flex:1 }}>{label}</span>
-            <span style={{ color:'#7c3aed', fontWeight:600, minWidth:55, textAlign:'right' }}>{valA}</span>
+            <span style={{ color:'#0f172a', fontWeight:600, minWidth:55, textAlign:'right' }}>{valA}</span>
             <span style={{ color:'#9ca3af', margin:'0 6px' }}>→</span>
-            <span style={{ color:'#0369a1', fontWeight:600, minWidth:55, textAlign:'right' }}>{valB}</span>
+            <span style={{ color:'#0f172a', fontWeight:600, minWidth:55, textAlign:'right' }}>{valB}</span>
             {deltaV!==undefined && <span style={{ color:tColor(deltaV), fontWeight:700, minWidth:60, textAlign:'right', fontSize:11 }}>{deltaV>0?'▲':deltaV<0?'▼':'='} {Math.abs(deltaV).toFixed(2)}</span>}
           </div>
         );
 
         return (
-          <div style={{ marginTop:20, borderRadius:14, overflow:'hidden', border:'1.5px solid #7c3aed' }}>
-            <div style={{ background:'linear-gradient(135deg,#6d28d9,#7c3aed)', padding:'14px 20px', display:'flex', alignItems:'center', gap:12 }}>
+          <div style={{ marginTop:20, borderRadius:14, overflow:'hidden', border:'1.5px solid #2563eb' }}>
+            <div style={{ background:'linear-gradient(135deg,#1d4ed8,#2563eb)', padding:'14px 20px', display:'flex', alignItems:'center', gap:12 }}>
               <span style={{ fontSize:22 }}>📊</span>
               <div>
                 <div style={{ fontSize:14, fontWeight:700, color:'#fff' }}>Floor Productivity Analysis</div>
@@ -954,7 +1061,7 @@ function FloorCompare({ projects, projectLabel, cmpProjectId, setCmpProjectId, c
 
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 {/* Key metrics */}
-                <Card icon="📋" title="Key Metrics" accent="#7c3aed">
+                <Card icon="📋" title="Key Metrics" accent="#2563eb">
                   <Row label="Total Installed" valA={fmt(totalA)} valB={fmt(totalB)} deltaV={delta} />
                   <Row label="Active Floors" valA={activeFloorsA} valB={activeFloorsB} deltaV={activeFloorsB-activeFloorsA} />
                   <Row label="Avg per Floor" valA={fmt(activeFloorsA>0?totalA/activeFloorsA:0)} valB={fmt(activeFloorsB>0?totalB/activeFloorsB:0)} deltaV={(activeFloorsB>0?totalB/activeFloorsB:0)-(activeFloorsA>0?totalA/activeFloorsA:0)} />
@@ -988,7 +1095,7 @@ function FloorCompare({ projects, projectLabel, cmpProjectId, setCmpProjectId, c
                     : improved.slice(0,4).map(i=>(
                       <div key={i.name} style={{ display:'flex', justifyContent:'space-between', padding:'4px 0', borderBottom:'1px solid #f3f4f6', fontSize:12 }}>
                         <span style={{ color:'#111827', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{i.name}</span>
-                        <span style={{ color:'#16a34a', fontWeight:700, marginLeft:8 }}>▲ {fmt(i.delta)}</span>
+                        <span style={{ color:'#0f172a', fontWeight:700, marginLeft:8 }}>▲ {fmt(i.delta)}</span>
                       </div>
                     ))
                   }
@@ -1008,14 +1115,14 @@ function FloorCompare({ projects, projectLabel, cmpProjectId, setCmpProjectId, c
               </div>
 
               {/* Floor delta breakdown */}
-              <Card icon="🏗️" title="Floor-by-Floor Δ Change" accent="#7c3aed">
+              <Card icon="🏗️" title="Floor-by-Floor Δ Change" accent="#2563eb">
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
                   {floorStats.map(f => (
                     <div key={f.code} style={{ flex:'1 1 80px', background:f.delta>0?'#f0fdf4':f.delta<0?'#fef2f2':'#f9fafb',
                       border:`1px solid ${f.delta>0?'#bbf7d0':f.delta<0?'#fecaca':'#e5e7eb'}`, borderRadius:8, padding:'8px 10px', textAlign:'center' }}>
                       <div style={{ fontSize:12, fontWeight:800, color:'#374151' }}>{f.code}</div>
-                      <div style={{ fontSize:11, color:'#7c3aed' }}>W{cmpWeekA?.weekNum}: {f.a>0?fmt(f.a):'—'}</div>
-                      <div style={{ fontSize:11, color:'#0369a1' }}>W{cmpWeekB?.weekNum}: {f.b>0?fmt(f.b):'—'}</div>
+                      <div style={{ fontSize:11, color:'#0f172a' }}>W{cmpWeekA?.weekNum}: {f.a>0?fmt(f.a):'—'}</div>
+                      <div style={{ fontSize:11, color:'#0f172a' }}>W{cmpWeekB?.weekNum}: {f.b>0?fmt(f.b):'—'}</div>
                       {f.delta!==0 && <div style={{ fontSize:12, fontWeight:700, color:tColor(f.delta), marginTop:3 }}>{f.delta>0?'▲':'▼'} {Math.abs(f.delta).toFixed(1)}</div>}
                       {f.delta===0 && (f.a>0||f.b>0) && <div style={{ fontSize:11, color:'#9ca3af', marginTop:3 }}>= same</div>}
                     </div>
@@ -1032,7 +1139,7 @@ function FloorCompare({ projects, projectLabel, cmpProjectId, setCmpProjectId, c
                       warn:  { bg:'#fffbeb', border:'#fde68a', icon:'⚠️' },
                       bad:   { bg:'#fef2f2', border:'#fecaca', icon:'🔴' },
                       info:  { bg:'#eff6ff', border:'#bfdbfe', icon:'ℹ️' },
-                      action:{ bg:'#f5f3ff', border:'#ddd6fe', icon:'🎯' },
+                      action:{ bg:'#f8fbff', border:'#cfe0ff', icon:'🎯' },
                     }[ins.type]||{ bg:'#f9fafb', border:'#e5e7eb', icon:'➡️' };
                     return (
                       <div key={i} style={{ background:cfg.bg, border:`1px solid ${cfg.border}`, borderRadius:8, padding:'8px 12px', display:'flex', gap:8, alignItems:'flex-start' }}>

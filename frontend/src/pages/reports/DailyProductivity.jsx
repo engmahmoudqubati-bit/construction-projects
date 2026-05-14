@@ -2,6 +2,94 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from '../../api/client';
 import { useToast } from '../../components/shared/Toast';
 
+
+const reportDarkModeStyles = `
+[data-theme="dark"] .cpms-report-darkable,
+.dark .cpms-report-darkable,
+body.dark .cpms-report-darkable {
+  background: linear-gradient(180deg,#0f172a 0%,#111827 100%) !important;
+  color: #e5e7eb !important;
+}
+[data-theme="dark"] .cpms-report-darkable div,
+[data-theme="dark"] .cpms-report-darkable section,
+.dark .cpms-report-darkable div,
+.dark .cpms-report-darkable section,
+body.dark .cpms-report-darkable div,
+body.dark .cpms-report-darkable section {
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .cpms-report-darkable input,
+[data-theme="dark"] .cpms-report-darkable select,
+[data-theme="dark"] .cpms-report-darkable textarea,
+.dark .cpms-report-darkable input,
+.dark .cpms-report-darkable select,
+.dark .cpms-report-darkable textarea,
+body.dark .cpms-report-darkable input,
+body.dark .cpms-report-darkable select,
+body.dark .cpms-report-darkable textarea {
+  background: #0b1220 !important;
+  color: #e5e7eb !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .cpms-report-darkable input::placeholder,
+.dark .cpms-report-darkable input::placeholder,
+body.dark .cpms-report-darkable input::placeholder { color: #94a3b8 !important; }
+[data-theme="dark"] .cpms-report-darkable button,
+.dark .cpms-report-darkable button,
+body.dark .cpms-report-darkable button {
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .cpms-report-darkable h1,
+[data-theme="dark"] .cpms-report-darkable h2,
+[data-theme="dark"] .cpms-report-darkable h3,
+[data-theme="dark"] .cpms-report-darkable label,
+.dark .cpms-report-darkable h1,
+.dark .cpms-report-darkable h2,
+.dark .cpms-report-darkable h3,
+.dark .cpms-report-darkable label,
+body.dark .cpms-report-darkable h1,
+body.dark .cpms-report-darkable h2,
+body.dark .cpms-report-darkable h3,
+body.dark .cpms-report-darkable label { color: #f8fafc !important; }
+[data-theme="dark"] .cpms-report-darkable p,
+[data-theme="dark"] .cpms-report-darkable span,
+.dark .cpms-report-darkable p,
+.dark .cpms-report-darkable span,
+body.dark .cpms-report-darkable p,
+body.dark .cpms-report-darkable span { color: inherit; }
+[data-theme="dark"] .cpms-report-darkable table,
+.dark .cpms-report-darkable table,
+body.dark .cpms-report-darkable table { background: #111827 !important; color:#e5e7eb !important; }
+[data-theme="dark"] .cpms-report-darkable th,
+.dark .cpms-report-darkable th,
+body.dark .cpms-report-darkable th {
+  background: linear-gradient(180deg,#1e293b 0%,#0f172a 100%) !important;
+  color: #dbeafe !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .cpms-report-darkable td,
+.dark .cpms-report-darkable td,
+body.dark .cpms-report-darkable td {
+  background: #111827 !important;
+  color: #e5e7eb !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .cpms-report-darkable tr:nth-child(even) td,
+.dark .cpms-report-darkable tr:nth-child(even) td,
+body.dark .cpms-report-darkable tr:nth-child(even) td { background: #0f172a !important; }
+[data-theme="dark"] .cpms-report-darkable [style*="background: rgb(255, 255, 255)"],
+[data-theme="dark"] .cpms-report-darkable [style*="background:#fff"],
+[data-theme="dark"] .cpms-report-darkable [style*="background: '#fff'"],
+.dark .cpms-report-darkable [style*="background:#fff"],
+body.dark .cpms-report-darkable [style*="background:#fff"] {
+  background: #1e293b !important;
+}
+`;
+
+function ReportDarkModeStyle() {
+  return <style>{reportDarkModeStyles}</style>;
+}
+
 const fmt2 = v => (parseFloat(v) || 0).toFixed(2);
 
 // ── Shared week helpers ───────────────────────────────────────────────────────
@@ -27,17 +115,26 @@ function dayName(ds) {
   const [y,m,d] = ds.split('-').map(Number);
   return new Date(y,m-1,d).toLocaleDateString('en-GB',{weekday:'short'});
 }
-function generateWeeks(firstDateStr) {
+function generateWeeks(firstDateStr, lastDateStr) {
   if (!firstDateStr) return [];
-  const today = new Date();
+  const last = lastDateStr ? new Date(...lastDateStr.split('-').map((v,i)=>i===1?Number(v)-1:Number(v))) : new Date();
   let sat = getWeekSaturday(firstDateStr);
   const weeks = []; let wn = 1;
-  while (sat <= today) {
+  while (sat <= last) {
     const thu = addDays(sat, 5);
     weeks.push({ weekNum:wn++, sat:toISO(sat), thu:toISO(thu), label:`Week ${wn-1} — ${formatDate(toISO(sat))} → ${formatDate(toISO(thu))}` });
     sat = addDays(sat, 7);
   }
   return weeks;
+}
+
+function getInstallationDateRangeFromMap(mapData) {
+  const confirmedDates = (mapData?.txs || [])
+    .filter(t => (t.tx_status || '').toLowerCase() === 'confirmed' && t.transaction_date)
+    .map(t => String(t.transaction_date).slice(0,10))
+    .sort();
+  if (!confirmedDates.length) return { first: null, last: null };
+  return { first: confirmedDates[0], last: confirmedDates[confirmedDates.length - 1] };
 }
 function weekDays(satStr) {
   const days = [];
@@ -58,7 +155,51 @@ function buildQtyMap(daily) {
 }
 
 // ── Week Filter Bar ───────────────────────────────────────────────────────────
-function WeekFilter({ projects, projectId, setProjectId, weekNum, setWeekNum, weeks, years, months, selectedYear, setSelectedYear, selectedMonth, setSelectedMonth, weekInput, setWeekInput, selectedWeek, fSel }) {
+function FilterShell({ title, subtitle, children, right }) {
+  return (
+    <div style={{
+      background:'#fff', border:'1px solid #bfdbfe', borderRadius:16, overflow:'hidden',
+      boxShadow:'0 10px 26px rgba(15,23,42,0.06)', marginBottom:14
+    }}>
+      <div style={{
+        minHeight:42, padding:'9px 12px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12,
+        background:'linear-gradient(180deg,#f8fbff 0%,#eff6ff 100%)', borderBottom:'1px solid #bfdbfe'
+      }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10, minWidth:0 }}>
+          <div style={{ width:30, height:30, borderRadius:9, background:'#1d4ed8', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15, boxShadow:'0 8px 18px rgba(29,78,216,0.18)' }}>⚙️</div>
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontSize:13, fontWeight:900, color:'#0f172a', lineHeight:1.1 }}>{title}</div>
+            <div style={{ fontSize:11, color:'#64748b', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', marginTop:2 }}>{subtitle}</div>
+          </div>
+        </div>
+        {right}
+      </div>
+      <div style={{ padding:12, display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(190px, 1fr))', gap:10, alignItems:'end' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function FilterField({ label, span=3, children }) {
+  return (
+    <div style={{ gridColumn: span >= 12 ? '1 / -1' : 'auto', minWidth:0 }}>
+      <label style={{ display:'block', fontSize:10, fontWeight:900, color:'#334155', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function ClearableInput({ value, onChange, placeholder, style }) {
+  return (
+    <div style={{ position:'relative' }}>
+      <input value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={{ ...style, width:'100%' }} />
+    </div>
+  );
+}
+
+// ── Week Filter Bar ───────────────────────────────────────────────────────────
+function WeekFilter({ projects, projectId, setProjectId, weekNum, setWeekNum, weeks, years, months, selectedYear, setSelectedYear, selectedMonth, setSelectedMonth, weekInput, setWeekInput, selectedWeek, fSel, search, setSearch }) {
   const projectLabel = p => [p.project_name_en, p.project_name_ar].filter(Boolean).join(' / ');
   const monthName = m => new Date(`2000-${m}-01`).toLocaleDateString('en-GB',{month:'long'});
   const filteredWeeks = useMemo(() => {
@@ -68,60 +209,63 @@ function WeekFilter({ projects, projectId, setProjectId, weekNum, setWeekNum, we
     return ws;
   }, [weeks, selectedYear, selectedMonth]);
 
+  const resetFilters = () => {
+    setSelectedYear(''); setSelectedMonth(''); setWeekNum(''); setWeekInput(''); setSearch?.('');
+  };
+
   return (
-    <div style={{ display:'flex', gap:12, marginBottom:16, flexWrap:'wrap', alignItems:'flex-end' }}>
-      <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-        <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>🏗️ Project</label>
-        <select value={projectId} onChange={e => setProjectId(e.target.value)} style={{ ...fSel, minWidth:280 }}>
-          <option value="">— Select Project —</option>
-          {projects.map(p => <option key={p.id} value={p.id}>{projectLabel(p)}</option>)}
+    <FilterShell
+      title="Productivity Filters"
+      subtitle="Installation-style filters: project, installation period, selected week and smart search above the report."
+      right={selectedWeek ? <div style={{ background:'#eff6ff', border:'1px solid #bfdbfe', color:'#1d4ed8', borderRadius:999, padding:'6px 10px', fontSize:11, fontWeight:800, whiteSpace:'nowrap' }}>Week {selectedWeek.weekNum}: {formatDate(selectedWeek.sat)} → {formatDate(selectedWeek.thu)}</div> : null}
+    >
+      <FilterField label="Select Project" span={4}>
+        <div style={{ position:'relative' }}>
+          <select value={projectId} onChange={e => setProjectId(e.target.value)} style={{ ...fSel, width:'100%' }}>
+            <option value="">— Select Project —</option>
+            {projects.map(p => <option key={p.id} value={p.id}>{projectLabel(p)}</option>)}
+          </select>
+        </div>
+      </FilterField>
+
+      <FilterField label="Year" span={1}>
+        <select value={selectedYear} onChange={e => { setSelectedYear(e.target.value); setSelectedMonth(''); setWeekNum(''); setWeekInput(''); }} style={{ ...fSel, width:'100%' }} disabled={!years.length}>
+          <option value="">All</option>
+          {years.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
+      </FilterField>
+
+      <FilterField label="Month" span={2}>
+        <select value={selectedMonth} onChange={e => { setSelectedMonth(e.target.value); setWeekNum(''); setWeekInput(''); }} style={{ ...fSel, width:'100%' }} disabled={!selectedYear || !months.length}>
+          <option value="">All Months</option>
+          {months.map(m => <option key={m} value={m}>{monthName(m)}</option>)}
+        </select>
+      </FilterField>
+
+      <FilterField label={`Week No. ${weeks.length ? `(1-${weeks.length})` : ''}`} span={1}>
+        <input type="number" min={1} max={weeks.length || 1} value={weekInput} placeholder="#"
+          onChange={e => { const n=parseInt(e.target.value); setWeekInput(e.target.value); if(!isNaN(n)&&weeks.find(w=>w.weekNum===n)) setWeekNum(String(n)); }}
+          style={{ ...fSel, width:'100%', fontWeight:800, textAlign:'center' }} disabled={!weeks.length} />
+      </FilterField>
+
+      <FilterField label="Select Week" span={2}>
+        <select value={weekNum} onChange={e => { setWeekNum(e.target.value); setWeekInput(e.target.value); }} style={{ ...fSel, width:'100%' }} disabled={!filteredWeeks.length}>
+          <option value="">— Select —</option>
+          {filteredWeeks.map(w => <option key={w.weekNum} value={w.weekNum}>W{w.weekNum}: {formatDate(w.sat)} → {formatDate(w.thu)}</option>)}
+        </select>
+      </FilterField>
+
+      <FilterField label="Smart Search" span={2}>
+        <ClearableInput value={search||''} onChange={setSearch} placeholder="Item, code, classification..." style={fSel} />
+      </FilterField>
+
+      <div style={{ gridColumn:'span 12', display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop:2, gap:10 }}>
+        <div style={{ fontSize:11, color:'#64748b' }}>
+          Search includes item code, item name, classification and parent classification.
+        </div>
+        <button type="button" onClick={resetFilters} style={{ border:'1px solid #bfdbfe', background:'#eff6ff', color:'#1d4ed8', borderRadius:10, padding:'8px 12px', fontSize:12, fontWeight:800, cursor:'pointer' }}>Clear Filters</button>
       </div>
-      {years.length > 0 && (
-        <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>📆 Year</label>
-          <select value={selectedYear} onChange={e => { setSelectedYear(e.target.value); setSelectedMonth(''); setWeekNum(''); setWeekInput(''); }} style={{ ...fSel, minWidth:100 }}>
-            <option value="">All</option>
-            {years.map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
-        </div>
-      )}
-      {selectedYear && months.length > 0 && (
-        <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>🗓️ Month</label>
-          <select value={selectedMonth} onChange={e => { setSelectedMonth(e.target.value); setWeekNum(''); setWeekInput(''); }} style={{ ...fSel, minWidth:130 }}>
-            <option value="">All</option>
-            {months.map(m => <option key={m} value={m}>{monthName(m)}</option>)}
-          </select>
-        </div>
-      )}
-      {weeks.length > 0 && (
-        <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>
-            # Week No. <span style={{ color:'#9ca3af', fontWeight:400, textTransform:'none' }}>(1–{weeks.length})</span>
-          </label>
-          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <input type="number" min={1} max={weeks.length} value={weekInput} placeholder={`1–${weeks.length}`}
-              onChange={e => { const n=parseInt(e.target.value); setWeekInput(e.target.value); if(!isNaN(n)&&weeks.find(w=>w.weekNum===n)) setWeekNum(String(n)); }}
-              style={{ ...fSel, minWidth:85, fontWeight:700, textAlign:'center' }} />
-            {selectedWeek && (
-              <div style={{ background:'#f5f3ff', border:'1px solid #ddd6fe', borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:600, color:'#7c3aed', whiteSpace:'nowrap' }}>
-                📅 <strong>Sat</strong> {formatDate(selectedWeek.sat)} → <strong>Thu</strong> {formatDate(selectedWeek.thu)}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      {filteredWeeks.length > 0 && (
-        <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-          <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>📋 Or Select Week</label>
-          <select value={weekNum} onChange={e => { setWeekNum(e.target.value); setWeekInput(e.target.value); }} style={{ ...fSel, minWidth:320 }}>
-            <option value="">— Select Week —</option>
-            {filteredWeeks.map(w => <option key={w.weekNum} value={w.weekNum}>{w.label}</option>)}
-          </select>
-        </div>
-      )}
-    </div>
+    </FilterShell>
   );
 }
 
@@ -154,8 +298,8 @@ function ProductivityTable({ items, daily, selectedWeek, search }) {
   const dayTotals = days.map(d => activeItems.reduce((s,i) => s+(qtyMap[i.item_id]?.[d.iso]||0), 0));
   const grandTotal = dayTotals.reduce((s,v)=>s+v,0);
 
-  const th = { background:'#f0f7ff', color:'#111827', fontWeight:700, fontSize:11, padding:'10px 12px',
-    borderBottom:'2px solid #e0ecff', whiteSpace:'nowrap', letterSpacing:'0.02em', textAlign:'center' };
+  const th = { background:'#eff6ff', color:'#1e3a8a', fontWeight:800, fontSize:11, padding:'10px 12px',
+    borderBottom:'2px solid #bfdbfe', whiteSpace:'nowrap', letterSpacing:'0.04em', textAlign:'center', textTransform:'uppercase' };
   const td = { padding:'10px 12px', verticalAlign:'middle', textAlign:'center', fontSize:12 };
 
   if (activeItems.length === 0)
@@ -175,12 +319,12 @@ function ProductivityTable({ items, daily, selectedWeek, search }) {
             <th style={{ ...th, textAlign:'left' }}>Item Name</th>
             <th style={th}>Unit</th>
             {days.map(d => (
-              <th key={d.iso} style={{ ...th, background:'#eef2ff', color:'#1e3a5f', borderLeft:'1px solid #e0ecff' }}>
+              <th key={d.iso} style={{ ...th, background:'#dbeafe', color:'#1d4ed8', borderLeft:'1px solid #bfdbfe' }}>
                 <div style={{ fontSize:11, fontWeight:700 }}>{d.label}</div>
                 <div style={{ fontSize:10, fontWeight:500, color:'#9ca3af', marginTop:2 }}>{d.day}</div>
               </th>
             ))}
-            <th style={{ ...th, background:'#f5f3ff', color:'#7c3aed', borderLeft:'2px solid #ddd6fe' }}>Total</th>
+            <th style={{ ...th, background:'#eff6ff', color:'#2563eb', borderLeft:'2px solid #bfdbfe' }}>Total</th>
           </tr>
         </thead>
         <tbody>
@@ -189,14 +333,14 @@ function ProductivityTable({ items, daily, selectedWeek, search }) {
             const gTotal = gDayTotals.reduce((s,v)=>s+v,0);
             return (
               <>
-                <tr key={`g-${group}`} style={{ background:'#ede9fe' }}>
-                  <td colSpan={3} style={{ padding:'7px 12px', fontSize:11, fontWeight:700, color:'#7c3aed' }}>{group}</td>
+                <tr key={`g-${group}`} style={{ background:'#eff6ff' }}>
+                  <td colSpan={3} style={{ padding:'7px 12px', fontSize:11, fontWeight:700, color:'#2563eb' }}>{group}</td>
                   {gDayTotals.map((gt,i) => (
-                    <td key={i} style={{ padding:'7px 12px', textAlign:'center', fontSize:11, fontWeight:700, color:gt>0?'#7c3aed':'#ddd6fe', borderLeft:'1px solid #ede9fe' }}>
+                    <td key={i} style={{ padding:'7px 12px', textAlign:'center', fontSize:11, fontWeight:700, color:gt>0?'#2563eb':'#bfdbfe', borderLeft:'1px solid #eff6ff' }}>
                       {gt > 0 ? fmt2(gt) : '—'}
                     </td>
                   ))}
-                  <td style={{ padding:'7px 12px', textAlign:'center', fontWeight:700, fontSize:11, color:'#7c3aed', background:'#ede9fe', borderLeft:'2px solid #ddd6fe' }}>{fmt2(gTotal)}</td>
+                  <td style={{ padding:'7px 12px', textAlign:'center', fontWeight:700, fontSize:11, color:'#2563eb', background:'#eff6ff', borderLeft:'2px solid #bfdbfe' }}>{fmt2(gTotal)}</td>
                 </tr>
                 {groupItems.map((item, idx) => {
                   const qtys = days.map(d => qtyMap[item.item_id]?.[d.iso]||0);
@@ -207,17 +351,22 @@ function ProductivityTable({ items, daily, selectedWeek, search }) {
                       <td style={{ ...td, textAlign:'left', fontWeight:600, color:'#111827' }}>{item.item_name}</td>
                       <td style={{ ...td, color:'#9ca3af', fontSize:11 }}>{item.unit_of_measure||'—'}</td>
                       {qtys.map((qty,i) => (
-                        <td key={i} style={{ ...td, borderLeft:'1px solid #f3f4f6', background:qty>0?'#faf5ff':'transparent' }}>
+                        <td key={i} style={{ ...td, borderLeft:'1px solid #f3f4f6', background:qty>0?'#f8fafc':'transparent' }}>
                           {qty > 0
-                            ? <div><div style={{ fontWeight:700, color:'#7c3aed', fontSize:13 }}>{fmt2(qty)}</div>
-                                <div style={{ height:3, background:'#ede9fe', borderRadius:99, overflow:'hidden', marginTop:3 }}>
-                                  <div style={{ height:'100%', width:`${Math.min(100,(qty/(grandTotal/Math.max(1,activeItems.length)))*100)}%`, background:'#7c3aed', borderRadius:99 }} />
-                                </div></div>
-                            : <span style={{ color:'#e5e7eb', fontSize:15 }}>·</span>}
+                            ? <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+                                <div style={{ fontWeight:800, color:'#1d4ed8', fontSize:13 }}>{fmt2(qty)}</div>
+                                <div style={{ fontSize:10, fontWeight:800, color:'#2563eb', background:'#dbeafe', border:'1px solid #bfdbfe', borderRadius:999, padding:'1px 7px' }}>
+                                  {grandTotal > 0 ? ((qty / grandTotal) * 100).toFixed(1) : '0.0'}%
+                                </div>
+                                <div style={{ height:3, background:'#e2e8f0', borderRadius:99, overflow:'hidden', marginTop:1, width:'72%' }}>
+                                  <div style={{ height:'100%', width:`${grandTotal > 0 ? Math.min(100,(qty/grandTotal)*100) : 0}%`, background:'#2563eb', borderRadius:99 }} />
+                                </div>
+                              </div>
+                            : <span style={{ color:'#cbd5e1', fontSize:15 }}>·</span>}
                         </td>
                       ))}
-                      <td style={{ ...td, fontWeight:700, color:'#7c3aed', background:'#f5f3ff', borderLeft:'2px solid #ddd6fe', fontSize:13 }}>
-                        {itemTotal > 0 ? fmt2(itemTotal) : '—'}
+                      <td style={{ ...td, fontWeight:700, color:'#2563eb', background:'#eff6ff', borderLeft:'2px solid #bfdbfe', fontSize:13 }}>
+                        {itemTotal > 0 ? <div><div>{fmt2(itemTotal)}</div><div style={{ fontSize:10, color:'#1d4ed8', marginTop:2 }}>{grandTotal > 0 ? ((itemTotal / grandTotal) * 100).toFixed(1) : '0.0'}%</div></div> : '—'}
                       </td>
                     </tr>
                   );
@@ -227,14 +376,14 @@ function ProductivityTable({ items, daily, selectedWeek, search }) {
           })}
         </tbody>
         <tfoot>
-          <tr style={{ borderTop:'2px solid #e0ecff', background:'#f0f7ff' }}>
+          <tr style={{ borderTop:'2px solid #dbeafe', background:'#f8fafc' }}>
             <td colSpan={3} style={{ padding:'11px 12px', fontWeight:700, fontSize:12, color:'#374151' }}>Daily Total ({activeItems.length} items)</td>
             {dayTotals.map((total,i) => (
-              <td key={i} style={{ padding:'11px 12px', textAlign:'center', fontWeight:700, color:total>0?'#7c3aed':'#c4b5fd', fontSize:13, borderLeft:'1px solid #e0ecff' }}>
+              <td key={i} style={{ padding:'11px 12px', textAlign:'center', fontWeight:700, color:total>0?'#2563eb':'#93c5fd', fontSize:13, borderLeft:'1px solid #dbeafe' }}>
                 {total > 0 ? fmt2(total) : '—'}
               </td>
             ))}
-            <td style={{ padding:'11px 12px', textAlign:'center', fontWeight:700, color:'#7c3aed', background:'#ede9fe', fontSize:14, borderLeft:'2px solid #ddd6fe' }}>{fmt2(grandTotal)}</td>
+            <td style={{ padding:'11px 12px', textAlign:'center', fontWeight:700, color:'#2563eb', background:'#eff6ff', fontSize:14, borderLeft:'2px solid #bfdbfe' }}>{fmt2(grandTotal)}</td>
           </tr>
         </tfoot>
       </table>
@@ -286,12 +435,12 @@ function CompareTable({ dataA, dataB, weekA, weekB, search }) {
 
   // Colours — light palette
   const CLR = {
-    wA:      '#7c3aed', wAbg:   '#f5f3ff', wAborder:'#ddd6fe',
-    wB:      '#0369a1', wBbg:   '#eff6ff', wBborder:'#bfdbfe',
-    head:    '#f0f7ff', headBorder:'#e0ecff',
-    grp:     '#faf5ff', grpText:'#7c3aed',
-    totA:    '#f5f3ff', totB:   '#eff6ff',
-    delta:   '#fffbeb', foot:   '#f8faff',
+    wA:      '#1d4ed8', wAbg:   '#eff6ff', wAborder:'#93c5fd',
+    wB:      '#c2410c', wBbg:   '#fff7ed', wBborder:'#fdba74',
+    head:    '#f8fafc', headBorder:'#bfdbfe',
+    grp:     '#eef6ff', grpText:'#1d4ed8',
+    totA:    '#eff6ff', totB:   '#fffbeb',
+    delta:   '#f0fdf4', foot:   '#f8fbff',
   };
 
   // Fixed column widths to keep table on screen
@@ -341,13 +490,13 @@ function CompareTable({ dataA, dataB, weekA, weekB, search }) {
               <th colSpan={3} style={{ ...thBase, textAlign:'left', borderRight:`1px solid ${CLR.headBorder}` }}></th>
               {daysA.map((dA, i) => (
                 <th key={dA.iso} colSpan={2} style={{ ...thBase, borderLeft:`1px solid ${CLR.headBorder}`,
-                  background: i%2===0?'#eef2ff':'#f0f9ff', color:'#1e3a5f', fontSize:13, fontWeight:800, padding:'7px 4px' }}>
+                  background: i%2===0?'#eff6ff':'#f0f9ff', color:'#1e40af', fontSize:13, fontWeight:800, padding:'7px 4px' }}>
                   {dA.day}
                 </th>
               ))}
               <th style={{ ...thBase, background:CLR.wAbg, color:CLR.wA, borderLeft:`2px solid ${CLR.wAborder}` }}>Total</th>
               <th style={{ ...thBase, background:CLR.wBbg, color:CLR.wB, borderLeft:`1px solid ${CLR.wBborder}` }}>Total</th>
-              <th style={{ ...thBase, background:'#fffbeb', color:'#b45309', borderLeft:'2px solid #fde68a' }}>Δ</th>
+              <th style={{ ...thBase, background:'#fff7ed', color:'#c2410c', borderLeft:'2px solid #fde68a' }}>Δ</th>
             </tr>
             {/* Row 2 — W1 / W2 labels */}
             <tr>
@@ -368,7 +517,7 @@ function CompareTable({ dataA, dataB, weekA, weekB, search }) {
               ))}
               <th style={{ ...thBase, background:CLR.wAbg, color:CLR.wA, fontSize:10, borderLeft:`2px solid ${CLR.wAborder}` }}>W{weekA.weekNum}</th>
               <th style={{ ...thBase, background:CLR.wBbg, color:CLR.wB, fontSize:10, borderLeft:`1px solid ${CLR.wBborder}` }}>W{weekB.weekNum}</th>
-              <th style={{ ...thBase, background:'#fffbeb', color:'#b45309', fontSize:10, borderLeft:'2px solid #fde68a' }}>W{weekB.weekNum}−W{weekA.weekNum}</th>
+              <th style={{ ...thBase, background:'#fff7ed', color:'#c2410c', fontSize:10, borderLeft:'2px solid #fde68a' }}>W{weekB.weekNum}−W{weekA.weekNum}</th>
             </tr>
           </thead>
           <tbody>
@@ -431,7 +580,7 @@ function CompareTable({ dataA, dataB, weekA, weekB, search }) {
             })}
           </tbody>
           <tfoot>
-            <tr style={{ background:'#f0f7ff', borderTop:`2px solid ${CLR.headBorder}` }}>
+            <tr style={{ background:'#f8fafc', borderTop:`2px solid ${CLR.headBorder}` }}>
               <td colSpan={3} style={{ padding:'10px 12px', fontWeight:700, color:'#374151', fontSize:12 }}>Grand Total</td>
               {daysA.map((dA, i) => {
                 const dB = daysB[i];
@@ -535,7 +684,7 @@ function SmartInsights({ dataA, dataB, weekA, weekB }) {
     : r.deltaPct >= -5 ? 'Stable Performance' : r.deltaPct >= -20 ? 'Slight Decline' : 'Significant Decline';
   const verdictIcon = r.deltaPct >= 5 ? '🟢' : r.deltaPct >= -5 ? '🟡' : '🔴';
 
-  const Card = ({ icon, title, children, accent='#7c3aed' }) => (
+  const Card = ({ icon, title, children, accent='#2563eb' }) => (
     <div style={{ background:'var(--card)', border:`1px solid ${accent}22`, borderRadius:12,
       padding:'14px 16px', borderLeft:`3px solid ${accent}` }}>
       <div style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.07em',
@@ -549,7 +698,7 @@ function SmartInsights({ dataA, dataB, weekA, weekB }) {
   const Row = ({ label, valA, valB, delta, unit='' }) => (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'5px 0', borderBottom:'1px solid #f3f4f6', fontSize:12 }}>
       <span style={{ color:'#6b7280', flex:1 }}>{label}</span>
-      <span style={{ color:'#7c3aed', fontWeight:600, minWidth:60, textAlign:'right' }}>{valA}{unit}</span>
+      <span style={{ color:'#2563eb', fontWeight:600, minWidth:60, textAlign:'right' }}>{valA}{unit}</span>
       <span style={{ color:'#9ca3af', margin:'0 8px' }}>→</span>
       <span style={{ color:'#0369a1', fontWeight:600, minWidth:60, textAlign:'right' }}>{valB}{unit}</span>
       {delta !== undefined && (
@@ -561,9 +710,9 @@ function SmartInsights({ dataA, dataB, weekA, weekB }) {
   );
 
   return (
-    <div style={{ marginTop:20, borderRadius:14, overflow:'hidden', border:'1.5px solid #7c3aed' }}>
+    <div style={{ marginTop:20, borderRadius:14, overflow:'hidden', border:'1.5px solid #2563eb' }}>
       {/* Header */}
-      <div style={{ background:'linear-gradient(135deg,#6d28d9 0%,#7c3aed 100%)', padding:'14px 20px', display:'flex', alignItems:'center', gap:12 }}>
+      <div style={{ background:'linear-gradient(135deg,#1d4ed8 0%,#2563eb 100%)', padding:'14px 20px', display:'flex', alignItems:'center', gap:12 }}>
         <span style={{ fontSize:22 }}>📊</span>
         <div>
           <div style={{ fontSize:14, fontWeight:700, color:'#fff' }}>Productivity Analysis</div>
@@ -592,7 +741,7 @@ function SmartInsights({ dataA, dataB, weekA, weekB }) {
 
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
           {/* Key metrics */}
-          <Card icon="📋" title="Key Metrics" accent="#7c3aed">
+          <Card icon="📋" title="Key Metrics" accent="#2563eb">
             <Row label="Total Installed" valA={fmt(r.totalA)} valB={fmt(r.totalB)} delta={r.delta} />
             <Row label="Active Work Days" valA={r.activeDaysA} valB={r.activeDaysB} delta={r.activeDaysB-r.activeDaysA} />
             <Row label="Avg per Active Day" valA={fmt(r.avgDayA)} valB={fmt(r.avgDayB)} delta={r.avgDayB-r.avgDayA} />
@@ -665,7 +814,7 @@ function SmartInsights({ dataA, dataB, weekA, weekB }) {
         </div>
 
         {/* Day-by-day breakdown */}
-        <Card icon="🗓️" title="Day-by-Day Breakdown" accent="#7c3aed">
+        <Card icon="🗓️" title="Day-by-Day Breakdown" accent="#2563eb">
           <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
             {r.dayPairs.map(d => {
               const hasBoth = d.tA>0||d.tB>0;
@@ -673,7 +822,7 @@ function SmartInsights({ dataA, dataB, weekA, weekB }) {
                 <div key={d.day} style={{ flex:'1 1 80px', background:tBg(d.delta), border:`1px solid ${tBorder(d.delta)}`,
                   borderRadius:8, padding:'8px 10px', textAlign:'center', opacity:hasBoth?1:0.4 }}>
                   <div style={{ fontSize:11, fontWeight:700, color:'#374151', marginBottom:4 }}>{d.day}</div>
-                  <div style={{ fontSize:11, color:'#7c3aed', fontWeight:600 }}>W{weekA.weekNum}: {d.tA>0?fmt(d.tA):'—'}</div>
+                  <div style={{ fontSize:11, color:'#2563eb', fontWeight:600 }}>W{weekA.weekNum}: {d.tA>0?fmt(d.tA):'—'}</div>
                   <div style={{ fontSize:11, color:'#0369a1', fontWeight:600 }}>W{weekB.weekNum}: {d.tB>0?fmt(d.tB):'—'}</div>
                   {hasBoth && (
                     <div style={{ fontSize:12, fontWeight:700, color:tColor(d.delta), marginTop:4 }}>
@@ -738,7 +887,7 @@ function SmartInsights({ dataA, dataB, weekA, weekB }) {
                 warning: { bg:'#fff7ed', border:'#fed7aa', color:'#ea580c', icon:'⚠️' },
                 info:    { bg:'#e0f2fe', border:'#bae6fd', color:'#0369a1', icon:'ℹ️' },
                 neutral: { bg:'#f9fafb', border:'#e5e7eb', color:'#6b7280', icon:'➡️' },
-                action:  { bg:'#ede9fe', border:'#ddd6fe', color:'#7c3aed', icon:'🎯' },
+                action:  { bg:'#eff6ff', border:'#bfdbfe', color:'#2563eb', icon:'🎯' },
               }[obs.type];
               return (
                 <div key={i} style={{ background:cfg.bg, border:`1px solid ${cfg.border}`, borderRadius:8, padding:'8px 12px', display:'flex', gap:8, alignItems:'flex-start' }}>
@@ -791,11 +940,15 @@ export default function DailyProductivity() {
   const loadWeeksForProject = useCallback(async (pid, setWks, setFd) => {
     if (!pid) { setWks([]); setFd(null); return; }
     try {
-      const dummy = new Date().toISOString().slice(0,10);
-      const data = await api.getDailyProductivity(pid, dummy, dummy);
-      if (data.firstDeliveryDate) { setFd(data.firstDeliveryDate); setWks(generateWeeks(data.firstDeliveryDate)); }
+      // Weeks are based on confirmed INSTALLATION transactions only.
+      // This avoids delivery dates expanding or shifting the productivity report period.
+      const mapData = await api.getInstallationMap(pid);
+      const { first, last } = getInstallationDateRangeFromMap(mapData);
+      if (first) { setFd(first); setWks(generateWeeks(first, last)); }
       else { setWks([]); setFd(null); }
-    } catch { setWks([]); }
+    } catch {
+      setWks([]); setFd(null);
+    }
   }, []);
 
   useEffect(() => {
@@ -847,37 +1000,40 @@ export default function DailyProductivity() {
 
   const cmpProject = projects.find(p => String(p.id) === String(cmpProjectId));
 
-  const fSel = { background:'var(--card)', border:'2px solid #7c3aed', borderRadius:10, padding:'8px 14px', fontSize:13, fontWeight:600, color:'var(--text)', cursor:'pointer', fontFamily:'inherit', outline:'none', height:40 };
+  const fSel = { background:'#fff', border:'1px solid #bfdbfe', borderRadius:10, padding:'8px 12px', fontSize:13, fontWeight:600, color:'#0f172a', cursor:'pointer', fontFamily:'inherit', outline:'none', height:40, boxShadow:'0 1px 2px rgba(37,99,235,0.08)', transition:'border-color 0.15s, box-shadow 0.15s' };
 
   // SearchBar rendered inline (not as sub-component) to avoid focus loss on re-render
 
   return (
-    <div>
-      {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:24, flexWrap:'wrap' }}>
-        <div style={{ width:48, height:48, borderRadius:14, background:'#ede9fe', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-          <span style={{ fontSize:24 }}>📊</span>
+    <div className="cpms-report-darkable" style={{ fontFamily:'Inter, Segoe UI, Roboto, Arial, sans-serif', background:'linear-gradient(180deg,#f8fbff 0%,#eef4fb 100%)', minHeight:'100%', padding:'0 0 12px', color:'#0f172a' }}>
+      <ReportDarkModeStyle />
+      {/* Compact report header */}
+      <div style={{ background:'linear-gradient(135deg,#ffffff 0%,#f8fbff 100%)', border:'1px solid #d7e5fb', borderRadius:14, padding:'7px 10px', marginBottom:8, display:'flex', alignItems:'center', gap:12, boxShadow:'0 10px 26px rgba(15,23,42,0.06)' }}>
+        <div style={{ width:32, height:32, borderRadius:9, background:'linear-gradient(135deg,#1d4ed8,#2563eb)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, boxShadow:'0 8px 18px rgba(37,99,235,0.22)' }}>
+          <span style={{ fontSize:17 }}>📊</span>
         </div>
-        <div style={{ flex:1 }}>
-          <h1 style={{ fontSize:20, fontWeight:700, color:'var(--text)', letterSpacing:'-0.3px', margin:0 }}>Daily Productivity Per Week</h1>
-          <p style={{ fontSize:12, color:'#9ca3af', margin:'4px 0 0 0' }}>
-            Installation qty per item per working day (Sat–Thu) — reads from confirmed installation entries
+        <div style={{ flex:1, minWidth:0 }}>
+          <h1 style={{ fontSize:16, fontWeight:850, color:'#0f172a', letterSpacing:'-0.3px', margin:0 }}>Daily Productivity Per Week</h1>
+          <p style={{ fontSize:11, color:'#64748b', margin:'2px 0 0 0' }}>
+            Installation quantity per item and working day — confirmed site productivity entries
           </p>
         </div>
       </div>
 
-      {/* Tab bar */}
-      <div style={{ display:'flex', gap:0, marginBottom:20, borderBottom:'2px solid #ede9fe' }}>
+      {/* Floor-style professional tab bar */}
+      <div style={{ display:'flex', gap:0, marginBottom:10, borderBottom:'1px solid #dbeafe', background:'#f8fbff', padding:'4px', borderRadius:14, boxShadow:'0 4px 14px rgba(15,23,42,0.04)' }}>
         {[
-          { id:'single',  label:'📅 Single Week' },
-          { id:'compare', label:'⚖️ Compare Two Weeks' },
+          { id:'single',  label:'Single Week' },
+          { id:'compare', label:'Compare Two Weeks' },
         ].map(tab => (
           <button key={tab.id} onClick={() => { setActiveTab(tab.id); setSearch(''); }} style={{
-            padding:'10px 28px', fontSize:13, fontWeight:600, cursor:'pointer',
-            background:'none', border:'none', fontFamily:'inherit',
-            color: activeTab===tab.id?'#7c3aed':'#6b7280',
-            borderBottom: activeTab===tab.id?'2px solid #7c3aed':'2px solid transparent',
-            marginBottom:-2, transition:'all 0.15s',
+            padding:'8px 22px', fontSize:13, fontWeight:700, cursor:'pointer',
+            border:'none', fontFamily:'inherit',
+            background: activeTab===tab.id?'linear-gradient(135deg,#2563eb,#0ea5e9)':'transparent',
+            color: activeTab===tab.id?'#fff':'#64748b',
+            borderRadius:10,
+            marginBottom:0, transition:'all 0.15s',
+            boxShadow: activeTab===tab.id?'0 8px 18px rgba(37,99,235,0.16)':'none'
           }}>{tab.label}</button>
         ))}
       </div>
@@ -891,41 +1047,50 @@ export default function DailyProductivity() {
             selectedYear={selectedYear} setSelectedYear={setSelectedYear}
             selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth}
             weekInput={weekInput} setWeekInput={setWeekInput}
-            selectedWeek={selectedWeek} fSel={fSel} />
+            selectedWeek={selectedWeek} fSel={fSel} search={search} setSearch={setSearch} />
 
           {!projectId && <div style={{ textAlign:'center', padding:'60px 20px', color:'#9ca3af' }}><div style={{ fontSize:48, marginBottom:12 }}>📊</div><div style={{ fontSize:15 }}>Select a project to begin</div></div>}
-          {projectId && weeks.length === 0 && !loading && <div style={{ textAlign:'center', padding:'60px 20px', color:'#9ca3af' }}><div style={{ fontSize:48, marginBottom:12 }}>📦</div><div style={{ fontSize:15 }}>No delivery records found</div></div>}
+          {projectId && weeks.length === 0 && !loading && <div style={{ textAlign:'center', padding:'60px 20px', color:'#9ca3af' }}><div style={{ fontSize:48, marginBottom:12 }}>📦</div><div style={{ fontSize:15 }}>No confirmed installation productivity records found</div></div>}
           {projectId && weeks.length > 0 && !selectedWeek && !loading && (
             <div style={{ textAlign:'center', padding:'40px 20px', color:'#9ca3af' }}>
               <div style={{ fontSize:40, marginBottom:10 }}>👆</div>
               <div style={{ fontSize:14 }}>Enter a week number or select from the dropdown</div>
-              <div style={{ fontSize:12, marginTop:4 }}>Project has <strong style={{ color:'#7c3aed' }}>{weeks.length}</strong> weeks since first delivery on <strong style={{ color:'#7c3aed' }}>{formatDate(firstDate)}</strong></div>
+              <div style={{ fontSize:12, marginTop:4 }}>Project has <strong style={{ color:'#2563eb' }}>{weeks.length}</strong> weeks since first productivity entry on <strong style={{ color:'#2563eb' }}>{formatDate(firstDate)}</strong></div>
             </div>
           )}
           {loading && <div style={{ textAlign:'center', padding:40 }}><div className="spinner" /></div>}
 
           {!loading && reportData && selectedWeek && (
             <>
-              <div style={{ display:'flex', gap:12, marginBottom:16, flexWrap:'wrap' }}>
-                {[
-                  { label:'Week', value:`Week ${selectedWeek.weekNum}`, color:'#7c3aed', bg:'#f5f3ff' },
-                  { label:'Period Start', value:formatDate(selectedWeek.sat)+' (Sat)', color:'#7c3aed', bg:'#f5f3ff' },
-                  { label:'Period End',   value:formatDate(selectedWeek.thu)+' (Thu)', color:'#7c3aed', bg:'#f5f3ff' },
-                  { label:'Total Installed', value:fmt2(reportData.daily.reduce((s,d)=>s+(parseFloat(d.qty_installed)||0),0)), color:'#16a34a', bg:'#f0fdf4' },
-                  { label:'Active Items', value:new Set(reportData.daily.map(d=>d.item_id)).size, color:'#0369a1', bg:'#e0f2fe' },
-                ].map(k => (
-                  <div key={k.label} style={{ flex:'1 1 120px', background:k.bg, border:`1px solid ${k.color}33`, borderRadius:12, padding:'11px 14px' }}>
-                    <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', color:k.color, marginBottom:3 }}>{k.label}</div>
-                    <div style={{ fontSize:15, fontWeight:700, color:k.color }}>{k.value}</div>
-                  </div>
-                ))}
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:12, marginBottom:16 }}>
+                {(() => {
+                  const totalInstalled = reportData.daily.reduce((s,d)=>s+(parseFloat(d.qty_installed)||0),0);
+                  const activeItems = new Set(reportData.daily.map(d=>d.item_id)).size;
+                  const days = weekDays(selectedWeek.sat);
+                  const activeDays = days.filter(day => reportData.daily.some(d => String(d.transaction_date).slice(0,10) === day.iso && (parseFloat(d.qty_installed)||0) > 0)).length;
+                  const avgPerDay = activeDays > 0 ? totalInstalled / activeDays : 0;
+                  const itemShare = reportData.items?.length ? (activeItems / reportData.items.length) * 100 : 0;
+                  return [
+                    { label:'Selected Week', value:`W${selectedWeek.weekNum}`, sub:`${formatDate(selectedWeek.sat)} → ${formatDate(selectedWeek.thu)}`, pct:'100%', tone:'#2563eb', bg:'linear-gradient(135deg,#eff6ff,#dbeafe)' },
+                    { label:'Total Installed', value:fmt2(totalInstalled), sub:'Confirmed installation quantity', pct:`${activeDays}/6 days`, tone:'#16a34a', bg:'linear-gradient(135deg,#f0fdf4,#dcfce7)' },
+                    { label:'Active Items', value:activeItems, sub:`${reportData.items?.length || 0} planned items`, pct:`${itemShare.toFixed(1)}%`, tone:'#0369a1', bg:'linear-gradient(135deg,#e0f2fe,#cffafe)' },
+                    { label:'Avg / Active Day', value:fmt2(avgPerDay), sub:'Daily productivity rate', pct: activeDays ? 'Live' : 'No work', tone:'#7c3aed', bg:'linear-gradient(135deg,#f5f3ff,#ede9fe)' },
+                  ].map(k => (
+                    <div key={k.label} style={{ background:k.bg, border:`1px solid ${k.tone}33`, borderRadius:16, padding:'14px 16px', boxShadow:'0 12px 24px rgba(15,23,42,0.07)', position:'relative', overflow:'hidden' }}>
+                      <div style={{ position:'absolute', right:-16, top:-18, width:72, height:72, borderRadius:'50%', background:`${k.tone}18` }} />
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:10, position:'relative' }}>
+                        <div>
+                          <div style={{ fontSize:10, fontWeight:900, textTransform:'uppercase', letterSpacing:'0.08em', color:k.tone }}>{k.label}</div>
+                          <div style={{ fontSize:22, fontWeight:900, color:'#0f172a', marginTop:5, letterSpacing:'-0.5px' }}>{k.value}</div>
+                          <div style={{ fontSize:11, color:'#64748b', marginTop:3 }}>{k.sub}</div>
+                        </div>
+                        <div style={{ border:`1px solid ${k.tone}44`, background:'#fff', color:k.tone, borderRadius:999, padding:'5px 8px', fontSize:11, fontWeight:900, whiteSpace:'nowrap' }}>{k.pct}</div>
+                      </div>
+                    </div>
+                  ));
+                })()}
               </div>
-              <div style={{ display:'flex', alignItems:'center', background:'var(--card)', border:'2px solid #7c3aed', borderRadius:10, height:40, paddingLeft:12, marginBottom:16, maxWidth:420 }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input style={{ border:'none', outline:'none', fontSize:13, color:'var(--text)', background:'none', width:'100%', padding:'0 10px', fontFamily:'inherit' }}
-                  placeholder="Search by item name or classification..." value={search} onChange={e => setSearch(e.target.value)} />
-                {search && <button onClick={() => setSearch('')} style={{ background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:'0 12px', fontSize:14 }}>✕</button>}
-              </div>
+              
               <div style={{ background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:14, overflow:'hidden' }}>
                 <ProductivityTable items={reportData.items} daily={reportData.daily} selectedWeek={selectedWeek} search={search} />
               </div>
@@ -937,57 +1102,63 @@ export default function DailyProductivity() {
       {/* ── COMPARE TWO WEEKS ── */}
       {activeTab === 'compare' && (
         <>
-          {/* All filters in one row */}
-          <div style={{ display:'flex', gap:12, marginBottom:20, flexWrap:'wrap', alignItems:'flex-end' }}>
-            <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-              <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'#7c3aed' }}>🏗️ Project</label>
-              <select value={cmpProjectId} onChange={e => setCmpProjectId(e.target.value)} style={{ ...fSel, minWidth:260 }}>
+          <FilterShell
+            title="Compare Two Weeks Filters"
+            subtitle="Choose one project and compare two installation productivity weeks with clear W1/W2 colors."
+            right={(cmpWeekA && cmpWeekB) ? <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
+              <span style={{ background:'#eff6ff', border:'1px solid #93c5fd', color:'#1d4ed8', borderRadius:999, padding:'6px 10px', fontSize:11, fontWeight:900 }}>W1: Week {cmpWeekA.weekNum}</span>
+              <span style={{ background:'#fff7ed', border:'1px solid #fdba74', color:'#c2410c', borderRadius:999, padding:'6px 10px', fontSize:11, fontWeight:900 }}>W2: Week {cmpWeekB.weekNum}</span>
+            </div> : null}
+          >
+            <FilterField label="Select Project" span={4}>
+              <select value={cmpProjectId} onChange={e => setCmpProjectId(e.target.value)} style={{ ...fSel, width:'100%' }}>
                 <option value="">— Select Project —</option>
                 {projects.map(p => <option key={p.id} value={p.id}>{[p.project_name_en,p.project_name_ar].filter(Boolean).join(' / ')}</option>)}
               </select>
-            </div>
+            </FilterField>
             {cmpProjectId && cmpWeeks.length > 0 && (
               <>
-                {[
-                  { label:'Week 1', num:cmpWeekNumA, setNum:setCmpWeekNumA, inp:cmpWeekInputA, setInp:setCmpWeekInputA, color:'#7c3aed', bg:'#f5f3ff', border:'#ddd6fe' },
-                  { label:'Week 2', num:cmpWeekNumB, setNum:setCmpWeekNumB, inp:cmpWeekInputB, setInp:setCmpWeekInputB, color:'#0369a1', bg:'#eff6ff', border:'#bfdbfe' },
-                ].map(({ label, num, setNum, inp, setInp, color, bg, border }) => {
-                  const selWeek = cmpWeeks.find(w => w.weekNum === parseInt(num));
-                  return (
-                    <div key={label} style={{ display:'flex', flexDirection:'column', gap:5 }}>
-                      <label style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color }}>📅 {label}</label>
-                      <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-                        <input type="number" min={1} max={cmpWeeks.length} value={inp} placeholder="#"
-                          onChange={e => { const n=parseInt(e.target.value); setInp(e.target.value); if(!isNaN(n)&&cmpWeeks.find(w=>w.weekNum===n)) setNum(String(n)); }}
-                          style={{ ...fSel, width:64, minWidth:64, fontWeight:700, textAlign:'center', border:`2px solid ${color}` }} />
-                        <select value={num} onChange={e => { setNum(e.target.value); setInp(e.target.value); }}
-                          style={{ ...fSel, minWidth:240, border:`2px solid ${color}`, background:bg }}>
-                          <option value="">— {label} —</option>
-                          {cmpWeeks.map(w => <option key={w.weekNum} value={w.weekNum}>{w.label}</option>)}
-                        </select>
-                        {selWeek && (
-                          <span style={{ fontSize:11, color, fontWeight:600, whiteSpace:'nowrap' }}>
-                            {formatDate(selWeek.sat)} → {formatDate(selWeek.thu)}
-                          </span>
-                        )}
-                      </div>
+                <FilterField label="Week 1 - Blue" span={4}>
+                  <div style={{ background:'linear-gradient(135deg,#eff6ff,#dbeafe)', border:'1px solid #93c5fd', borderRadius:14, padding:10, boxShadow:'0 8px 18px rgba(29,78,216,0.08)' }}>
+                    <div style={{ display:'grid', gridTemplateColumns:'74px 1fr', gap:8 }}>
+                      <input type="number" min={1} max={cmpWeeks.length} value={cmpWeekInputA} placeholder="#"
+                        onChange={e => { const n=parseInt(e.target.value); setCmpWeekInputA(e.target.value); if(!isNaN(n)&&cmpWeeks.find(w=>w.weekNum===n)) setCmpWeekNumA(String(n)); }}
+                        style={{ ...fSel, width:'100%', fontWeight:900, textAlign:'center', border:'1px solid #60a5fa', background:'#fff', color:'#1d4ed8' }} />
+                      <select value={cmpWeekNumA} onChange={e => { setCmpWeekNumA(e.target.value); setCmpWeekInputA(e.target.value); }} style={{ ...fSel, width:'100%', border:'1px solid #60a5fa', background:'#fff', color:'#1d4ed8' }}>
+                        <option value="">— Week 1 —</option>
+                        {cmpWeeks.map(w => <option key={w.weekNum} value={w.weekNum}>{w.label}</option>)}
+                      </select>
                     </div>
-                  );
-                })}
+                    {cmpWeekA && <div style={{ marginTop:8, color:'#1d4ed8', fontSize:11, fontWeight:800 }}>{formatDate(cmpWeekA.sat)} → {formatDate(cmpWeekA.thu)}</div>}
+                  </div>
+                </FilterField>
+                <FilterField label="Week 2 - Orange" span={4}>
+                  <div style={{ background:'linear-gradient(135deg,#fff7ed,#ffedd5)', border:'1px solid #fdba74', borderRadius:14, padding:10, boxShadow:'0 8px 18px rgba(194,65,12,0.08)' }}>
+                    <div style={{ display:'grid', gridTemplateColumns:'74px 1fr', gap:8 }}>
+                      <input type="number" min={1} max={cmpWeeks.length} value={cmpWeekInputB} placeholder="#"
+                        onChange={e => { const n=parseInt(e.target.value); setCmpWeekInputB(e.target.value); if(!isNaN(n)&&cmpWeeks.find(w=>w.weekNum===n)) setCmpWeekNumB(String(n)); }}
+                        style={{ ...fSel, width:'100%', fontWeight:900, textAlign:'center', border:'1px solid #fb923c', background:'#fff', color:'#c2410c' }} />
+                      <select value={cmpWeekNumB} onChange={e => { setCmpWeekNumB(e.target.value); setCmpWeekInputB(e.target.value); }} style={{ ...fSel, width:'100%', border:'1px solid #fb923c', background:'#fff', color:'#c2410c' }}>
+                        <option value="">— Week 2 —</option>
+                        {cmpWeeks.map(w => <option key={w.weekNum} value={w.weekNum}>{w.label}</option>)}
+                      </select>
+                    </div>
+                    {cmpWeekB && <div style={{ marginTop:8, color:'#c2410c', fontSize:11, fontWeight:800 }}>{formatDate(cmpWeekB.sat)} → {formatDate(cmpWeekB.thu)}</div>}
+                  </div>
+                </FilterField>
+                <div style={{ gridColumn:'1 / -1', display:'flex', justifyContent:'space-between', alignItems:'center', gap:10, flexWrap:'wrap', paddingTop:2 }}>
+                  <div style={{ fontSize:11, color:'#64748b' }}>Blue = Week 1, Orange = Week 2. The table keeps the same colors for faster reading.</div>
+                  <button type="button" onClick={() => { setCmpWeekNumA(''); setCmpWeekInputA(''); setCmpWeekNumB(''); setCmpWeekInputB(''); setCmpDataA(null); setCmpDataB(null); }} style={{ border:'1px solid #bfdbfe', background:'#eff6ff', color:'#1d4ed8', borderRadius:10, padding:'8px 12px', fontSize:12, fontWeight:800, cursor:'pointer' }}>Clear Compare</button>
+                </div>
               </>
             )}
-          </div>
+          </FilterShell>
 
           {!cmpProjectId && <div style={{ textAlign:'center', padding:'60px 20px', color:'#9ca3af' }}><div style={{ fontSize:48, marginBottom:12 }}>⚖️</div><div style={{ fontSize:15 }}>Select a project to compare weeks</div></div>}
 
           {cmpDataA && cmpDataB && cmpWeekA && cmpWeekB && (
             <>
-              <div style={{ display:'flex', alignItems:'center', background:'var(--card)', border:'2px solid #7c3aed', borderRadius:10, height:40, paddingLeft:12, marginBottom:16, maxWidth:420 }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input style={{ border:'none', outline:'none', fontSize:13, color:'var(--text)', background:'none', width:'100%', padding:'0 10px', fontFamily:'inherit' }}
-                  placeholder="Filter items by name or classification..." value={search} onChange={e => setSearch(e.target.value)} />
-                {search && <button onClick={() => setSearch('')} style={{ background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:'0 12px', fontSize:14 }}>✕</button>}
-              </div>
+              
               <div style={{ background:'var(--card)', border:'1px solid var(--border-light)', borderRadius:14, overflow:'hidden', marginBottom:8 }}>
                 <CompareTable dataA={cmpDataA} dataB={cmpDataB} weekA={cmpWeekA} weekB={cmpWeekB} search={search} />
               </div>

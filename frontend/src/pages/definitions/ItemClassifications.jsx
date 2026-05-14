@@ -98,7 +98,7 @@ export default function ItemClassifications() {
     const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='classifications.csv'; a.click();
   }
 
-  const levelLabel = [{bg:'#ede9fe',c:'#7c3aed',l:'L1'},{bg:'#eff6ff',c:'#1d4ed8',l:'L2'},{bg:'#f0fdf4',c:'#16a34a',l:'L3'}];
+  const levelLabel = [{bg:'#eff6ff',c:'#2563eb',l:'L1'},{bg:'#eff6ff',c:'#1d4ed8',l:'L2'},{bg:'#f0fdf4',c:'#16a34a',l:'L3'}];
 
   const columns = [
     { key:'classification_code', label:'Code', style:{width:100},
@@ -145,8 +145,8 @@ export default function ItemClassifications() {
   return (
     <div>
       <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:24,flexWrap:'wrap'}}>
-        <div style={{width:48,height:48,borderRadius:14,background:'#ede9fe',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
+        <div style={{width:48,height:48,borderRadius:14,background:'#eff6ff',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
         </div>
         <div><h1 style={{fontSize:20,fontWeight:700,color:'var(--text)'}}>{t.itemClassifications}</h1></div>
         <div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
@@ -182,7 +182,7 @@ export default function ItemClassifications() {
             </button>
           )}
           {canAction('can_create') && (
-            <button onClick={openAdd} style={{display:'flex',alignItems:'center',gap:7,background:'#7c3aed',border:'none',borderRadius:10,padding:'9px 18px',fontSize:13,fontWeight:600,color:'#fff',cursor:'pointer',fontFamily:'inherit'}}>
+            <button onClick={openAdd} style={{display:'flex',alignItems:'center',gap:7,background:'#2563eb',border:'none',borderRadius:10,padding:'9px 18px',fontSize:13,fontWeight:600,color:'#fff',cursor:'pointer',fontFamily:'inherit'}}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               New Classification
             </button>
@@ -212,7 +212,7 @@ export default function ItemClassifications() {
       {viewModal && (
         <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.45)',backdropFilter:'blur(4px)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={()=>setViewModal(null)}>
           <div style={{background:'var(--card)',borderRadius:16,width:'100%',maxWidth:480,overflow:'hidden',boxShadow:'0 24px 60px rgba(0,0,0,0.18)'}} onClick={e=>e.stopPropagation()}>
-            <div style={{background:'linear-gradient(135deg,#6d28d9 0%,#7c3aed 100%)',padding:'18px 24px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <div style={{background:'linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%)',padding:'18px 24px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
               <div>
                 <div style={{fontSize:11,color:'rgba(255,255,255,0.65)',textTransform:'uppercase',letterSpacing:'0.08em'}}>Classifications › View</div>
                 <div style={{fontSize:17,fontWeight:700,color:'#fff'}}>{viewModal.classification_name}</div>
