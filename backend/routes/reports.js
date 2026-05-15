@@ -639,57 +639,173 @@ router.get('/entry-logs', async (req, res) => {
     const rows = [];
 
     // Real audit table, if installed. This is the only reliable source for Edit / Unpost / Delete history.
+    // IMPORTANT:
+    // The audit table may not contain every optional column such as status, status_to, qty, details, etc.
+    // Therefore this query checks the actual table columns first and only references columns that exist.
+    // This prevents errors like: column l.status does not exist.
     const auditCheck = await pool.query(`SELECT to_regclass('public.cp_entry_audit_logs') AS table_name`);
     if (auditCheck.rows[0]?.table_name) {
-      const auditParams = [projectId];
-      const auditWhere = [`l.project_id = $1`];
-
-      if (processFilter) {
-        if (processFilter === 'boq' || processFilter === 'planning') {
-          auditWhere.push(`LOWER(l.process) IN ('boq','planning')`);
-        } else {
-          auditParams.push(processFilter);
-          auditWhere.push(`LOWER(l.process) = $${auditParams.length}`);
-        }
-      } else {
-        // Do not show a separate Planning process. Planning audit rows are shown as BOQ.
-        auditWhere.push(`LOWER(COALESCE(l.process,'')) IN ('boq','planning','delivery','installation')`);
-      }
-
-      const actionSql = normalizeActionPredicate(`COALESCE(l.action, '')`, auditParams);
-      if (actionSql) auditWhere.push(actionSql.replace(/^ AND /, ''));
-      if (dateFrom) { auditParams.push(dateFrom); auditWhere.push(`l.created_at >= $${auditParams.length}::date`); }
-      if (dateTo) { auditParams.push(dateTo); auditWhere.push(`l.created_at < ($${auditParams.length}::date + interval '1 day')`); }
-
-      const { rows: auditRows } = await pool.query(
-        `SELECT
-           l.id,
-           ${processLabelSql(`COALESCE(l.process, '')`)} AS process,
-           ${actionLabelSql(`COALESCE(l.action, '')`)} AS action,
-           p.project_code,
-           p.project_name_en,
-           i.item_code,
-           i.item_name,
-           NULL::text AS level_code,
-           NULL::text AS level_name,
-           l.transaction_date::text AS transaction_date,
-           l.qty,
-           COALESCE(l.status_to, l.status, '') AS status,
-           COALESCE(u.full_name_en, u.full_name, u.username, 'System') AS user_name,
-           COALESCE(l.details, '') AS notes,
-           NULLIF(COALESCE(to_jsonb(l)->>'old_value', to_jsonb(l)->>'old_data', to_jsonb(l)->>'old_values', to_jsonb(l)->>'before_value', ''), '') AS old_value,
-           NULLIF(COALESCE(to_jsonb(l)->>'new_value', to_jsonb(l)->>'new_data', to_jsonb(l)->>'new_values', to_jsonb(l)->>'after_value', ''), '') AS new_value,
-           to_char(l.created_at, 'YYYY-MM-DD HH24:MI:SS') AS action_datetime,
-           l.created_at AS sort_time
-         FROM cp_entry_audit_logs l
-         LEFT JOIN cp_projects p ON p.id = l.project_id
-         LEFT JOIN cp_items i ON i.id = l.item_id
-         LEFT JOIN cp_users u ON u.id = l.user_id
-         WHERE ${auditWhere.join(' AND ')}
-         ORDER BY l.created_at DESC
-         LIMIT 1500`, auditParams
+      const { rows: auditColumnRows } = await pool.query(
+        `SELECT column_name
+         FROM information_schema.columns
+         WHERE table_schema='public'
+           AND table_name='cp_entry_audit_logs'`
       );
-      rows.push(...auditRows);
+
+      const auditCols = new Set(auditColumnRows.map(r => r.column_name));
+
+      const hasCol = (name) => auditCols.has(name);
+      const colText = (name, fallback = "''") => hasCol(name) ? `l.${name}::text` : fallback;
+      const colRaw = (name, fallback = 'NULL') => hasCol(name) ? `l.${name}` : fallback;
+
+      const processExpr = hasCol('process')
+        ? `COALESCE(l.process::text, '')`
+        : hasCol('process_name')
+        ? `COALESCE(l.process_name::text, '')`
+        : `''`;
+
+      const actionExpr = hasCol('action')
+        ? `COALESCE(l.action::text, '')`
+        : hasCol('action_type')
+        ? `COALESCE(l.action_type::text, '')`
+        : hasCol('operation')
+        ? `COALESCE(l.operation::text, '')`
+        : `''`;
+
+      const createdExpr = hasCol('created_at')
+        ? `l.created_at`
+        : hasCol('updated_at')
+        ? `l.updated_at`
+        : hasCol('action_datetime')
+        ? `l.action_datetime`
+        : `NULL::timestamp`;
+
+      const transactionDateExpr = hasCol('transaction_date')
+        ? `l.transaction_date::text`
+        : hasCol('event_date')
+        ? `l.event_date::text`
+        : hasCol('date')
+        ? `l.date::text`
+        : `NULL::text`;
+
+      const qtyExpr = hasCol('qty')
+        ? `l.qty`
+        : hasCol('quantity')
+        ? `l.quantity`
+        : hasCol('qty_delivered')
+        ? `l.qty_delivered`
+        : hasCol('qty_installed')
+        ? `l.qty_installed`
+        : hasCol('planned_qty')
+        ? `l.planned_qty`
+        : `NULL::numeric`;
+
+      const statusExpr = `NULLIF(COALESCE(
+        ${colText('status_to')},
+        ${colText('status_after')},
+        ${colText('new_status')},
+        ${colText('tx_status')},
+        ${colText('status')}
+      ), '')`;
+
+      const detailsExpr = `COALESCE(
+        ${colText('details')},
+        ${colText('notes')},
+        ${colText('description')},
+        ${colText('remarks')},
+        ''
+      )`;
+
+      const oldValueExpr = `NULLIF(COALESCE(
+        ${colText('old_value')},
+        ${colText('old_data')},
+        ${colText('old_values')},
+        ${colText('before_value')},
+        ${colText('before_data')},
+        ''
+      ), '')`;
+
+      const newValueExpr = `NULLIF(COALESCE(
+        ${colText('new_value')},
+        ${colText('new_data')},
+        ${colText('new_values')},
+        ${colText('after_value')},
+        ${colText('after_data')},
+        ''
+      ), '')`;
+
+      // Audit rows must be project-specific. If audit table has no project_id, skip audit rows safely.
+      if (hasCol('project_id')) {
+        const auditParams = [projectId];
+        const auditWhere = [`l.project_id = $1`];
+
+        if (processFilter) {
+          if (processFilter === 'boq' || processFilter === 'planning') {
+            auditWhere.push(`LOWER(${processExpr}) IN ('boq','planning')`);
+          } else {
+            auditParams.push(processFilter);
+            auditWhere.push(`LOWER(${processExpr}) = $${auditParams.length}`);
+          }
+        } else {
+          // Do not show a separate Planning process. Planning audit rows are shown as BOQ.
+          auditWhere.push(`LOWER(COALESCE(${processExpr},'')) IN ('boq','planning','delivery','installation')`);
+        }
+
+        const actionSql = normalizeActionPredicate(actionExpr, auditParams);
+        if (actionSql) auditWhere.push(actionSql.replace(/^ AND /, ''));
+
+        if (dateFrom && createdExpr !== 'NULL::timestamp') {
+          auditParams.push(dateFrom);
+          auditWhere.push(`${createdExpr} >= $${auditParams.length}::date`);
+        }
+
+        if (dateTo && createdExpr !== 'NULL::timestamp') {
+          auditParams.push(dateTo);
+          auditWhere.push(`${createdExpr} < ($${auditParams.length}::date + interval '1 day')`);
+        }
+
+        const projectJoin = `p.id = l.project_id`;
+        const itemJoin = hasCol('item_id') ? `i.id = l.item_id` : `FALSE`;
+        const userJoin = hasCol('user_id')
+          ? `u.id = l.user_id`
+          : hasCol('created_by')
+          ? `u.id::text = l.created_by::text`
+          : `FALSE`;
+
+        const { rows: auditRows } = await pool.query(
+          `SELECT
+             ${hasCol('id') ? 'l.id' : 'NULL'} AS id,
+             ${processLabelSql(processExpr)} AS process,
+             ${actionLabelSql(actionExpr)} AS action,
+             p.project_code,
+             p.project_name_en,
+             i.item_code,
+             i.item_name,
+             NULL::text AS level_code,
+             NULL::text AS level_name,
+             ${transactionDateExpr} AS transaction_date,
+             ${qtyExpr} AS qty,
+             ${statusExpr} AS status,
+             COALESCE(u.full_name_en, u.full_name, u.username, ${colText('user_name', "'System'")}, 'System') AS user_name,
+             ${detailsExpr} AS notes,
+             ${oldValueExpr} AS old_value,
+             ${newValueExpr} AS new_value,
+             CASE
+               WHEN ${createdExpr} IS NULL THEN NULL
+               ELSE to_char(${createdExpr}, 'YYYY-MM-DD HH24:MI:SS')
+             END AS action_datetime,
+             ${createdExpr} AS sort_time
+           FROM cp_entry_audit_logs l
+           LEFT JOIN cp_projects p ON ${projectJoin}
+           LEFT JOIN cp_items i ON ${itemJoin}
+           LEFT JOIN cp_users u ON ${userJoin}
+           WHERE ${auditWhere.join(' AND ')}
+           ORDER BY ${createdExpr} DESC NULLS LAST
+           LIMIT 1500`, auditParams
+        );
+
+        rows.push(...auditRows);
+      }
     }
 
     // If user selects Unpost/Delete/Edit, never fake data from current transaction status.
