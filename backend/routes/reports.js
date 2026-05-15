@@ -592,6 +592,196 @@ router.get('/item-logs', async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+
+
+// ── Entry Logs — BOQ / Delivery / Installation actions and entries ───────────
+router.get('/entry-logs', async (req, res) => {
+  const { projectId, process, action, dateFrom, dateTo } = req.query;
+  if (!projectId) return res.json([]);
+  if (!canAccessProject(req, projectId)) return res.status(403).json({ message: 'No access to this project' });
+
+  const params = [projectId];
+  const addParam = (value) => { params.push(value); return `$${params.length}`; };
+
+  const processFilter = String(process || '').toLowerCase();
+  const actionFilter = String(action || '').toLowerCase();
+
+  const dateConditions = (alias) => {
+    const cond = [];
+    if (dateFrom) cond.push(`COALESCE(${alias}.created_at, ${alias}.transaction_date::timestamp) >= ${addParam(dateFrom)}::date`);
+    if (dateTo) cond.push(`COALESCE(${alias}.created_at, ${alias}.transaction_date::timestamp) < (${addParam(dateTo)}::date + interval '1 day')`);
+    return cond.length ? ` AND ${cond.join(' AND ')}` : '';
+  };
+
+  try {
+    const rows = [];
+
+    // If a real audit table exists, read it first. This captures future create/update/delete/confirm history when the optional SQL is installed.
+    const auditCheck = await pool.query(`SELECT to_regclass('public.cp_entry_audit_logs') AS table_name`);
+    if (auditCheck.rows[0]?.table_name) {
+      const auditParams = [projectId];
+      const auditWhere = [`l.project_id = $1`];
+      if (processFilter) { auditParams.push(processFilter); auditWhere.push(`LOWER(l.process) = $${auditParams.length}`); }
+      if (actionFilter) { auditParams.push(`%${actionFilter}%`); auditWhere.push(`LOWER(l.action) LIKE $${auditParams.length}`); }
+      if (dateFrom) { auditParams.push(dateFrom); auditWhere.push(`l.created_at >= $${auditParams.length}::date`); }
+      if (dateTo) { auditParams.push(dateTo); auditWhere.push(`l.created_at < ($${auditParams.length}::date + interval '1 day')`); }
+
+      const { rows: auditRows } = await pool.query(
+        `SELECT
+           l.id,
+           INITCAP(l.process) AS process,
+           l.action,
+           p.project_code,
+           p.project_name_en,
+           i.item_code,
+           i.item_name,
+           NULL::text AS level_code,
+           NULL::text AS level_name,
+           l.transaction_date::text AS transaction_date,
+           l.qty,
+           l.status_to AS status,
+           COALESCE(u.full_name_en, u.full_name, u.username, 'System') AS user_name,
+           l.details AS notes,
+           to_char(l.created_at, 'YYYY-MM-DD HH24:MI:SS') AS action_datetime,
+           l.created_at AS sort_time
+         FROM cp_entry_audit_logs l
+         LEFT JOIN cp_projects p ON p.id = l.project_id
+         LEFT JOIN cp_items i ON i.id = l.item_id
+         LEFT JOIN cp_users u ON u.id = l.user_id
+         WHERE ${auditWhere.join(' AND ')}
+         ORDER BY l.created_at DESC
+         LIMIT 1000`, auditParams
+      );
+      rows.push(...auditRows);
+    }
+
+    // Existing BOQ rows. The original BOQ table does not store user/date history, so this shows the current BOQ status.
+    if (!processFilter || processFilter === 'boq' || processFilter === 'planning') {
+      const boqWhere = [`pp.project_id = $1`];
+      if (actionFilter) {
+        if (actionFilter === 'confirm') boqWhere.push(`LOWER(COALESCE(pp.status,'')) = 'approved'`);
+        if (actionFilter === 'save') boqWhere.push(`LOWER(COALESCE(pp.status,'')) = 'saved'`);
+        if (actionFilter === 'entry') boqWhere.push(`LOWER(COALESCE(pp.status,'')) IN ('incomplete','draft','prepared')`);
+      }
+      const { rows: boqRows } = await pool.query(
+        `SELECT
+           'BOQ' AS process,
+           CASE
+             WHEN LOWER(COALESCE(pp.status,'')) = 'approved' THEN 'Confirm BOQ'
+             WHEN LOWER(COALESCE(pp.status,'')) = 'saved' THEN 'Save BOQ'
+             ELSE 'Entry BOQ'
+           END AS action,
+           p.project_code,
+           p.project_name_en,
+           i.item_code,
+           i.item_name,
+           NULL::text AS level_code,
+           NULL::text AS level_name,
+           NULL::text AS transaction_date,
+           pp.planned_qty AS qty,
+           pp.status,
+           'Not captured' AS user_name,
+           'BOQ current status only. Historical user/time requires the optional audit SQL.' AS notes,
+           NULL::text AS action_datetime,
+           NULL::timestamp AS sort_time
+         FROM cp_project_planning pp
+         JOIN cp_projects p ON p.id = pp.project_id
+         JOIN cp_items i ON i.id = pp.item_id
+         WHERE ${boqWhere.join(' AND ')}
+         ORDER BY i.item_name`, params.slice(0,1)
+      );
+      rows.push(...boqRows);
+    }
+
+    if (!processFilter || processFilter === 'delivery') {
+      const delWhere = [`d.project_id = $1`];
+      if (actionFilter) {
+        if (actionFilter === 'confirm') delWhere.push(`LOWER(COALESCE(d.tx_status,'')) = 'confirmed'`);
+        if (actionFilter === 'save') delWhere.push(`LOWER(COALESCE(d.tx_status,'')) = 'saved'`);
+        if (actionFilter === 'entry') delWhere.push(`LOWER(COALESCE(d.tx_status,'')) = 'incomplete'`);
+      }
+      const dateSql = dateConditions('d');
+      const { rows: delRows } = await pool.query(
+        `SELECT
+           'Delivery' AS process,
+           CASE
+             WHEN LOWER(COALESCE(d.tx_status,'')) = 'confirmed' THEN 'Confirm Delivery'
+             WHEN LOWER(COALESCE(d.tx_status,'')) = 'saved' THEN 'Save Delivery'
+             ELSE 'Entry Delivery'
+           END AS action,
+           p.project_code,
+           p.project_name_en,
+           i.item_code,
+           i.item_name,
+           NULL::text AS level_code,
+           NULL::text AS level_name,
+           d.transaction_date::text AS transaction_date,
+           d.qty_delivered AS qty,
+           d.tx_status AS status,
+           COALESCE(u.full_name_en, u.full_name, u.username, 'Unknown User') AS user_name,
+           d.notes,
+           to_char(COALESCE(d.created_at, d.transaction_date::timestamp), 'YYYY-MM-DD HH24:MI:SS') AS action_datetime,
+           COALESCE(d.created_at, d.transaction_date::timestamp) AS sort_time
+         FROM cp_delivery_transactions d
+         JOIN cp_projects p ON p.id = d.project_id
+         JOIN cp_items i ON i.id = d.item_id
+         LEFT JOIN cp_users u ON u.id = d.engineer_id
+         WHERE ${delWhere.join(' AND ')}${dateSql}
+         ORDER BY COALESCE(d.created_at, d.transaction_date::timestamp) DESC`, params
+      );
+      rows.push(...delRows);
+    }
+
+    if (!processFilter || processFilter === 'installation') {
+      const insWhere = [`it.project_id = $1`];
+      if (actionFilter) {
+        if (actionFilter === 'confirm') insWhere.push(`LOWER(COALESCE(it.tx_status,'')) = 'confirmed'`);
+        if (actionFilter === 'save') insWhere.push(`LOWER(COALESCE(it.tx_status,'')) = 'saved'`);
+        if (actionFilter === 'entry') insWhere.push(`LOWER(COALESCE(it.tx_status,'')) = 'incomplete'`);
+      }
+      const dateSql = dateConditions('it');
+      const { rows: insRows } = await pool.query(
+        `SELECT
+           'Installation' AS process,
+           CASE
+             WHEN LOWER(COALESCE(it.tx_status,'')) = 'confirmed' THEN 'Confirm Installation'
+             WHEN LOWER(COALESCE(it.tx_status,'')) = 'saved' THEN 'Save Installation'
+             ELSE 'Entry Installation'
+           END AS action,
+           p.project_code,
+           p.project_name_en,
+           i.item_code,
+           i.item_name,
+           l.level_code,
+           l.level_name,
+           it.transaction_date::text AS transaction_date,
+           it.qty_installed AS qty,
+           it.tx_status AS status,
+           COALESCE(u.full_name_en, u.full_name, u.username, 'Unknown User') AS user_name,
+           it.notes,
+           to_char(COALESCE(it.created_at, it.transaction_date::timestamp), 'YYYY-MM-DD HH24:MI:SS') AS action_datetime,
+           COALESCE(it.created_at, it.transaction_date::timestamp) AS sort_time
+         FROM cp_installation_transactions it
+         JOIN cp_projects p ON p.id = it.project_id
+         JOIN cp_items i ON i.id = it.item_id
+         LEFT JOIN cp_project_levels l ON l.id = it.level_id
+         LEFT JOIN cp_users u ON u.id = it.engineer_id
+         WHERE ${insWhere.join(' AND ')}${dateSql}
+         ORDER BY COALESCE(it.created_at, it.transaction_date::timestamp) DESC`, params
+      );
+      rows.push(...insRows);
+    }
+
+    rows.sort((a, b) => {
+      const aa = a.sort_time ? new Date(a.sort_time).getTime() : 0;
+      const bb = b.sort_time ? new Date(b.sort_time).getTime() : 0;
+      return bb - aa;
+    });
+
+    res.json(rows.slice(0, 1500));
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 // ── Floor Weekly Productivity ─────────────────────────────────────────────────
 // Returns confirmed installation qty per item per level for a week (Sat–Thu)
 router.get('/floor-weekly', async (req, res) => {

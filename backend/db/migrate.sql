@@ -104,3 +104,103 @@ ALTER TABLE cp_inspection_transactions DROP CONSTRAINT IF EXISTS cp_inspection_t
 ALTER TABLE cp_inspection_transactions ADD CONSTRAINT cp_inspection_transactions_tx_status_check
   CHECK (tx_status IN ('incomplete','saved','confirmed'));
 UPDATE cp_inspection_transactions SET tx_status='incomplete' WHERE tx_status='draft';
+
+
+
+
+-- Optional audit setup for full future action history in Entry Logs.
+-- Run once in PostgreSQL if you want exact created/updated/deleted action records going forward.
+-- Existing old transactions can only show current status because old action history was not stored.
+
+CREATE TABLE IF NOT EXISTS cp_entry_audit_logs (
+  id BIGSERIAL PRIMARY KEY,
+  process VARCHAR(30) NOT NULL,
+  action VARCHAR(80) NOT NULL,
+  project_id INTEGER REFERENCES cp_projects(id) ON DELETE CASCADE,
+  item_id INTEGER REFERENCES cp_items(id) ON DELETE SET NULL,
+  user_id INTEGER REFERENCES cp_users(id) ON DELETE SET NULL,
+  transaction_date DATE,
+  qty NUMERIC(14,3),
+  status_from VARCHAR(30),
+  status_to VARCHAR(30),
+  details TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE OR REPLACE FUNCTION cp_log_delivery_audit() RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO cp_entry_audit_logs(process, action, project_id, item_id, user_id, transaction_date, qty, status_to, details)
+    VALUES ('delivery', CASE WHEN NEW.tx_status='confirmed' THEN 'Confirm Delivery' WHEN NEW.tx_status='saved' THEN 'Save Delivery' ELSE 'Entry Delivery' END,
+            NEW.project_id, NEW.item_id, NEW.engineer_id, NEW.transaction_date, NEW.qty_delivered, NEW.tx_status, NEW.notes);
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE' THEN
+    INSERT INTO cp_entry_audit_logs(process, action, project_id, item_id, user_id, transaction_date, qty, status_from, status_to, details)
+    VALUES ('delivery', CASE WHEN OLD.tx_status <> NEW.tx_status AND NEW.tx_status='confirmed' THEN 'Confirm Delivery'
+                             WHEN OLD.tx_status <> NEW.tx_status AND NEW.tx_status='saved' THEN 'Save Delivery'
+                             ELSE 'Update Delivery' END,
+            NEW.project_id, NEW.item_id, NEW.engineer_id, NEW.transaction_date, NEW.qty_delivered, OLD.tx_status, NEW.tx_status, NEW.notes);
+    RETURN NEW;
+  ELSIF TG_OP = 'DELETE' THEN
+    INSERT INTO cp_entry_audit_logs(process, action, project_id, item_id, user_id, transaction_date, qty, status_from, details)
+    VALUES ('delivery', 'Delete Delivery', OLD.project_id, OLD.item_id, OLD.engineer_id, OLD.transaction_date, OLD.qty_delivered, OLD.tx_status, OLD.notes);
+    RETURN OLD;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_cp_delivery_audit ON cp_delivery_transactions;
+CREATE TRIGGER trg_cp_delivery_audit AFTER INSERT OR UPDATE OR DELETE ON cp_delivery_transactions
+FOR EACH ROW EXECUTE FUNCTION cp_log_delivery_audit();
+
+CREATE OR REPLACE FUNCTION cp_log_installation_audit() RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO cp_entry_audit_logs(process, action, project_id, item_id, user_id, transaction_date, qty, status_to, details)
+    VALUES ('installation', CASE WHEN NEW.tx_status='confirmed' THEN 'Confirm Installation' WHEN NEW.tx_status='saved' THEN 'Save Installation' ELSE 'Entry Installation' END,
+            NEW.project_id, NEW.item_id, NEW.engineer_id, NEW.transaction_date, NEW.qty_installed, NEW.tx_status, NEW.notes);
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE' THEN
+    INSERT INTO cp_entry_audit_logs(process, action, project_id, item_id, user_id, transaction_date, qty, status_from, status_to, details)
+    VALUES ('installation', CASE WHEN OLD.tx_status <> NEW.tx_status AND NEW.tx_status='confirmed' THEN 'Confirm Installation'
+                                 WHEN OLD.tx_status <> NEW.tx_status AND NEW.tx_status='saved' THEN 'Save Installation'
+                                 ELSE 'Update Installation' END,
+            NEW.project_id, NEW.item_id, NEW.engineer_id, NEW.transaction_date, NEW.qty_installed, OLD.tx_status, NEW.tx_status, NEW.notes);
+    RETURN NEW;
+  ELSIF TG_OP = 'DELETE' THEN
+    INSERT INTO cp_entry_audit_logs(process, action, project_id, item_id, user_id, transaction_date, qty, status_from, details)
+    VALUES ('installation', 'Delete Installation', OLD.project_id, OLD.item_id, OLD.engineer_id, OLD.transaction_date, OLD.qty_installed, OLD.tx_status, OLD.notes);
+    RETURN OLD;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_cp_installation_audit ON cp_installation_transactions;
+CREATE TRIGGER trg_cp_installation_audit AFTER INSERT OR UPDATE OR DELETE ON cp_installation_transactions
+FOR EACH ROW EXECUTE FUNCTION cp_log_installation_audit();
+
+CREATE OR REPLACE FUNCTION cp_log_boq_audit() RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO cp_entry_audit_logs(process, action, project_id, item_id, transaction_date, qty, status_to, details)
+    VALUES ('boq', CASE WHEN NEW.status='approved' THEN 'Confirm BOQ' WHEN NEW.status='saved' THEN 'Save BOQ' ELSE 'Entry BOQ' END,
+            NEW.project_id, NEW.item_id, NULL, NEW.planned_qty, NEW.status, 'BOQ row created');
+    RETURN NEW;
+  ELSIF TG_OP = 'UPDATE' THEN
+    INSERT INTO cp_entry_audit_logs(process, action, project_id, item_id, transaction_date, qty, status_from, status_to, details)
+    VALUES ('boq', CASE WHEN OLD.status <> NEW.status AND NEW.status='approved' THEN 'Confirm BOQ'
+                        WHEN OLD.status <> NEW.status AND NEW.status='saved' THEN 'Save BOQ'
+                        ELSE 'Update BOQ' END,
+            NEW.project_id, NEW.item_id, NULL, NEW.planned_qty, OLD.status, NEW.status, 'BOQ qty/status updated');
+    RETURN NEW;
+  ELSIF TG_OP = 'DELETE' THEN
+    INSERT INTO cp_entry_audit_logs(process, action, project_id, item_id, transaction_date, qty, status_from, details)
+    VALUES ('boq', 'Delete BOQ', OLD.project_id, OLD.item_id, NULL, OLD.planned_qty, OLD.status, 'BOQ row deleted');
+    RETURN OLD;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_cp_boq_audit ON cp_project_planning;
+CREATE TRIGGER trg_cp_boq_audit AFTER INSERT OR UPDATE OR DELETE ON cp_project_planning
+FOR EACH ROW EXECUTE FUNCTION cp_log_boq_audit();
