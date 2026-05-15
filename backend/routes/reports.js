@@ -10,30 +10,69 @@ router.get('/progress', async (req, res) => {
   const { projectId } = req.query;
   if (!projectId) return res.status(400).json({ message: 'projectId required' });
   if (!canAccessProject(req, projectId)) return res.status(403).json({ message: 'No access to this project' });
+
   try {
     const { rows } = await pool.query(
-      `SELECT i.item_code, i.item_name, i.unit_of_measure,
-              c.classification_name,
-              pc.classification_name AS parent_classification_name,
-              pp.planned_qty,
-              COALESCE(SUM(DISTINCT d.qty_delivered),0)   AS total_delivered,
-              COALESCE(SUM(DISTINCT ins.qty_installed),0) AS total_installed,
-              ROUND(COALESCE(SUM(DISTINCT ins.qty_installed),0)/NULLIF(pp.planned_qty,0)*100,1) AS install_pct,
-              ROUND(COALESCE(SUM(DISTINCT d.qty_delivered),0)/NULLIF(pp.planned_qty,0)*100,1)   AS delivery_pct
-       FROM cp_project_planning pp
-       JOIN cp_items i ON i.id=pp.item_id
-       LEFT JOIN cp_item_classifications c  ON c.id  = i.classification_id
+      `WITH
+       -- BOQ / Planning is the denominator for every percentage.
+       -- Aggregate planning first so delivery/installation joins never multiply the BOQ value.
+       plan AS (
+         SELECT project_id,
+                item_id,
+                SUM(COALESCE(planned_qty, 0))::numeric AS planned_qty
+         FROM cp_project_planning
+         WHERE project_id = $1
+         GROUP BY project_id, item_id
+       ),
+       -- Confirmed delivery only, grouped before joining to BOQ.
+       del AS (
+         SELECT project_id,
+                item_id,
+                SUM(COALESCE(qty_delivered, 0))::numeric AS total_delivered
+         FROM cp_delivery_transactions
+         WHERE project_id = $1
+           AND tx_status = 'confirmed'
+         GROUP BY project_id, item_id
+       ),
+       -- Confirmed installation only, grouped before joining to BOQ.
+       -- Do NOT use SUM(DISTINCT qty_installed); it undercounts repeated equal quantities.
+       ins AS (
+         SELECT project_id,
+                item_id,
+                SUM(COALESCE(qty_installed, 0))::numeric AS total_installed
+         FROM cp_installation_transactions
+         WHERE project_id = $1
+           AND tx_status = 'confirmed'
+         GROUP BY project_id, item_id
+       )
+       SELECT
+         plan.item_id,
+         i.item_code,
+         i.item_name,
+         COALESCE(m.desc_en, m.unit_code, i.unit_of_measure) AS unit_of_measure,
+         c.classification_name,
+         pc.classification_name AS parent_classification_name,
+         COALESCE(plan.planned_qty, 0) AS planned_qty,
+         COALESCE(del.total_delivered, 0) AS total_delivered,
+         COALESCE(ins.total_installed, 0) AS total_installed,
+         COALESCE(del.total_delivered, 0) AS delivered_qty,
+         COALESCE(ins.total_installed, 0) AS installed_qty,
+         GREATEST(COALESCE(plan.planned_qty, 0) - COALESCE(ins.total_installed, 0), 0) AS remaining_qty,
+         GREATEST(COALESCE(del.total_delivered, 0) - COALESCE(ins.total_installed, 0), 0) AS delivered_not_installed_qty,
+         ROUND(COALESCE(del.total_delivered, 0) / NULLIF(plan.planned_qty, 0) * 100, 1) AS delivery_pct,
+         ROUND(COALESCE(ins.total_installed, 0) / NULLIF(plan.planned_qty, 0) * 100, 1) AS install_pct,
+         ROUND(COALESCE(ins.total_installed, 0) / NULLIF(plan.planned_qty, 0) * 100, 1) AS installation_pct
+       FROM plan
+       JOIN cp_items i ON i.id = plan.item_id
+       LEFT JOIN cp_measurements m ON m.id = i.measurement_id
+       LEFT JOIN cp_item_classifications c ON c.id = i.classification_id
        LEFT JOIN cp_item_classifications pc ON pc.id = c.parent_id
-       LEFT JOIN cp_delivery_transactions d
-         ON d.project_id=pp.project_id AND d.item_id=pp.item_id AND d.tx_status='confirmed'
-       LEFT JOIN cp_installation_transactions ins
-         ON ins.project_id=pp.project_id AND ins.item_id=pp.item_id AND ins.tx_status='confirmed'
-       WHERE pp.project_id=$1
-       GROUP BY i.item_code,i.item_name,i.unit_of_measure,c.classification_name,
-                pc.classification_name,pp.planned_qty
+       LEFT JOIN del ON del.project_id = plan.project_id AND del.item_id = plan.item_id
+       LEFT JOIN ins ON ins.project_id = plan.project_id AND ins.item_id = plan.item_id
        ORDER BY pc.classification_name NULLS LAST, c.classification_name, i.item_name`,
       [projectId]
     );
+
     res.json(rows);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
@@ -41,27 +80,66 @@ router.get('/progress', async (req, res) => {
 // Tab 2 — Project-level progress summary (all accessible projects)
 router.get('/projects-summary', async (req, res) => {
   try {
-    let clause = '';
+    let accessClause = '';
     const params = [];
+
     if (req.projectIds !== null) {
       if (req.projectIds.length === 0) return res.json([]);
       params.push(req.projectIds);
-      clause = 'WHERE p.id = ANY($1)';
+      accessClause = `WHERE p.id = ANY($${params.length})`;
     }
+
     const { rows } = await pool.query(
-      `SELECT p.id, p.project_code, p.project_name_en, p.project_name_ar, p.status,
-              COALESCE(SUM(pp.planned_qty),0) AS planned_qty,
-              COALESCE(SUM(ins.qty_installed),0) AS installed_qty,
-              COALESCE(SUM(d.qty_delivered),0)   AS delivered_qty,
-              ROUND(COALESCE(SUM(ins.qty_installed),0)/NULLIF(SUM(pp.planned_qty),0)*100,1) AS install_pct
+      `WITH
+       -- BOQ totals per project. This is calculated separately to avoid multiplying
+       -- planning quantities by delivery/installation transaction rows.
+       plan AS (
+         SELECT project_id,
+                SUM(COALESCE(planned_qty, 0))::numeric AS planned_qty,
+                COUNT(*)::int AS item_count
+         FROM cp_project_planning
+         GROUP BY project_id
+       ),
+       del AS (
+         SELECT project_id,
+                SUM(COALESCE(qty_delivered, 0))::numeric AS delivered_qty
+         FROM cp_delivery_transactions
+         WHERE tx_status = 'confirmed'
+         GROUP BY project_id
+       ),
+       ins AS (
+         SELECT project_id,
+                SUM(COALESCE(qty_installed, 0))::numeric AS installed_qty
+         FROM cp_installation_transactions
+         WHERE tx_status = 'confirmed'
+         GROUP BY project_id
+       )
+       SELECT
+         p.id,
+         p.project_code,
+         p.project_name_en,
+         p.project_name_ar,
+         p.status,
+         p.start_date::text AS start_date,
+         p.end_date::text AS end_date,
+         COALESCE(plan.item_count, 0) AS item_count,
+         COALESCE(plan.planned_qty, 0) AS planned_qty,
+         COALESCE(del.delivered_qty, 0) AS delivered_qty,
+         COALESCE(ins.installed_qty, 0) AS installed_qty,
+         GREATEST(COALESCE(plan.planned_qty, 0) - COALESCE(ins.installed_qty, 0), 0) AS remaining_qty,
+         GREATEST(COALESCE(del.delivered_qty, 0) - COALESCE(ins.installed_qty, 0), 0) AS delivered_not_installed_qty,
+         ROUND(COALESCE(del.delivered_qty, 0) / NULLIF(plan.planned_qty, 0) * 100, 1) AS delivery_pct,
+         ROUND(COALESCE(ins.installed_qty, 0) / NULLIF(plan.planned_qty, 0) * 100, 1) AS install_pct,
+         ROUND(COALESCE(ins.installed_qty, 0) / NULLIF(plan.planned_qty, 0) * 100, 1) AS installation_pct
        FROM cp_projects p
-       LEFT JOIN cp_project_planning pp ON pp.project_id=p.id
-       LEFT JOIN cp_installation_transactions ins ON ins.project_id=p.id AND ins.tx_status='confirmed'
-       LEFT JOIN cp_delivery_transactions d ON d.project_id=p.id AND d.tx_status='confirmed'
-       ${clause}
-       GROUP BY p.id,p.project_code,p.project_name_en,p.project_name_ar,p.status
-       ORDER BY p.id`, params
+       LEFT JOIN plan ON plan.project_id = p.id
+       LEFT JOIN del  ON del.project_id  = p.id
+       LEFT JOIN ins  ON ins.project_id  = p.id
+       ${accessClause}
+       ORDER BY p.id`,
+      params
     );
+
     res.json(rows);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
@@ -69,35 +147,98 @@ router.get('/projects-summary', async (req, res) => {
 // Tab 3 — Item tracking across accessible projects
 router.get('/item-tracking', async (req, res) => {
   const { projectId, itemId } = req.query;
+
   try {
     let clause = 'WHERE 1=1';
     const params = [];
-    if (projectId) { params.push(projectId); clause += ` AND pp.project_id=$${params.length}`; }
-    if (itemId)    { params.push(itemId);    clause += ` AND pp.item_id=$${params.length}`; }
+
+    if (projectId) {
+      if (!canAccessProject(req, projectId)) return res.status(403).json({ message: 'No access to this project' });
+      params.push(projectId);
+      clause += ` AND pp.project_id = $${params.length}`;
+    }
+
+    if (itemId) {
+      params.push(itemId);
+      clause += ` AND pp.item_id = $${params.length}`;
+    }
+
     if (req.projectIds !== null) {
       if (req.projectIds.length === 0) return res.json([]);
       params.push(req.projectIds);
-      clause += ` AND pp.project_id=ANY($${params.length})`;
+      clause += ` AND pp.project_id = ANY($${params.length})`;
     }
+
     const { rows } = await pool.query(
-      `SELECT p.project_code, p.project_name_en, p.project_name_ar,
-              i.item_code, i.item_name, i.unit_of_measure,
-              pp.planned_qty,
-              COALESCE(SUM(d.qty_delivered),0)   AS total_delivered,
-              COALESCE(SUM(ins.qty_installed),0) AS total_installed,
-              COALESCE(SUM(insp.qty_inspected),0) AS total_inspected,
-              ROUND(COALESCE(SUM(ins.qty_installed),0)/NULLIF(pp.planned_qty,0)*100,1) AS install_pct
-       FROM cp_project_planning pp
-       JOIN cp_projects p ON p.id=pp.project_id
-       JOIN cp_items i ON i.id=pp.item_id
-       LEFT JOIN cp_delivery_transactions d ON d.project_id=pp.project_id AND d.item_id=pp.item_id AND d.tx_status='confirmed'
-       LEFT JOIN cp_installation_transactions ins ON ins.project_id=pp.project_id AND ins.item_id=pp.item_id AND ins.tx_status='confirmed'
-       LEFT JOIN cp_inspection_transactions insp ON insp.project_id=pp.project_id AND insp.item_id=pp.item_id
-       ${clause}
-       GROUP BY p.project_code,p.project_name_en,p.project_name_ar,
-                i.item_code,i.item_name,i.unit_of_measure,pp.planned_qty
-       ORDER BY p.project_code, i.item_name`, params
+      `WITH
+       plan AS (
+         SELECT pp.project_id,
+                pp.item_id,
+                SUM(COALESCE(pp.planned_qty, 0))::numeric AS planned_qty
+         FROM cp_project_planning pp
+         ${clause}
+         GROUP BY pp.project_id, pp.item_id
+       ),
+       del AS (
+         SELECT project_id,
+                item_id,
+                SUM(COALESCE(qty_delivered, 0))::numeric AS total_delivered
+         FROM cp_delivery_transactions
+         WHERE tx_status = 'confirmed'
+         GROUP BY project_id, item_id
+       ),
+       ins AS (
+         SELECT project_id,
+                item_id,
+                SUM(COALESCE(qty_installed, 0))::numeric AS total_installed
+         FROM cp_installation_transactions
+         WHERE tx_status = 'confirmed'
+         GROUP BY project_id, item_id
+       ),
+       insp AS (
+         SELECT project_id,
+                item_id,
+                SUM(COALESCE(qty_inspected, 0))::numeric AS total_inspected
+         FROM cp_inspection_transactions
+         GROUP BY project_id, item_id
+       )
+       SELECT
+         p.id AS project_id,
+         p.project_code,
+         p.project_name_en,
+         p.project_name_ar,
+         p.start_date::text AS start_date,
+         p.end_date::text AS end_date,
+         plan.item_id,
+         i.item_code,
+         i.item_name,
+         COALESCE(m.desc_en, m.unit_code, i.unit_of_measure) AS unit_of_measure,
+         c.classification_name,
+         pc.classification_name AS parent_classification_name,
+         COALESCE(plan.planned_qty, 0) AS planned_qty,
+         COALESCE(del.total_delivered, 0) AS total_delivered,
+         COALESCE(ins.total_installed, 0) AS total_installed,
+         COALESCE(insp.total_inspected, 0) AS total_inspected,
+         COALESCE(del.total_delivered, 0) AS delivered_qty,
+         COALESCE(ins.total_installed, 0) AS installed_qty,
+         GREATEST(COALESCE(plan.planned_qty, 0) - COALESCE(ins.total_installed, 0), 0) AS remaining_qty,
+         GREATEST(COALESCE(del.total_delivered, 0) - COALESCE(ins.total_installed, 0), 0) AS delivered_not_installed_qty,
+         ROUND(COALESCE(del.total_delivered, 0) / NULLIF(plan.planned_qty, 0) * 100, 1) AS delivery_pct,
+         ROUND(COALESCE(ins.total_installed, 0) / NULLIF(plan.planned_qty, 0) * 100, 1) AS install_pct,
+         ROUND(COALESCE(ins.total_installed, 0) / NULLIF(plan.planned_qty, 0) * 100, 1) AS installation_pct
+       FROM plan
+       JOIN cp_projects p ON p.id = plan.project_id
+       JOIN cp_items i ON i.id = plan.item_id
+       LEFT JOIN cp_measurements m ON m.id = i.measurement_id
+       LEFT JOIN cp_item_classifications c ON c.id = i.classification_id
+       LEFT JOIN cp_item_classifications pc ON pc.id = c.parent_id
+       LEFT JOIN del ON del.project_id = plan.project_id AND del.item_id = plan.item_id
+       LEFT JOIN ins ON ins.project_id = plan.project_id AND ins.item_id = plan.item_id
+       LEFT JOIN insp ON insp.project_id = plan.project_id AND insp.item_id = plan.item_id
+       ORDER BY p.project_code, pc.classification_name NULLS LAST, c.classification_name, i.item_name`,
+      params
     );
+
     res.json(rows);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
@@ -109,12 +250,14 @@ router.get('/inspection', async (req, res) => {
   if (!canAccessProject(req, projectId)) return res.status(403).json({ message: 'No access to this project' });
   try {
     const { rows } = await pool.query(
-      `SELECT i.item_code, i.item_name, i.unit_of_measure,
+      `SELECT i.item_code, i.item_name,
+              COALESCE(m.desc_en, m.unit_code, i.unit_of_measure) AS unit_of_measure,
               t.transaction_date,
               t.qty_inspected, t.status, t.remarks,
               u.full_name AS inspector_name
        FROM cp_inspection_transactions t
        JOIN cp_items i ON i.id=t.item_id
+       LEFT JOIN cp_measurements m ON m.id=i.measurement_id
        LEFT JOIN cp_users u ON u.id=t.inspector_id
        WHERE t.project_id=$1
        ORDER BY t.transaction_date DESC, i.item_name`,
@@ -124,7 +267,6 @@ router.get('/inspection', async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-module.exports = router;
 
 // ── Weekly Summary Report ─────────────────────────────────────────────────────
 router.get('/weekly', async (req, res) => {
@@ -453,14 +595,66 @@ router.get('/floor-weekly', async (req, res) => {
       [projectId]
     );
 
-    // First delivery date for week numbering
-    const { rows: firstRows } = await pool.query(
-      `SELECT MIN(transaction_date)::text AS first_date
-       FROM cp_delivery_transactions
+    // First/last CONFIRMED INSTALLATION dates for week numbering.
+    // Floor Weekly Productivity must be driven by installation activity, not delivery.
+    const { rows: installRangeRows } = await pool.query(
+      `SELECT
+          MIN(transaction_date)::text AS first_installation_date,
+          MAX(transaction_date)::text AS last_installation_date
+       FROM cp_installation_transactions
        WHERE project_id=$1 AND tx_status='confirmed'`,
       [projectId]
     );
 
-    res.json({ items, levels, allocs, weekTx, totalTx, firstDeliveryDate: firstRows[0]?.first_date || null });
+    // Optional list of actual installation week starts.
+    // Kept in the response for frontend/reporting flexibility.
+    const { rows: installationWeekRows } = await pool.query(
+      `SELECT DISTINCT
+          (
+            transaction_date::date -
+            (
+              CASE
+                WHEN EXTRACT(DOW FROM transaction_date::date)::int = 6 THEN 0
+                ELSE EXTRACT(DOW FROM transaction_date::date)::int + 1
+              END
+            )
+          )::date::text AS week_start,
+          (
+            transaction_date::date -
+            (
+              CASE
+                WHEN EXTRACT(DOW FROM transaction_date::date)::int = 6 THEN 0
+                ELSE EXTRACT(DOW FROM transaction_date::date)::int + 1
+              END
+            )
+            + INTERVAL '6 days'
+          )::date::text AS week_end
+       FROM cp_installation_transactions
+       WHERE project_id=$1 AND tx_status='confirmed'
+       ORDER BY week_start`,
+      [projectId]
+    );
+
+    const firstInstallationDate = installRangeRows[0]?.first_installation_date || null;
+    const lastInstallationDate  = installRangeRows[0]?.last_installation_date || null;
+
+    res.json({
+      items,
+      levels,
+      allocs,
+      weekTx,
+      totalTx,
+
+      // Correct fields
+      firstInstallationDate,
+      lastInstallationDate,
+      installationWeeks: installationWeekRows,
+
+      // Backward compatibility for older frontend code.
+      // It now intentionally mirrors installation date, not delivery date.
+      firstDeliveryDate: firstInstallationDate
+    });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
+
+module.exports = router;

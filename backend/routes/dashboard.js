@@ -139,24 +139,24 @@ router.get('/overview-details', async (req, res) => {
         `SELECT
            d.project_id,
            d.item_id,
-           d.transaction_date,
+           DATE_TRUNC('week', d.transaction_date)::date AS transaction_date,
            SUM(d.qty_delivered) AS qty_delivered
          FROM cp_delivery_transactions d
          WHERE COALESCE(d.tx_status, 'confirmed') = 'confirmed' ${deliveryFilter.clause}
-         GROUP BY d.project_id, d.item_id, d.transaction_date
-         ORDER BY d.transaction_date`,
+         GROUP BY d.project_id, d.item_id, DATE_TRUNC('week', d.transaction_date)::date
+         ORDER BY DATE_TRUNC('week', d.transaction_date)::date`,
         deliveryFilter.params,
       ),
       pool.query(
         `SELECT
            it.project_id,
            it.item_id,
-           it.transaction_date,
+           DATE_TRUNC('week', it.transaction_date)::date AS transaction_date,
            SUM(it.qty_installed) AS qty_installed
          FROM cp_installation_transactions it
          WHERE COALESCE(it.tx_status, 'confirmed') = 'confirmed' ${installationFilter.clause}
-         GROUP BY it.project_id, it.item_id, it.transaction_date
-         ORDER BY it.transaction_date`,
+         GROUP BY it.project_id, it.item_id, DATE_TRUNC('week', it.transaction_date)::date
+         ORDER BY DATE_TRUNC('week', it.transaction_date)::date`,
         installationFilter.params,
       ),
     ]);
