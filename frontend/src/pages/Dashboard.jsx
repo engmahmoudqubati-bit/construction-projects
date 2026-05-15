@@ -6,11 +6,13 @@ import {
   ComposedChart,
   Legend,
   Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
+
 import { api } from '../api/client';
 
 const TABS = [
