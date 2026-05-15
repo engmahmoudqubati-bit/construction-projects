@@ -67,16 +67,18 @@ router.get('/installation-progress', async (req, res) => {
   const f = projectFilter(projectId, req);
   try {
     const { rows } = await pool.query(
-      `SELECT i.item_name, i.item_code, i.unit_of_measure,
+      `SELECT i.item_name, i.item_code,
+              COALESCE(m.desc_en, m.unit_code, i.unit_of_measure) AS unit_of_measure,
               SUM(pp.planned_qty) AS planned_qty,
               COALESCE(SUM(t.qty_installed),0) AS installed_qty,
               ROUND(COALESCE(SUM(t.qty_installed),0) / NULLIF(SUM(pp.planned_qty),0) * 100, 1) AS pct
        FROM cp_project_planning pp
        JOIN cp_items i ON i.id=pp.item_id
+       LEFT JOIN cp_measurements m ON m.id = i.measurement_id
        LEFT JOIN cp_installation_transactions t
          ON t.project_id=pp.project_id AND t.item_id=pp.item_id
        WHERE 1=1 ${f.clause}
-       GROUP BY i.item_name, i.item_code, i.unit_of_measure
+       GROUP BY i.item_name, i.item_code, COALESCE(m.desc_en, m.unit_code, i.unit_of_measure)
        ORDER BY pct DESC NULLS LAST
        LIMIT 20`, f.params
     );
@@ -122,16 +124,17 @@ router.get('/overview-details', async (req, res) => {
            pp.item_id,
            i.item_code,
            i.item_name,
-           i.unit_of_measure,
+           COALESCE(m.desc_en, m.unit_code, i.unit_of_measure) AS unit_of_measure,
            COALESCE(c.classification_name, 'Uncategorized') AS classification_name,
            COALESCE(pc.classification_name, c.classification_name, 'General') AS parent_classification_name,
            SUM(pp.planned_qty) AS planned_qty
          FROM cp_project_planning pp
          JOIN cp_items i ON i.id = pp.item_id
+         LEFT JOIN cp_measurements m ON m.id = i.measurement_id
          LEFT JOIN cp_item_classifications c  ON c.id = i.classification_id
          LEFT JOIN cp_item_classifications pc ON pc.id = c.parent_id
          WHERE 1=1 ${planningFilter.clause}
-         GROUP BY pp.project_id, pp.item_id, i.item_code, i.item_name, i.unit_of_measure, c.classification_name, pc.classification_name
+         GROUP BY pp.project_id, pp.item_id, i.item_code, i.item_name, COALESCE(m.desc_en, m.unit_code, i.unit_of_measure), c.classification_name, pc.classification_name
          ORDER BY COALESCE(pc.classification_name, c.classification_name, 'General'), COALESCE(c.classification_name, 'Uncategorized'), i.item_name`,
         planningFilter.params,
       ),
@@ -139,24 +142,24 @@ router.get('/overview-details', async (req, res) => {
         `SELECT
            d.project_id,
            d.item_id,
-           DATE_TRUNC('week', d.transaction_date)::date AS transaction_date,
+           d.transaction_date::date AS transaction_date,
            SUM(d.qty_delivered) AS qty_delivered
          FROM cp_delivery_transactions d
          WHERE COALESCE(d.tx_status, 'confirmed') = 'confirmed' ${deliveryFilter.clause}
-         GROUP BY d.project_id, d.item_id, DATE_TRUNC('week', d.transaction_date)::date
-         ORDER BY DATE_TRUNC('week', d.transaction_date)::date`,
+         GROUP BY d.project_id, d.item_id, d.transaction_date::date
+         ORDER BY d.transaction_date::date`,
         deliveryFilter.params,
       ),
       pool.query(
         `SELECT
            it.project_id,
            it.item_id,
-           DATE_TRUNC('week', it.transaction_date)::date AS transaction_date,
+           it.transaction_date::date AS transaction_date,
            SUM(it.qty_installed) AS qty_installed
          FROM cp_installation_transactions it
          WHERE COALESCE(it.tx_status, 'confirmed') = 'confirmed' ${installationFilter.clause}
-         GROUP BY it.project_id, it.item_id, DATE_TRUNC('week', it.transaction_date)::date
-         ORDER BY DATE_TRUNC('week', it.transaction_date)::date`,
+         GROUP BY it.project_id, it.item_id, it.transaction_date::date
+         ORDER BY it.transaction_date::date`,
         installationFilter.params,
       ),
     ]);
@@ -177,16 +180,18 @@ router.get('/delivery-progress', async (req, res) => {
   const f = projectFilter(projectId, req);
   try {
     const { rows } = await pool.query(
-      `SELECT i.item_name, i.item_code, i.unit_of_measure,
+      `SELECT i.item_name, i.item_code,
+              COALESCE(m.desc_en, m.unit_code, i.unit_of_measure) AS unit_of_measure,
               SUM(pp.planned_qty) AS planned_qty,
               COALESCE(SUM(t.qty_delivered),0) AS delivered_qty,
               ROUND(COALESCE(SUM(t.qty_delivered),0) / NULLIF(SUM(pp.planned_qty),0) * 100, 1) AS pct
        FROM cp_project_planning pp
        JOIN cp_items i ON i.id=pp.item_id
+       LEFT JOIN cp_measurements m ON m.id = i.measurement_id
        LEFT JOIN cp_delivery_transactions t
          ON t.project_id=pp.project_id AND t.item_id=pp.item_id
        WHERE 1=1 ${f.clause}
-       GROUP BY i.item_name, i.item_code, i.unit_of_measure
+       GROUP BY i.item_name, i.item_code, COALESCE(m.desc_en, m.unit_code, i.unit_of_measure)
        ORDER BY pct DESC NULLS LAST
        LIMIT 20`, f.params
     );
