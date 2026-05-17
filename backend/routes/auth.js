@@ -74,13 +74,16 @@ router.post('/login', async (req, res) => {
 
     const valid = await bcrypt.compare(password, user.password);
 
-    if (!valid) {
-      await saveLoginLog(req, user.id, user.username, 'failed');
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
+if (!valid) {
+  await saveLoginLog(req, user.id, user.username, 'failed');
+  return res.status(401).json({ message: 'Invalid credentials' });
+}
 
-    // Save successful login history
-    await saveLoginLog(req, user.id, user.username, 'success');
+// Create session ID for this login
+const sessionId = crypto.randomUUID();
+
+// Save successful login history with session ID
+await saveLoginLog(req, user.id, user.username, 'success', sessionId);
 
     // Load permissions for non-admin users
     let pagePermissions   = [];
@@ -112,15 +115,16 @@ router.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign(
-      {
-        id: user.id,
-        username: user.username,
-        role: user.role,
-        full_name: user.full_name
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '8h' }
-    );
+  {
+    id: user.id,
+    username: user.username,
+    role: user.role,
+    full_name: user.full_name,
+    session_id: sessionId
+  },
+  process.env.JWT_SECRET,
+  { expiresIn: '8h' }
+);
 
     res.json({
       token,
