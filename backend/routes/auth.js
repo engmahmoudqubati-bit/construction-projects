@@ -3,6 +3,7 @@ const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
 const pool    = require('../db/pool');
 const auth    = require('../middleware/auth');
+const crypto = require('crypto');
 
 /**
  * Get real client IP address
@@ -22,21 +23,22 @@ function getClientIp(req) {
  * Save login history in database
  * This function will not stop login if logging fails
  */
-async function saveLoginLog(req, userId, username, status) {
+async function saveLoginLog(req, userId, username, status, sessionId = null) {
   try {
     const ipAddress = getClientIp(req);
     const userAgent = req.headers['user-agent'] || null;
 
     await pool.query(
       `INSERT INTO user_login_logs 
-       (user_id, username, ip_address, user_agent, login_status)
-       VALUES ($1, $2, $3, $4, $5)`,
+       (user_id, username, ip_address, user_agent, login_status, session_id)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
       [
         userId,
         username || 'unknown',
         ipAddress,
         userAgent,
-        status
+        status,
+        sessionId
       ]
     );
   } catch (err) {
